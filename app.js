@@ -38,6 +38,9 @@
         <section class="requirements-section"><div class="section-heading"><div><h2>需求列表</h2><p>点击需求查看交互原型与详细规则</p></div><span class="last-sync">最后更新 2026-07-12 14:41</span></div><div class="table-wrap"><table><thead><tr><th>需求编号</th><th>需求主题</th><th>优先级</th><th>状态</th><th>产品</th><th>开始时间</th><th>完成时间</th><th><span class="sr-only">操作</span></th></tr></thead><tbody>${rows}</tbody></table></div></section>
       </main>`;
 
+    const latestUpdate = requirements.map((item) => item.updatedAt).filter(Boolean).sort().at(-1) || "—";
+    app.querySelector(".last-sync").textContent = `最后更新 ${latestUpdate}`;
+
     app.querySelectorAll(".requirement-row").forEach((row) => {
       const open = () => { window.location.hash = `requirement/${row.dataset.requirementId}`; };
       row.addEventListener("click", open);
@@ -204,7 +207,8 @@
       if (selectedSize !== "200条/页" || !tableWrap || card.querySelector(".full-pagination.top-pagination")) return;
       const top = bottom.cloneNode(true);
       top.classList.add("top-pagination");
-      card.insertBefore(top, tableWrap);
+      const heading = card.querySelector(".risk-list-heading");
+      if (heading) heading.appendChild(top); else card.insertBefore(top, tableWrap);
     });
   }
 
@@ -213,6 +217,7 @@
     if (page.key !== requestedPageKey) window.history.replaceState(null, "", `#requirement/${requirement.id}/page/${page.key}`);
     const pageLogic = page.logic ? `<section class="logic-note"><span>逻辑说明</span><p>${escapeHtml(page.logic)}</p></section>` : "";
     app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav aria-label="当前原型页面"><span class="current-page-label">${page.name}</span></nav></header><div class="prototype-canvas"><div class="risk-app">${sidebar(requirement,page)}<section class="risk-main"><header class="risk-topbar"><div><span>风控管理 /</span><strong>${page.name}</strong></div><div><span class="environment-tag">测试环境</span><strong>Mike</strong></div></header><div class="risk-content">${pageContent(page)}</div></section></div></div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><div><h2>${page.name}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll">${questionsBlock(page)}<section class="page-note"><span>页面目标</span><p>${page.purpose}</p>${page.flow ? `<span>主流程</span><p>${page.flow}</p>` : ""}</section>${pageLogic}<div class="spec-section-heading"><h2>组件说明</h2><span>${page.annotations.length} 项</span></div><div class="annotation-list">${page.annotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"></div>`;
+    app.querySelector(".environment-tag").textContent = "产品原型";
     if (page.key === "withdraw-monitor") renderMonitorView(false);
     if (page.hidePageNote) app.querySelector(".page-note")?.remove();
     addTopPaginators();
@@ -258,7 +263,18 @@
     document.querySelectorAll("[data-date-trigger]").forEach((trigger) => {
       if (trigger.dataset.dateBound) return;
       trigger.dataset.dateBound = "true";
-      trigger.addEventListener("click", () => { const popover = trigger.parentElement.querySelector(".date-picker-popover"); popover.hidden = !popover.hidden; });
+      trigger.addEventListener("click", () => {
+        const field = trigger.closest(".date-range-field");
+        const popover = field.querySelector(".date-picker-popover");
+        const opening = popover.hidden;
+        popover.hidden = !popover.hidden;
+        if (!opening) return;
+        popover.classList.remove("align-left", "align-right");
+        const contentRect = trigger.closest(".risk-content").getBoundingClientRect();
+        const fieldRect = field.getBoundingClientRect();
+        const opensLeftOfField = fieldRect.right - popover.offsetWidth < contentRect.left;
+        popover.classList.add(opensLeftOfField ? "align-left" : "align-right");
+      });
     });
     document.querySelectorAll(".date-close").forEach((button) => { if (button.dataset.dateBound) return; button.dataset.dateBound = "true"; button.addEventListener("click", () => { button.closest(".date-picker-popover").hidden = true; }); });
     document.querySelectorAll(".calendar-panel").forEach((panel) => panel.querySelectorAll(".calendar-day").forEach((day) => { if (day.dataset.dateBound) return; day.dataset.dateBound = "true"; day.addEventListener("click", () => { panel.querySelectorAll(".calendar-day").forEach((item) => item.classList.remove("selected")); day.classList.add("selected"); }); }));
