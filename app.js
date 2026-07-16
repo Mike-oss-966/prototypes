@@ -17,6 +17,7 @@
   }));
   const loginState = { searched: false, sortKey: "", sortDirection: 1, dedupKeys: [] };
   const transactionState = { searched: false };
+  const financeTabState = {};
 
   function escapeHtml(value) {
     return String(value ?? "")
@@ -36,6 +37,9 @@
   }
 
   function listView() {
+    const inProgress = requirements.filter((item) => item.status === "进行中").length;
+    const pending = requirements.filter((item) => item.status === "待开始").length;
+    const completedThisMonth = requirements.filter((item) => item.status === "已完成" && item.completionDate?.startsWith("2026-07")).length;
     const rows = requirements.map((item) => `
       <tr class="requirement-row" tabindex="0" data-requirement-id="${escapeHtml(item.id)}" aria-label="查看 ${escapeHtml(item.title)}">
         <td><span class="requirement-id">${escapeHtml(item.id)}</span></td>
@@ -49,7 +53,7 @@
     app.innerHTML = `
       <main class="list-shell">
         <header class="list-header"><div><p class="eyebrow">PRODUCT SPECIFICATION HUB</p><h1>产品需求原型库</h1><p class="header-copy">集中查看需求、高保真原型和组件级开发说明。</p></div><div class="owner-block"><span>产品负责人</span><strong>Mike</strong></div></header>
-        <section class="summary-strip" aria-label="需求概览"><div><span>全部需求</span><strong>01</strong></div><div><span>进行中</span><strong>01</strong></div><div><span>待开始</span><strong>00</strong></div><div><span>本月完成</span><strong>00</strong></div></section>
+        <section class="summary-strip" aria-label="需求概览"><div><span>全部需求</span><strong>${String(requirements.length).padStart(2, "0")}</strong></div><div><span>进行中</span><strong>${String(inProgress).padStart(2, "0")}</strong></div><div><span>待开始</span><strong>${String(pending).padStart(2, "0")}</strong></div><div><span>本月完成</span><strong>${String(completedThisMonth).padStart(2, "0")}</strong></div></section>
         <section class="requirements-section"><div class="section-heading"><div><h2>需求列表</h2><p>点击需求查看交互原型与详细规则</p></div><span class="last-sync">最后更新 2026-07-12 14:41</span></div><div class="table-wrap"><table><thead><tr><th>需求编号</th><th>需求主题</th><th>优先级</th><th>状态</th><th>产品</th><th>开始时间</th><th>完成时间</th><th><span class="sr-only">操作</span></th></tr></thead><tbody>${rows}</tbody></table></div></section>
       </main>`;
 
@@ -71,15 +75,31 @@
     if (annotation.name === "流水列表状态") demoControls = `<div class="spec-demo-controls"><label><input type="checkbox" ${transactionState.searched ? "checked" : ""} id="spec-transaction-data-toggle" /><span>展示有数据状态</span></label></div>`;
     let summaryText = escapeHtml(annotation.summary);
     annotation.summaryHighlights?.forEach((term) => { summaryText = summaryText.replaceAll(escapeHtml(term), `<strong class="summary-danger">${escapeHtml(term)}</strong>`); });
-    const summary = annotation.summary ? `<p class="annotation-summary">${summaryText}</p>` : "";
+    const summary = annotation.summary ? `<p class="annotation-summary${annotation.summaryTone === "danger" ? " annotation-summary-danger" : ""}">${summaryText}</p>` : "";
     const rules = [...annotation.rules];
     if (annotation.name.includes("筛选") || annotation.name.includes("输入处理")) rules.push("筛选按钮的可点击面积大于其他按钮一倍，可参考原型");
     if (annotation.type === "数据表格") rules.push("表格仅在内容超出对应可视区域时显示滚动条：横向滚动条高度、纵向滚动条宽度均保持15px；内容可完整显示时对应滚动条隐藏");
-    return `<article class="annotation-card" data-spec-id="${annotation.id}" tabindex="0"><div class="annotation-heading"><span class="component-code">${annotation.id}</span><div><h3>${escapeHtml(annotation.name)}</h3></div></div>${summary}<ul>${rules.map((rule) => `<li>${escapeHtml(rule)}</li>`).join("")}</ul>${demoControls}</article>`;
+    const ruleHtml = rules.map((rule, index) => {
+      let text = escapeHtml(rule);
+      annotation.ruleHighlights?.forEach((term) => { text = text.replaceAll(escapeHtml(term), `<strong class="rule-highlight">${escapeHtml(term)}</strong>`); });
+      return `<li${annotation.ruleEmphasisIndexes?.includes(index) ? ' class="rule-emphasis"' : ""}>${text}</li>`;
+    }).join("");
+    return `<article class="annotation-card${annotation.critical ? " critical-annotation" : ""}" data-spec-id="${annotation.id}" tabindex="0"><div class="annotation-heading"><span class="component-code">${annotation.id}</span><div><h3>${escapeHtml(annotation.name)}</h3></div></div>${summary}<ul>${ruleHtml}</ul>${demoControls}</article>`;
+  }
+
+  function visibleAnnotations(page, activeTab = financeTabState[page.key] || page.tabs?.[0]) {
+    return page.annotations.filter((annotation) => !annotation.tab || annotation.tab === activeTab);
   }
 
   function sidebar(requirement, page) {
-    return `<aside class="risk-sidebar"><div class="risk-brand"><span>R</span><div><strong>RiskControl</strong><small>风控工作台</small></div></div><div class="risk-menu-label">风控管理</div><nav>${requirement.pages.map((item) => `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${item.key}" class="${item.key === page.key ? "active" : ""}"><span class="menu-symbol">${item.key === page.key ? "■" : "□"}</span>${item.name}</a>`).join("")}</nav><div class="risk-user"><span>MK</span><div><strong>Mike</strong><small>风控审核员</small></div></div></aside>`;
+    const finance = requirement.moduleName === "财务管理";
+    const brand = finance ? "Finance" : "RiskControl";
+    const brandMark = finance ? "F" : "R";
+    const moduleName = requirement.moduleName || "风控管理";
+    const workspaceName = requirement.workspaceName || "风控工作台";
+    const roleName = requirement.roleName || "风控审核员";
+    const links = requirement.pages.map((item) => `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${item.key}" class="${item.key === page.key ? "active" : ""}"><span class="menu-symbol">${item.key === page.key ? "■" : "□"}</span><span class="menu-name">${item.name}</span>${item.changeLabel ? `<em class="menu-change-badge ${item.changeType === "纯新增" ? "is-new" : "is-merged"}">${item.changeLabel}</em>` : ""}</a>`).join("");
+    return `<aside class="risk-sidebar"><div class="risk-brand"><span>${brandMark}</span><div><strong>${brand}</strong><small>${workspaceName}</small></div></div><div class="risk-menu-label">${moduleName}</div><nav>${links}</nav><div class="risk-user"><span>MK</span><div><strong>Mike</strong><small>${roleName}</small></div></div></aside>`;
   }
 
   function timeRange(id) {
@@ -251,6 +271,127 @@
     return `<div class="risk-page-heading"><div><h1>风控名单库</h1></div></div><div class="inner-tabs annotated blacklist-tabs" data-component-id="N01">${componentBadge("N01")}${page.tabs.map((tab) => { const type = tab === "设备黑名单" ? "device" : tab === "IP黑名单" ? "ip" : "legacy"; return `<button type="button" class="blacklist-tab ${type === "device" ? "active" : ""}" data-blacklist-type="${type}">${tab}</button>`; }).join("")}</div><div id="blacklist-view">${blacklistView("device")}</div>`;
   }
 
+  function financeTimeRange(id, label, fullDay = false) {
+    const componentId = id || "__finance_time";
+    let html = timeRange(componentId).replaceAll("申请时间", label);
+    html = html.replaceAll("2026-07-12", "2026-07-16").replaceAll('<button type="button" class="calendar-day selected">12</button>', '<button type="button" class="calendar-day selected">16</button>');
+    if (!id) html = html.replace(`risk-field-wide annotated date-range-field" data-component-id="${componentId}">${componentBadge(componentId)}`, 'risk-field-wide date-range-field">');
+    if (fullDay) html = html.replace("2026-07-16 14:41:00", "2026-07-16 23:59:59").replace('value="14:41:00"', 'value="23:59:59"');
+    return html;
+  }
+
+  function financeFilterActions(exportable = false) {
+    return `<div class="risk-filter-actions"><button type="button" class="main-action primary-filter">搜索</button><button type="button" class="secondary-action reset-action">重置</button>${exportable ? '<button type="button" class="secondary-action">导出</button>' : ""}</div>`;
+  }
+
+  function financeTabs(page, activeTab) {
+    return `<div class="inner-tabs annotated finance-tabs" data-component-id="N01">${componentBadge("N01")}${page.tabs.map((tab) => `<button type="button" class="finance-tab ${tab === activeTab ? "active" : ""}" data-finance-tab="${tab}">${tab}</button>`).join("")}</div>`;
+  }
+
+  function financeMenuChangeSummary(page) {
+    if (!page.changeType) return "";
+    const sources = page.menuSources?.length ? page.menuSources.map((item) => `<span>${item}</span>`).join('<b aria-hidden="true">→</b>') : '<span class="new-menu-source">无原菜单，纯新增功能</span>';
+    return `<section class="menu-change-summary"><div><em class="menu-change-badge ${page.changeType === "纯新增" ? "is-new" : "is-merged"}">${page.changeType}</em><strong>${page.name}</strong></div><div class="menu-source-flow">${sources}${page.menuSources?.length ? `<b aria-hidden="true">→</b><span class="target-menu">${page.name}</span>` : ""}</div></section>`;
+  }
+
+  function depositSettingsRows() {
+    const rows = [
+      ["12", "USDT", "USDT", "TronPay", "1", "1", "固定+浮动", "固定：10,20,30,50,100 / 10-10000", "TRC20按档位费率", "启用", "2026-07-15 18:30"],
+      ["14", "支付宝", "人民币", "HiPay", "—", "2", "固定+浮动", "固定：1000,2000,3000 / 1-10000", "—", "启用", "2026-07-15 18:30"],
+      ["47", "NEXUS", "NEXUS", "NEXUS", "—", "3", "固定+浮动", "1-100000", "—", "启用", "2026-07-16 08:45"]
+    ];
+    return rows.map((row) => `<tr><td><input type="checkbox" aria-label="选择${row[1]}" /></td>${row.map((cell, index) => index === 9 ? `<td><span class="result-tag approved">${cell}</span></td>` : `<td>${index === 0 ? `<strong class="mono">${cell}</strong>` : cell}</td>`).join("")}<td class="row-actions"><button type="button" class="link-action finance-edit-setting">修改</button><button type="button" class="link-action finance-delete-setting">删除</button></td></tr>`).join("");
+  }
+
+  function depositSettingsContent() {
+    return `<section class="risk-filter-panel"><div class="risk-filter-grid finance-setting-filters"><div class="risk-field"><label>存款类型</label><select><option>全部存款类型</option><option>USDT</option><option>支付宝</option><option>NEXUS</option></select></div><div class="risk-field"><label>存款币种</label><select><option>全部存款币种</option><option>人民币</option><option>USDT</option></select></div><div class="risk-field"><label>通道状态</label><select><option>全部状态</option><option>启用</option><option>停用</option></select></div>${financeFilterActions()}</div></section>
+      <div class="finance-setting-toolbar"><div><button type="button" class="secondary-action finance-add-setting">新增</button><button type="button" class="secondary-action finance-edit-selected">修改</button><button type="button" class="secondary-action finance-delete-selected">删除</button></div><label class="failure-limit-control annotated" data-component-id="F01">${componentBadge("F01")}<span>连续</span><input type="number" min="0" value="3" /><span>笔失败/取消充值订单后，禁止发起充值</span><button type="button" class="main-action finance-limit-save">确认更新</button></label></div>
+      <section class="risk-list-card"><div class="risk-list-heading"><div><h2>存款通道设置</h2><span>共 26 条</span></div></div><div class="risk-table-wrap"><table class="risk-table finance-settings-table"><thead><tr><th><input type="checkbox" aria-label="全选" /></th><th>ID</th><th>存款类型</th><th>存款币种</th><th>上游服务商</th><th>上游通道编码</th><th>展示排序</th><th>金额类型</th><th>支付区间</th><th>协议手续费</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead><tbody>${depositSettingsRows()}</tbody></table></div>${pagination(10, 26)}</section>`;
+  }
+
+  function depositAuditRows() {
+    const rows = [
+      ["e1557e56c370408f", "afei666", "旺财体育", "HiPay", "支付宝", "CNY", "500", "—", "500", "0", "支付处理中", "2026-07-16 12:27:35"],
+      ["419b77a14c1a47d8", "mike966", "旺财体育", "TronPay", "USDT", "USDT", "1000", "1000", "986", "14", "充值待支付", "2026-07-16 12:05:31"],
+      ["0892615005924e67", "dengji000", "新旺体育", "XMFPay", "支付宝", "CNY", "588", "588", "588", "0", "用户主动取消", "2026-07-16 11:41:23"]
+    ];
+    return rows.map((row, index) => `<tr><td class="sticky-finance-order"><strong class="mono">${row[0]}</strong></td><td class="sticky-finance-member"><a class="member-detail-link" href="javascript:void(0)">${row[1]}</a></td>${row.slice(2, 10).map((cell, cellIndex) => `<td>${[6,7,8,9].includes(cellIndex + 2) && cell !== "—" ? `<strong class="amount">${cell} ${row[5]}</strong>` : cell}</td>`).join("")}<td>—</td><td>—</td><td>${row[11]}</td><td class="sticky-finance-status"><span class="result-tag ${index === 2 ? "rejected" : ""}">${row[10]}</span></td><td class="row-actions sticky-finance-action"><button type="button" class="link-action">查看</button><button type="button" class="link-action">上分</button><button type="button" class="link-action">取消</button></td></tr>`).join("");
+  }
+
+  function depositAuditContent() {
+    return `<section class="risk-filter-panel annotated" data-component-id="F02">${componentBadge("F02")}<div class="risk-filter-grid finance-audit-filters"><div class="risk-field"><label>单号</label><input type="text" placeholder="请输入单号" /></div><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号" /></div><div class="risk-field"><label>所属站点</label><input type="text" placeholder="请输入所属站点" /></div><div class="risk-field"><label>充值类型</label><select><option></option></select></div><div class="risk-field"><label>币种</label><select><option>全部币种</option><option>CNY</option><option>USDT</option></select></div><div class="risk-field"><label>状态</label><select><option>全部状态</option><option>充值待支付</option><option>支付处理中</option></select></div>${financeTimeRange("F04", "存款申请时间", true)}${financeFilterActions()}</div></section>
+      <section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>会员存款审核</h2><span>共 43 条</span></div></div><div class="risk-table-wrap"><table class="risk-table finance-audit-table"><thead><tr><th class="sticky-finance-order">单号</th><th class="sticky-finance-member">会员账号</th><th>站点名称</th><th>三方支付通道</th><th>充值类型</th><th>币种</th><th>订单金额</th><th>充值金额</th><th>实际到账</th><th>手续费</th><th>异常备注</th><th>官方备注</th><th>存款申请时间</th><th class="sticky-finance-status">状态</th><th class="sticky-finance-action">操作</th></tr></thead><tbody>${depositAuditRows()}</tbody></table></div>${pagination(50, 43)}</section>`;
+  }
+
+  function financeRecordRows(subjectType, withdrawal) {
+    const identities = subjectType === "代理" ? ["agent_087", "agent_102", "agent_205"] : subjectType === "站点" ? ["旺财体育", "新旺体育", "彩虹站"] : ["afei666", "mike966", "dengji000"];
+    const states = subjectType === "会员" ? (withdrawal ? ["审核中", "转账中", "成功"] : ["确认中", "确认成功", "用户主动取消"]) : ["待确认", "待确认", "待确认"];
+    const hasRisk = subjectType === "会员" && withdrawal;
+    return identities.map((identity, index) => {
+      const orderPrefix = withdrawal ? "WD" : "DP";
+      const amount = [365, 1000, 588][index];
+      const statusClassName = states[index] === "成功" || states[index] === "确认成功" ? "approved" : states[index].includes("取消") ? "rejected" : "";
+      const riskColumns = hasRisk ? `<td>${index === 2 ? "risk_amy" : "mike.risk"}</td><td>2026-07-16 ${String(10 + index).padStart(2, "0")}:15:20</td>` : "";
+      const agentNumber = subjectType === "代理" ? `<td class="finance-agent-number">AG${String(870 + index).padStart(4, "0")}</td>` : "";
+      const siteColumn = subjectType === "会员" || subjectType === "代理" ? `<td>${index === 1 ? "新旺体育" : "旺财体育"}</td>` : "";
+      return `<tr><td class="sticky-finance-order"><strong class="mono">${orderPrefix}2026071600${index + 1}</strong></td><td class="sticky-finance-member"><a class="member-detail-link" href="javascript:void(0)">${identity}</a></td>${agentNumber}${siteColumn}<td>${index === 0 ? "USDT" : "支付宝"}</td><td>${index === 0 ? "USDT" : "CNY"}</td><td><strong class="amount">${amount} ${index === 0 ? "USDT" : "CNY"}</strong></td><td><strong class="amount">${withdrawal ? amount - 12 : amount} ${index === 0 ? "USDT" : "CNY"}</strong></td><td>${index === 0 ? "6.760000" : "1.000000"}</td><td><strong class="amount">${withdrawal ? 12 : 0} CNY</strong></td>${riskColumns}<td>mike.finance</td><td>—</td><td>2026-07-16 ${String(9 + index).padStart(2, "0")}:20:00</td><td>${withdrawal ? `2026-07-16 ${String(10 + index).padStart(2, "0")}:30:00` : "—"}</td><td class="sticky-finance-status"><span class="result-tag ${statusClassName}">${states[index]}</span></td><td class="row-actions sticky-finance-action finance-view-action"><button type="button" class="link-action">查看</button></td></tr>`;
+    }).join("");
+  }
+
+  function financeRecordContent(subjectType, withdrawal, filterId, tableId) {
+    const identityLabel = subjectType === "代理" ? "代理账号" : subjectType === "站点" ? "站点名称" : "会员账号";
+    const statusOptions = subjectType === "会员" ? (withdrawal ? ["审核中", "转账中", "拒绝", "成功", "失败"] : ["确认中", "确认失败", "确认成功", "待支付", "用户主动取消"]) : [];
+    const timeLabel = withdrawal ? "取款申请时间" : "存款申请时间";
+    const title = `${subjectType}${withdrawal ? "取款" : "存款"}记录`;
+    const timeIds = subjectType === "会员" ? (withdrawal ? ["F04", "F05"] : ["F05"]) : (withdrawal ? ["F02"] : ["F01"]);
+    const hasRisk = subjectType === "会员" && withdrawal;
+    const riskTime = hasRisk ? financeTimeRange(timeIds[1], "风控后创建时间", true) : "";
+    const riskHeaders = hasRisk ? "<th>风控审核人</th><th>风控后创建时间</th>" : "";
+    const agentHeader = subjectType === "代理" ? "<th>代理编号</th>" : "";
+    const siteHeader = subjectType === "会员" || subjectType === "代理" ? "<th>站点名称</th>" : "";
+    const statusOptionsHtml = statusOptions.length ? statusOptions.map((status) => `<option>${status}</option>`).join("") : '<option disabled>状态待确认</option>';
+    return `<section class="risk-filter-panel${filterId ? ' annotated' : ''}"${filterId ? ` data-component-id="${filterId}"` : ""}>${filterId ? componentBadge(filterId) : ""}<div class="risk-filter-grid finance-record-filters"><div class="risk-field"><label>单号</label><input type="text" placeholder="请输入单号" /></div><div class="risk-field"><label>${identityLabel}</label><input type="text" placeholder="请输入${identityLabel}" /></div>${subjectType === "站点" ? "" : '<div class="risk-field"><label>所属站点</label><input type="text" placeholder="请输入所属站点" /></div>'}<div class="risk-field"><label>支付类型</label><select><option>全部支付类型</option><option>支付宝</option><option>USDT</option></select></div><div class="risk-field"><label>状态</label><select><option>全部状态</option>${statusOptionsHtml}</select></div><div class="risk-field"><label>财务审核人</label><input type="text" placeholder="请输入财务审核人" /></div>${financeTimeRange(timeIds[0], timeLabel, true)}${riskTime}${financeFilterActions(true)}</div></section>
+      <section class="risk-list-card${tableId ? ' annotated' : ''}"${tableId ? ` data-component-id="${tableId}"` : ""}>${tableId ? componentBadge(tableId) : ""}<div class="risk-list-heading"><div><h2>${title}</h2><span>共 9 条</span></div></div><div class="risk-table-wrap"><table class="risk-table finance-record-table${subjectType !== "会员" ? " compact-identity-table" : ""}"><thead><tr><th class="sticky-finance-order">单号</th><th class="sticky-finance-member">${identityLabel}</th>${agentHeader}${siteHeader}<th>支付类型</th><th>币种</th><th>订单金额</th><th>实际交易金额</th><th>汇率</th><th>手续费</th>${riskHeaders}<th>财务审核人</th><th>审核备注</th><th>${timeLabel}</th><th>订单完成时间</th><th class="sticky-finance-status">状态</th><th class="sticky-finance-action finance-view-action">操作</th></tr></thead><tbody>${financeRecordRows(subjectType, withdrawal)}</tbody></table></div>${pagination(200, 9)}</section>`;
+  }
+
+  function withdrawalAuditRows() {
+    const rows = [
+      ["WD1783498560783231", "dlwc0011", "旺财体育", "VIP7", "USDT提币", "-90.00 U", "88.00 U", "2.00 CNY", "处理中", "待审核", "未提交"],
+      ["WD1783493903745929", "testhd021", "旺财体育", "VIP6", "USDT提币", "-10.00 U", "9.50 U", "3.40 CNY", "处理中", "待审核", "未提交"],
+      ["WD1783390901534802", "dlwc0011", "新旺体育", "VIP7", "人民币", "-100.00 U", "98.00 U", "2.00 CNY", "处理中", "待审核", "未提交"]
+    ];
+    return rows.map((row, index) => `<tr><td class="sticky-finance-order"><strong class="mono">${row[0]}</strong></td><td class="sticky-finance-member"><a class="member-detail-link" href="javascript:void(0)">${row[1]}</a></td><td>${row[2]}</td><td><span class="data-tag">${riskTags[index]}</span></td><td>${row[3]}</td><td>2026-06-${String(11 - index).padStart(2, "0")} 11:45:03</td><td>${row[4]}</td><td><strong class="amount amount-negative">${row[5]}</strong></td><td><strong class="amount">${row[6]}</strong></td><td>${row[7]}</td><td>${index === 2 ? "ALIPAY,支付宝" : "ERC20"}</td><td>${index === 2 ? "老李" : "罚罪"}</td><td class="mono">${index === 2 ? "15588889999" : "0xf59e59348407dc..."}</td><td>—</td><td>${index === 2 ? "risk_amy" : "mike.risk"}</td><td>2026-07-16 10:${10 + index}:00</td><td>2026-07-16 10:${20 + index}:00</td><td class="sticky-finance-user-status"><span class="result-tag">${row[8]}</span></td><td class="sticky-finance-platform-status"><span class="result-tag">${row[9]}</span></td><td class="sticky-finance-third-status"><span class="result-tag">${row[10]}</span></td><td class="row-actions sticky-finance-action"><button type="button" class="link-action">查看</button><button type="button" class="link-action">查询三方</button><button type="button" class="link-action finance-withdraw-audit">审核</button></td></tr>`).join("");
+  }
+
+  function withdrawalAuditContent() {
+    return `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid finance-withdraw-filters"><div class="risk-field"><label>单号</label><input type="text" placeholder="请输入单号" /></div><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号" /></div><div class="risk-field"><label>所属站点</label><input type="text" placeholder="请输入所属站点" /></div><div class="risk-field"><label>风控标签</label><select><option>全部风控标签</option></select></div><div class="risk-field"><label>取款类型</label><select><option>全部取款类型</option><option>人民币</option><option>USDT提币</option></select></div><div class="risk-field"><label>用户状态</label><select><option>全部用户状态</option></select></div><div class="risk-field"><label>平台状态</label><select><option>全部平台状态</option></select></div><div class="risk-field"><label>三方状态</label><select><option>全部三方状态</option></select></div>${financeTimeRange("F03", "取款申请时间", true)}${financeFilterActions()}</div></section>
+      <section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>会员取款审核</h2><span>共 43 条</span></div></div><div class="risk-table-wrap"><table class="risk-table finance-withdraw-audit-table"><thead><tr><th class="sticky-finance-order">单号</th><th class="sticky-finance-member">会员账号</th><th>站点名称</th><th>风控标签</th><th>等级</th><th>注册日期</th><th>取款类型</th><th>取款金额</th><th>实际到账</th><th>手续费</th><th>银行名称</th><th>账户姓名</th><th>银行账号</th><th>操作备注</th><th>风控审核人</th><th>风控后创建时间</th><th>取款申请时间</th><th class="sticky-finance-user-status">用户状态</th><th class="sticky-finance-platform-status">平台状态</th><th class="sticky-finance-third-status">三方状态</th><th class="sticky-finance-action">操作</th></tr></thead><tbody>${withdrawalAuditRows()}</tbody></table></div>${pagination(50, 43)}</section>`;
+  }
+
+  function unchangedFinanceContent(page) {
+    return `<div class="risk-page-heading"><div><h1>${page.name}</h1></div></div><section class="reserved-area unchanged-page"><div><strong>此页面无修改</strong><span>原有功能、字段、权限和交互保持生产现状。</span></div></section>`;
+  }
+
+  function financeTabBody(page, activeTab) {
+    if (page.key === "member-deposit") {
+      if (activeTab === "存款设置") return depositSettingsContent();
+      if (activeTab === "存款审核") return depositAuditContent();
+      return financeRecordContent("会员", false, "F03", "T02");
+    }
+    if (page.key === "member-withdrawal") {
+      if (activeTab === "取款设置") return `<section class="reserved-area unchanged-page compact"><div><strong>取款设置无修改</strong><span>原有设置内容保持生产现状。</span></div></section>`;
+      if (activeTab === "取款审核") return withdrawalAuditContent();
+      return financeRecordContent("会员", true, "F02", "T02");
+    }
+    const subjectType = page.key === "agent-transactions" ? "代理" : "站点";
+    return financeRecordContent(subjectType, activeTab.includes("取款"), "", activeTab.includes("取款") ? "T02" : "T01");
+  }
+
+  function financeGroupedContent(page) {
+    const activeTab = financeTabState[page.key] || page.tabs[0];
+    return `<div class="risk-page-heading finance-page-heading"><div><h1>${page.name}</h1></div><span class="prototype-only-label">变更标记仅用于原型评审</span></div>${financeMenuChangeSummary(page)}${financeTabs(page, activeTab)}<div class="finance-tab-body">${financeTabBody(page, activeTab)}</div>`;
+  }
+
   function tabPlaceholderContent(page) {
     return `<div class="risk-page-heading"><div><p>风控管理</p><h1>${page.name}</h1></div></div><div class="inner-tabs annotated" data-component-id="N01">${componentBadge("N01")}${page.tabs.map((tab,index)=>`<button class="${index===0?"active":""}">${tab}</button>`).join("")}</div><section class="reserved-area"><div><strong>保持原功能布局不变即可，本原型只做合并形式展示。</strong></div></section>`;
   }
@@ -260,6 +401,8 @@
   }
 
   function pageContent(page) {
+    if (page.unchanged) return unchangedFinanceContent(page);
+    if (["member-deposit", "member-withdrawal", "agent-transactions", "site-transactions"].includes(page.key)) return financeGroupedContent(page);
     if (page.key === "withdraw-review") return withdrawReviewContent();
     if (page.key === "hold-review") return holdReviewContent();
     if (page.key === "review-history") return historyContent();
@@ -271,9 +414,10 @@
     return emptyPageContent(page);
   }
 
-  function questionsBlock(page) {
-    if (!page.questions?.length) return "";
-    return `<section class="questions-block"><div class="questions-title"><span>?</span><div><strong>待确认事项</strong><small>${page.questions.length} 项</small></div></div><ol>${page.questions.map((question)=>`<li>${escapeHtml(question)}</li>`).join("")}</ol></section>`;
+  function questionsBlock(page, activeTab = financeTabState[page.key] || page.tabs?.[0]) {
+    const questions = page.tabQuestions?.[activeTab] || page.questions || [];
+    if (!questions.length) return "";
+    return `<section class="questions-block"><div class="questions-title"><span>?</span><div><strong>待确认事项</strong><small>${questions.length} 项</small></div></div><ol>${questions.map((question)=>`<li>${escapeHtml(question)}</li>`).join("")}</ol></section>`;
   }
 
   function addTopPaginators() {
@@ -309,12 +453,15 @@
 
   function detailView(requirement, requestedPageKey) {
     const page = requirement.pages.find((item) => item.key === requestedPageKey) || requirement.pages[0];
-    if (page.key !== requestedPageKey) window.history.replaceState(null, "", `#requirement/${requirement.id}/page/${page.key}`);
+    if (page.key !== requestedPageKey) window.history.replaceState(null, "", `#requirement/${encodeURIComponent(requirement.id)}/page/${page.key}`);
     if (page.key === "member-login-log") loginState.searched = false;
     if (page.key === "transaction-query") transactionState.searched = false;
     const pageLogic = page.logic ? `<section class="logic-note"><span>逻辑说明</span><p>${escapeHtml(page.logic)}</p></section>` : "";
     const extraNotice = page.extraNotice ? `<section class="critical-note"><span>额外功能</span><p>${escapeHtml(page.extraNotice)}</p></section>` : "";
-    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav aria-label="当前原型页面"><span class="current-page-label">${page.name}</span></nav></header><div class="prototype-canvas"><div class="risk-app">${sidebar(requirement,page)}<section class="risk-main"><header class="risk-topbar"><div><span>风控管理 /</span><strong>${page.name}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header><div class="risk-content">${pageContent(page)}</div></section></div></div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><div><h2>${page.name}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll">${questionsBlock(page)}<section class="page-note"><span>页面目标</span><p>${page.purpose}</p>${page.flow ? `<span>主流程</span><p>${page.flow}</p>` : ""}</section>${pageLogic}${extraNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${page.annotations.length} 项</span></div><div class="annotation-list">${page.annotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"></div>`;
+    const currentAnnotations = visibleAnnotations(page);
+    const moduleName = requirement.moduleName || "风控管理";
+    const adjustmentNotice = requirement.id === "#427" ? '<section class="adjustment-note"><span>调整说明</span><p>未标注的地方均为未修改，保持原页面内容和逻辑即可。</p></section>' : "";
+    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav aria-label="当前原型页面"><span class="current-page-label">${page.name}</span></nav></header><div class="prototype-canvas"><div class="risk-app">${sidebar(requirement,page)}<section class="risk-main"><header class="risk-topbar"><div><span>${moduleName} /</span><strong>${page.name}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header><div class="risk-content">${pageContent(page)}</div></section></div></div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><div><h2>${page.name}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll"><div class="questions-slot">${questionsBlock(page)}</div><section class="page-note"><span>页面目标</span><p>${page.purpose || ""}</p>${page.flow ? `<span>主流程</span><p>${page.flow}</p>` : ""}</section>${pageLogic}${extraNotice}${adjustmentNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${currentAnnotations.length} 项</span></div><div class="annotation-list">${currentAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"></div>`;
     if (page.key === "withdraw-monitor") renderMonitorView(false);
     if (page.hidePageNote) app.querySelector(".page-note")?.remove();
     addTopPaginators();
@@ -349,11 +496,11 @@
     });
   }
 
-  function modal(title, body, actionText = "确认") {
+  function modal(title, body, actionText = "确认", customFooter = "") {
     const root = document.getElementById("modal-root");
-    const footer = actionText === "关闭" ? `<footer><button class="main-action modal-confirm">关闭</button></footer>` : `<footer><button class="secondary-action modal-cancel">取消</button><button class="main-action modal-confirm">${actionText}</button></footer>`;
+    const footer = customFooter || (actionText === "关闭" ? `<footer><button class="main-action modal-confirm">关闭</button></footer>` : `<footer><button class="secondary-action modal-cancel">取消</button><button class="main-action modal-confirm">${actionText}</button></footer>`);
     root.innerHTML = `<div class="modal-backdrop"><section class="risk-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header><h2 id="modal-title">${title}</h2><button class="modal-close" aria-label="关闭">×</button></header><div class="modal-body">${body}</div>${footer}</section></div>`;
-    root.querySelectorAll(".modal-close,.modal-cancel,.modal-confirm").forEach((button)=>button.addEventListener("click",()=>{root.innerHTML="";}));
+    root.querySelectorAll(".modal-close,.modal-cancel,.modal-confirm,.withdraw-modal-cancel").forEach((button)=>button.addEventListener("click",()=>{root.innerHTML="";}));
     bindComponentLinks();
     applyTableRowLimits(root);
   }
@@ -426,6 +573,54 @@
       bindViewActions();
     }));
     bindViewActions();
+  }
+
+  function financeSettingModalBody() {
+    return `<div class="config-form finance-channel-form"><label>存款类型<select><option>支付宝</option><option>USDT</option><option>NEXUS</option></select></label><label>存款币种<select><option>人民币</option><option>USDT</option></select></label><label>上游服务商<input type="text" value="HiPay" /></label><label>支付区间<input type="text" value="1-10000" /></label><label>状态<select><option>启用</option><option>停用</option></select></label></div>`;
+  }
+
+  function withdrawalAuditModalBody() {
+    return `<div class="withdraw-audit-modal annotated" data-component-id="M01">${componentBadge("M01")}<section class="withdraw-member-summary"><div><span class="data-tag">会员</span><em class="data-tag tag-amber">VIP6</em><p><span>账号名称：</span><strong>testhd021</strong></p><small>注册日期：2026-05-01 14:38:50</small></div><div class="withdraw-risk-box"><span>风控标签</span><p>未加风控标签 <button type="button" class="link-action">+添加</button></p></div></section><section class="withdraw-amount-grid"><div><span>取款类型</span><strong>USDT提币</strong></div><div><span>人民币金额</span><strong>68.00</strong></div><div><span>取款金额</span><strong>-10.00 U</strong></div><div><span>实际到账</span><strong>9.50 U</strong></div><div><span>手续费</span><strong>3.40</strong></div><div><span>资金池</span><strong class="pool-amount">1977728.41</strong></div></section><label class="modal-field"><span>添加审核备注 <small>（选填）</small></span><textarea placeholder="请输入详细的审核备注信息"></textarea></label></div>`;
+  }
+
+  function withdrawalAuditModalFooter() {
+    return `<footer class="withdraw-modal-footer"><button type="button" class="secondary-action withdraw-modal-cancel">取消</button><div><button type="button" class="freeze-action withdraw-review-action" data-result="冻结">冻结</button><button type="button" class="danger-action withdraw-review-action" data-result="拒绝">拒绝</button><button type="button" class="approve-action withdraw-review-action" data-result="通过">通过</button></div></footer>`;
+  }
+
+  function bindFinanceBodyActions(page) {
+    document.querySelectorAll(".finance-tab-body .reset-action").forEach((button) => button.addEventListener("click", () => { const panel = button.closest(".risk-filter-panel"); panel?.querySelectorAll("input[type='text']").forEach((input) => { input.value = ""; }); panel?.querySelectorAll("select").forEach((select) => { select.selectedIndex = 0; }); }));
+    document.querySelector(".finance-limit-save")?.addEventListener("click", () => { const input = document.querySelector(".failure-limit-control input"); const value = Number(input?.value); if (!Number.isInteger(value) || value < 0) { modal("配置错误", "<p>连续笔数仅允许输入大于或等于0的整数。</p>", "关闭"); return; } modal("配置已更新", `<p>连续未成功充值订单限制已设置为 <strong>${value}</strong> 笔。${value === 0 ? "当前不启用限制。" : ""}</p>`, "关闭"); });
+    document.querySelector(".finance-add-setting")?.addEventListener("click", () => modal("新增存款设置", financeSettingModalBody(), "保存"));
+    document.querySelectorAll(".finance-edit-setting,.finance-edit-selected").forEach((button) => button.addEventListener("click", () => modal("修改存款设置", financeSettingModalBody(), "保存")));
+    document.querySelectorAll(".finance-delete-setting,.finance-delete-selected").forEach((button) => button.addEventListener("click", () => modal("删除存款设置", '<p class="danger-confirm">您现在操作的是<strong>【删除】</strong></p><p>确认删除所选存款通道设置？</p>', "确认删除")));
+    document.querySelectorAll(".finance-withdraw-audit").forEach((button) => button.addEventListener("click", () => { modal("取款审核 - WD1783493903745929", withdrawalAuditModalBody(), "", withdrawalAuditModalFooter()); document.querySelectorAll(".withdraw-review-action").forEach((action) => action.addEventListener("click", () => modal(`${action.dataset.result}确认`, `<p class="danger-confirm">您现在操作的是<strong>【${action.dataset.result}】</strong></p><p>确认后将更新该取款订单状态。</p>`, `确认${action.dataset.result}`))); }));
+    document.querySelectorAll(".finance-tab-body .member-detail-link").forEach((link) => link.addEventListener("click", (event) => event.preventDefault()));
+    bindComponentLinks();
+    bindDatePickers();
+    addTopPaginators();
+    applyTableRowLimits(document.querySelector(".finance-tab-body") || document);
+  }
+
+  function renderFinanceTab(page, tabName) {
+    financeTabState[page.key] = tabName;
+    document.querySelectorAll(".finance-tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.financeTab === tabName));
+    const body = document.querySelector(".finance-tab-body");
+    if (!body) return;
+    body.innerHTML = financeTabBody(page, tabName);
+    const annotations = visibleAnnotations(page, tabName);
+    const annotationList = document.querySelector(".annotation-list");
+    if (annotationList) annotationList.innerHTML = annotations.map(annotationCard).join("");
+    const annotationCount = document.querySelector(".spec-section-heading span");
+    if (annotationCount) annotationCount.textContent = `${annotations.length} 项`;
+    const questionsSlot = document.querySelector(".questions-slot");
+    if (questionsSlot) questionsSlot.innerHTML = questionsBlock(page, tabName);
+    bindFinanceBodyActions(page);
+  }
+
+  function bindFinanceBehavior(page) {
+    if (!document.querySelector(".finance-tab-body")) return;
+    document.querySelectorAll(".finance-tab").forEach((tab) => tab.addEventListener("click", () => renderFinanceTab(page, tab.dataset.financeTab)));
+    bindFinanceBodyActions(page);
   }
 
   function renderLoginResultsView() {
@@ -502,6 +697,7 @@
     bindSiteAutocomplete();
     bindLoginLogBehavior();
     bindBlacklistBehavior();
+    bindFinanceBehavior(page);
     document.querySelectorAll(".member-detail-link").forEach((link) => link.addEventListener("click", (event) => {
       event.preventDefault();
       const targetId = { "withdraw-review": "B04", "hold-review": "B03", "review-history": "B01" }[page.key];
