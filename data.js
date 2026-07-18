@@ -218,7 +218,7 @@
         priority: "P0",
         startDate: "2026-07-16",
         completionDate: "—",
-        updatedAt: "2026-07-18 14:56",
+        updatedAt: "2026-07-18 14:59",
         summary: "对财务菜单下的内容整合以及增加的内容。",
         moduleName: "财务管理",
         workspaceName: "财务工作台",
