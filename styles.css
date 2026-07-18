@@ -299,6 +299,8 @@ td { border-top: 1px solid #e8ece9; padding: 18px; font-size: 13px; vertical-ali
 .failure-limit-control { position: relative; display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; color: #4a554f; font-size: 13px; }.failure-limit-control input { width: 72px; height: 38px; padding: 0 8px; border: 1px solid #cfd6d1; text-align: center; }.failure-limit-control .component-badge { top: -14px; left: -4px; right: auto; }
 .finance-settings-table { width: 100%; min-width: 1500px; }.finance-audit-table { min-width: 1900px; }.finance-record-table { min-width: 2200px; }.finance-withdraw-audit-table { min-width: 2500px; }
 .global-deposit-audit-table { min-width: 2450px; }.global-withdraw-audit-table { min-width: 3100px; }
+.global-deposit-audit-table th.sticky-finance-action,.global-deposit-audit-table td.sticky-finance-action { right: 0; width: 170px; min-width: 170px; max-width: 170px; }
+.global-deposit-audit-table th.sticky-finance-status,.global-deposit-audit-table td.sticky-finance-status { right: 170px; width: 110px; min-width: 110px; max-width: 110px; }
 .amount-negative { color: #a32c25 !important; }
 .risk-table th.sticky-finance-order,.risk-table td.sticky-finance-order { position: sticky; left: 0; z-index: 5; width: 145px; min-width: 145px; max-width: 145px; overflow: hidden; text-overflow: ellipsis; background: #fff; }.risk-table th.sticky-finance-order { z-index: 7; background: #f7f9f7; }
 .risk-table th.sticky-finance-member,.risk-table td.sticky-finance-member { position: sticky; left: 145px; z-index: 5; width: 110px; min-width: 110px; max-width: 110px; overflow: hidden; text-overflow: ellipsis; background: #fff; box-shadow: 4px 0 5px rgba(28,43,35,.07); }.risk-table th.sticky-finance-member { z-index: 7; background: #f7f9f7; }
@@ -324,7 +326,7 @@ td { border-top: 1px solid #e8ece9; padding: 18px; font-size: 13px; vertical-ali
 .auto-unlock-setting { position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 8px; margin-top: 12px; padding: 13px 15px; color: #4a554f; background: #fff; border: 1px solid #dce3de; font-size: 13px; }.auto-unlock-setting label { font-weight: 400; }.auto-unlock-setting input { width: 72px; height: 38px; padding: 0 8px; border: 1px solid #cfd6d1; text-align: center; }.auto-unlock-setting .main-action { margin-left: 2px; }.auto-unlock-setting .component-badge { top: -8px; right: -6px; }
 .blocked-list-heading { align-items: center; }.blocked-list-heading .batch-unlock-action { position: relative; }.blocked-list-heading .batch-unlock-action .component-badge { top: -10px; right: -7px; }.blocked-list-heading .batch-unlock-action:disabled { color: #aeb6b1; background: #e8ece9; border-color: #d7ddd9; cursor: not-allowed; }
 .blocked-member-select { display: flex; align-items: center; gap: 8px; }.blocked-member-select input { flex: 0 0 auto; width: 15px; height: 15px; }.unlock-batch-members { display: flex; flex-wrap: wrap; gap: 7px; padding: 12px; background: #f4f7f5; border: 1px solid #dce3de; }.unlock-batch-members span { padding: 4px 8px; background: #fff; border: 1px solid #d8dfda; }
-.blocked-count-header { position: relative; color: var(--ink) !important; background: #eaf4ee !important; border-color: #c9ddd2 !important; }.blocked-count-header .component-badge { top: -9px; right: -7px; }
+.blocked-count-header { position: relative; }.blocked-count-header .component-badge { top: -9px; right: -7px; }
 .failed-count-detail { display: inline-flex; align-items: baseline; gap: 3px; padding: 3px 7px; color: var(--green); background: #eef6f2; border: 1px solid #bed8ca; cursor: pointer; }.failed-count-detail strong { color: var(--green); font-size: 14px; }.failed-count-detail span { font-size: 11px; }
 .risk-modal:has(.failed-deposit-modal) { width: min(980px, 100%); }.failed-deposit-modal { position: relative; }.failed-deposit-modal > .component-badge { top: -12px; right: -7px; }.failed-deposit-member { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 16px; background: #f4f7f5; border: 1px solid #dce3de; }.failed-deposit-member > div { padding: 12px 14px; }.failed-deposit-member > div + div { border-left: 1px solid #dce3de; }.failed-deposit-member span,.failed-deposit-member strong { display: block; }.failed-deposit-member span { color: #77827b; font-size: 11px; }.failed-deposit-member strong { margin-top: 4px; color: var(--ink); font-size: 14px; }.failed-deposit-table { width: 100%; min-width: 900px; }
 .result-tag.pending { color: #225fad; background: #e8eff8; }
@@ -358,12 +360,12 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .unchanged-production-section { position: relative; }
 .unchanged-production-section > :not(.unchanged-scope-banner) { opacity: .22; filter: grayscale(1); }
 .unchanged-production-section > .component-badge { opacity: 1; filter: none; }
-.withdrawal-table-scope > .risk-table-wrap { opacity: 1; filter: none; }
-.withdrawal-table-scope .risk-table :is(th,td):not(.sticky-finance-action),.withdrawal-table-scope .risk-table :is(th,td):not(.sticky-finance-action) * { color: #c3c9c5 !important; background-color: #fcfdfc !important; border-color: #f0f2f1 !important; box-shadow: none !important; }
-.withdrawal-table-scope .sticky-finance-action { opacity: 1; filter: none; }
-.withdrawal-table-scope .sticky-finance-action .link-action:not(.finance-withdraw-audit) { opacity: .2; pointer-events: none; }
-.withdrawal-table-scope .finance-withdraw-audit { position: relative; z-index: 9; color: var(--green); background: #fff; border: 1px solid #8cb9a6; box-shadow: 0 0 0 2px #e4f1ea; font-weight: 700; pointer-events: auto; }
-.withdrawal-table-scope .risk-table th.audit-changed-cell,.withdrawal-table-scope .risk-table th.audit-changed-cell * { color: var(--ink) !important; background-color: #f4faf6 !important; border-color: #c8ddd1 !important; opacity: 1 !important; }
+.audit-table-scope > .risk-table-wrap { opacity: 1; filter: none; }
+.audit-table-scope .risk-table :is(th,td):not(.sticky-finance-action),.audit-table-scope .risk-table :is(th,td):not(.sticky-finance-action) * { color: #c3c9c5 !important; background-color: #fcfdfc !important; border-color: #f0f2f1 !important; box-shadow: none !important; }
+.audit-table-scope .sticky-finance-action { opacity: 1; filter: none; }
+.audit-table-scope .sticky-finance-action .link-action:not(.finance-withdraw-audit) { opacity: .2; pointer-events: none; }
+.audit-table-scope .finance-withdraw-audit { position: relative; z-index: 9; color: var(--green); background: #fff; border: 1px solid #8cb9a6; box-shadow: 0 0 0 2px #e4f1ea; font-weight: 700; pointer-events: auto; }
+.audit-table-scope .risk-table th.audit-changed-cell,.audit-table-scope .risk-table th.audit-changed-cell * { color: var(--ink) !important; background-color: #f4faf6 !important; border-color: #c8ddd1 !important; opacity: 1 !important; }
 .changed-amount-scope { position: relative; padding: 16px 12px 18px; background: #fbfdfc; border: 1px solid #96b8a7; box-shadow: inset 3px 0 var(--green); }
 .changed-amount-scope .component-badge { top: -10px; right: -7px; }
 .changed-amount-scope strong small { color: var(--green); font-size: 11px; font-weight: 800; }
@@ -375,6 +377,7 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .record-difference-mode .risk-table thead th.record-changed-cell,.record-difference-mode .risk-table thead th.record-changed-cell * { color: var(--ink) !important; background-color: #f7fbf8 !important; border-color: #d2e2d9 !important; opacity: 1 !important; }
 .record-difference-mode .risk-table tbody td,.record-difference-mode .risk-table tbody td * { color: #c3c9c5 !important; background-color: #fcfdfc !important; border-color: #f0f2f1 !important; box-shadow: none !important; }
 .record-filter-panel.record-difference-mode { padding-top: 0; }.record-filter-panel .date-range-field:not(.unchanged-production),.record-filter-panel .record-changed-field { opacity: 1; filter: none; }.record-filter-panel .date-range-field.unchanged-production { opacity: .22; filter: grayscale(1); }
+.audit-changed-field { opacity: 1 !important; filter: none !important; }
 .record-withdraw-logic { margin-bottom: 12px; padding: 12px 13px; color: #8f211b; background: #fff3f1; border-left: 3px solid var(--red); }.record-withdraw-logic span { display: block; color: #8f211b; font-size: 11px; font-weight: 800; }.record-withdraw-logic p { margin: 5px 0 0; color: #9f2922; font-size: 13px; line-height: 1.6; }
 
 @media (max-width: 1100px) {
