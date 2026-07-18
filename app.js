@@ -414,12 +414,18 @@
   function failedDepositModalBody(user) {
     const types = ["支付宝", "USDT", "银行卡", "USDT", "支付宝", "银行卡"];
     const providers = ["HiPay", "TronPay", "XMFPay"];
+    const failureStates = [
+      { status: "确认失败", className: "rejected" },
+      { status: "待支付", className: "pending" },
+      { status: "用户主动取消", className: "rejected" }
+    ];
     const rows = Array.from({ length: user.count }, (_, index) => {
       const currency = types[index] === "USDT" ? "USDT" : "CNY";
       const amount = [500, 120, 1000, 60, 588, 1500][index] || 100;
-      return `<tr><td><strong class="mono">DP20260717${String(index + 41).padStart(4, "0")}</strong></td><td>${types[index]}</td><td>2026-07-${index ? "16" : "17"} ${String(8 + index).padStart(2, "0")}:42:16</td><td>${currency}</td><td>${providers[index % providers.length]}</td><td><strong class="amount">${amount} ${currency}</strong></td></tr>`;
+      const failure = failureStates[index % failureStates.length];
+      return `<tr><td><strong class="mono">DP20260717${String(index + 41).padStart(4, "0")}</strong></td><td>${types[index]}</td><td>2026-07-${index ? "16" : "17"} ${String(8 + index).padStart(2, "0")}:42:16</td><td>${currency}</td><td>${providers[index % providers.length]}</td><td><strong class="amount">${amount} ${currency}</strong></td><td><span class="result-tag ${failure.className}">${failure.status}</span></td></tr>`;
     }).join("");
-    return `<div class="failed-deposit-modal annotated" data-component-id="M02">${componentBadge("M02")}<section class="failed-deposit-member"><div><span>会员账号</span><strong>${user.member}</strong></div><div><span>会员等级</span><strong>${user.vip}</strong></div></section><div class="risk-table-wrap"><table class="risk-table failed-deposit-table"><thead><tr><th>充值单号</th><th>充值类型</th><th>充值时间</th><th>充值币种</th><th>上游服务商</th><th>充值金额</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    return `<div class="failed-deposit-modal annotated" data-component-id="M02">${componentBadge("M02")}<section class="failed-deposit-member"><div><span>会员账号</span><strong>${user.member}</strong></div><div><span>会员等级</span><strong>${user.vip}</strong></div></section><div class="risk-table-wrap"><table class="risk-table failed-deposit-table"><thead><tr><th>充值单号</th><th>充值类型</th><th>充值时间</th><th>充值币种</th><th>上游服务商</th><th>充值金额（价格）</th><th>状态</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }
 
   function openFailedDepositDetails(member) {
