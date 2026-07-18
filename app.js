@@ -1,6 +1,7 @@
 (function () {
   const app = document.getElementById("app");
   const requirements = window.PROTOTYPE_DATA.requirements;
+  const isLocalPrototype = ["127.0.0.1", "localhost"].includes(window.location.hostname);
   const riskTags = ["高盈利会员", "职业玩家", "对冲套利风险", "羊毛党用户", "多账号关联", "异常投注用户"];
   const loginRecords = Array.from({ length: 20 }, (_, index) => ({
     id: `LOGIN20260712${String(index + 1).padStart(4, "0")}`,
@@ -18,6 +19,17 @@
   const loginState = { searched: false, sortKey: "", sortDirection: 1, dedupKeys: [] };
   const transactionState = { searched: false };
   const financeTabState = {};
+  let blockedDepositViewState = "current";
+  const blockedDepositSelection = new Set();
+  let autoUnlockHours = 24;
+  let blockedDepositUsers = [
+    { member: "afei666", site: "旺财体育", vip: "VIP7", agent: "agent_087 / A10386", count: 4, amounts: "CNY 3,588 / USDT 120", threshold: 3, order: "DP202607170041", appliedAt: "2026-07-17 08:42:16", blockedAt: "2026-07-17 08:42:18" },
+    { member: "mike966", site: "新旺体育", vip: "VIP5", agent: "agent_102 / A10822", count: 3, amounts: "CNY 6,000", threshold: 3, order: "DP202607170037", appliedAt: "2026-07-17 08:13:52", blockedAt: "2026-07-17 08:13:55" },
+    { member: "dengji000", site: "旺财体育", vip: "VIP3", agent: "agent_205 / A12051", count: 6, amounts: "USDT 480", threshold: 5, order: "DP202607160298", appliedAt: "2026-07-16 23:56:08", blockedAt: "2026-07-16 23:56:10" }
+  ];
+  let blockedDepositUnlockLogs = [
+    { member: "test_member8", site: "旺财体育", count: 3, amounts: "CNY 2,400 / USDT 50", reason: "已联系会员确认异常订单，允许重新发起存款。", operator: "mike.finance", unlockedAt: "2026-07-17 07:35:20", result: "解锁成功" }
+  ];
 
   function escapeHtml(value) {
     return String(value ?? "")
@@ -91,6 +103,10 @@
     return page.annotations.filter((annotation) => !annotation.tab || annotation.tab === activeTab);
   }
 
+  function visiblePages(requirement) {
+    return requirement.pages.filter((page) => !page.localOnly || isLocalPrototype);
+  }
+
   function sidebar(requirement, page) {
     const finance = requirement.moduleName === "财务管理";
     const brand = finance ? "Finance" : "RiskControl";
@@ -98,7 +114,7 @@
     const moduleName = requirement.moduleName || "风控管理";
     const workspaceName = requirement.workspaceName || "风控工作台";
     const roleName = requirement.roleName || "风控审核员";
-    const links = requirement.pages.map((item) => `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${item.key}" class="${item.key === page.key ? "active" : ""}"><span class="menu-symbol">${item.key === page.key ? "■" : "□"}</span><span class="menu-name">${item.name}</span>${item.changeLabel ? `<em class="menu-change-badge ${item.changeType === "纯新增" ? "is-new" : "is-merged"}">${item.changeLabel}</em>` : ""}</a>`).join("");
+    const links = visiblePages(requirement).map((item) => `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${item.key}" class="${item.key === page.key ? "active" : ""}"><span class="menu-symbol">${item.key === page.key ? "■" : "□"}</span><span class="menu-name">${item.name}</span>${item.changeLabel ? `<em class="menu-change-badge ${item.changeType === "纯新增" ? "is-new" : "is-merged"}">${item.changeLabel}</em>` : ""}</a>`).join("");
     return `<aside class="risk-sidebar"><div class="risk-brand"><span>${brandMark}</span><div><strong>${brand}</strong><small>${workspaceName}</small></div></div><div class="risk-menu-label">${moduleName}</div><nav>${links}</nav><div class="risk-user"><span>MK</span><div><strong>Mike</strong><small>${roleName}</small></div></div></aside>`;
   }
 
@@ -151,12 +167,12 @@
       const badge = index === 1 ? componentBadge(anchorId) : "";
       const actions = mode === "claim" ? `<button class="link-action claim-action" type="button">领取</button>` : mode === "hold" ? `<button class="link-action pass-action" type="button">通过</button><button class="link-action reject-action" type="button">拒绝</button>` : `<button class="link-action pass-action" type="button">通过</button><button class="link-action reject-action" type="button">拒绝</button><button class="link-action hold-action" type="button">挂起</button>`;
       const member = index === 2 ? "evan888" : "dengji000";
-      const memberId = mode === "hold" ? "B03" : "B04";
-      const memberAnnotation = index === 1 && (mode === "claim" || mode === "hold") ? ` annotated" data-component-id="${memberId}` : "";
+      const memberComponentId = mode === "hold" ? "B03" : "B04";
+      const memberAnnotation = index === 1 && (mode === "claim" || mode === "hold") ? ` annotated" data-component-id="${memberComponentId}` : "";
       const showSystemTagAnchor = index === 1 && mode !== "review";
       const systemTagAnnotation = showSystemTagAnchor ? ` annotated" data-component-id="S02` : "";
       const systemResult = mode === "hold" ? `<td class="pending-system-cell${index === 1 ? ' annotated" data-component-id="S03' : ""}">${index === 1 ? componentBadge("S03") : ""}${questionMark("后续将提供完整标签和风控识别体系，此版本暂时留空")}</td>` : "";
-      return `<tr><td class="sticky-order"><strong class="mono">WD20260712000${index}</strong></td><td class="sticky-member${memberAnnotation}">${index === 1 && (mode === "claim" || mode === "hold") ? componentBadge(memberId) : ""}<a class="member-detail-link" href="javascript:void(0)" title="将在新Tab打开会员详情">${member}</a></td><td>VIP${5 + index}</td><td>旺财体育</td><td>agent_087</td><td>A10386</td><td>陈小明</td><td>6222123456783890</td><td><strong class="amount">¥ ${money(index * 2680)}</strong></td><td>2026-07-12<br />${10 + index}:2${index}:36</td><td><strong class="amount">¥ ${money(1000)}</strong></td><td class="pending-system-cell${systemTagAnnotation}">${showSystemTagAnchor ? componentBadge("S02") : ""}${questionMark("后续将提供完整标签和风控识别体系，此版本暂时留空")}</td>${mode !== "claim" ? `<td>mike.risk</td>` : ""}${systemResult}${mode === "hold" ? `<td><div class="stack-cell"><strong class="hold-time">2026-07-12 12:30:05</strong><span><i>挂起人：</i><b>mike.risk</b></span><span><i>挂起原因：</i><em class="data-tag">${riskTags[index]}</em></span></div></td>` : ""}<td class="row-actions sticky-action${anchor}">${badge}${actions}</td></tr>`;
+      return `<tr><td class="sticky-order"><strong class="mono">WD20260712000${index}</strong></td><td class="sticky-member${memberAnnotation}">${index === 1 && (mode === "claim" || mode === "hold") ? componentBadge(memberComponentId) : ""}<a class="member-detail-link" href="javascript:void(0)" title="将在新Tab打开会员详情">${member}</a></td><td>VIP${5 + index}</td><td>旺财体育</td><td>agent_087</td><td>A10386</td><td>陈小明</td><td>6222123456783890</td><td><strong class="amount">¥ ${money(index * 2680)}</strong></td><td>2026-07-12<br />${10 + index}:2${index}:36</td><td><strong class="amount">¥ ${money(1000)}</strong></td><td class="pending-system-cell${systemTagAnnotation}">${showSystemTagAnchor ? componentBadge("S02") : ""}${questionMark("后续将提供完整标签和风控识别体系，此版本暂时留空")}</td>${mode !== "claim" ? `<td>mike.risk</td>` : ""}${systemResult}${mode === "hold" ? `<td><div class="stack-cell"><strong class="hold-time">2026-07-12 12:30:05</strong><span><i>挂起人：</i><b>mike.risk</b></span><span><i>挂起原因：</i><em class="data-tag">${riskTags[index]}</em></span></div></td>` : ""}<td class="row-actions sticky-action${anchor}">${badge}${actions}</td></tr>`;
     }).join("");
   }
 
@@ -240,6 +256,79 @@
     return `<div class="transaction-page"><div class="transaction-confirm-overlay"><div><strong>待提现流水算法和页面确认</strong><button type="button" class="main-action transaction-overlay-view">查看</button></div></div><div class="risk-page-heading"><div><h1>流水查询</h1></div></div><section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid transaction-filter-grid"><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号" /></div>${siteField}<div class="risk-filter-actions"><button type="button" class="main-action primary-filter transaction-search">筛选</button><button type="button" class="secondary-action reset-action">重置</button></div></div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>会员流水任务</h2><span class="transaction-count" ${transactionState.searched ? "" : "hidden"}>共 3 条</span></div></div><div class="search-empty-state transaction-empty" ${transactionState.searched ? "hidden" : ""}><strong>请先设置筛选条件并点击筛选</strong><span>未搜索前，数据表不显示任何数据</span></div><div class="transaction-results" ${transactionState.searched ? "" : "hidden"}><div class="risk-table-wrap"><table class="risk-table transaction-table"><thead><tr><th class="sticky-transaction-member">会员信息</th><th class="sticky-transaction-agent">上级代理</th><th>存款时间</th><th>存款金额</th><th>存款类型</th><th>存款流水倍数</th><th>存款要求流水</th><th>存款完成流水</th><th>红利金额</th><th>红利类型</th><th>红利流水倍数</th><th>红利要求流水</th><th>红利完成流水</th><th>总完成流水</th><th>流水结余</th><th>达标情况</th><th>流水同步时间</th></tr></thead><tbody>${rows}</tbody></table></div>${pagination()}</div></section></div>`;
   }
 
+  function backupTransactionRows() {
+    const rows = [
+      ["旺财体育", "qiaodashang", "member_10086", "¥50,000.00", "¥74,528.50", "¥64,152.50", "¥10,376.00", "¥31,320.00", "¥31,320.00", "¥22,528.50", "待本轮全部完成", "2026-07-14 18:32", "2026-07-14 21:20"],
+      ["旺财体育", "WCO02", "wc_member02", "¥30,000.00", "¥26,400.00", "¥20,400.00", "¥6,000.00", "¥15,000.00", "¥15,000.00", "—", "亏损无解锁", "2026-07-14 16:05", "2026-07-14 21:18"],
+      ["旺财体育", "qiaodashang", "vip_8821", "¥18,000.00", "¥20,000.00", "¥12,800.00", "¥7,200.00", "¥9,600.00", "¥9,000.00", "¥2,000.00", "待本轮全部完成", "2026-07-13 22:18", "2026-07-14 21:16"],
+      ["旺财体育", "LGNB", "lgnb_5908", "¥12,000.00", "¥14,850.00", "¥11,650.00", "¥3,200.00", "¥10,000.00", "¥10,000.00", "¥2,850.00", "待本轮全部完成", "2026-07-14 19:47", "2026-07-14 20:52"],
+      ["旺财体育", "daliwei001", "single_0201", "¥26,000.00", "¥31,560.00", "¥31,560.00", "¥0.00", "¥0.00", "¥0.00", "¥5,560.00", "可领取", "2026-07-12 13:23", "2026-07-14 21:08"],
+      ["财源客栈", "FEE0426_A8", "fee_member8", "¥80,000.00", "¥92,600.00", "¥80,600.00", "¥12,000.00", "¥28,000.00", "¥28,000.00", "¥12,600.00", "待本轮全部完成", "2026-07-14 11:40", "2026-07-14 21:15"],
+      ["财源客栈", "NA7", "na7_player", "¥10,000.00", "¥7,800.00", "¥5,300.00", "¥2,500.00", "¥6,800.00", "¥6,800.00", "—", "亏损无解锁", "2026-07-09 09:22", "2026-07-14 21:02"],
+      ["旺财体育", "WCO02", "wc_member19", "¥45,000.00", "¥51,280.00", "¥44,980.00", "¥6,300.00", "¥17,400.00", "¥17,400.00", "¥6,280.00", "待本轮全部完成", "2026-07-14 08:13", "2026-07-14 21:19"]
+    ];
+    return rows.map((row, index) => {
+      const venueClass = index === 0 ? ' annotated" data-component-id="B01' : "";
+      const rechargeClass = index === 0 ? ' annotated" data-component-id="B02' : "";
+      return `<tr><td>${row[0]}</td><td>${row[1]}</td><td><strong>${row[2]}</strong></td><td>CNY</td><td><strong class="amount">${row[3]}</strong></td><td><strong class="amount">${row[4]}</strong></td><td><strong class="amount flow-available">${row[5]}</strong></td><td><strong class="amount">${row[6]}</strong></td><td><button type="button" class="flow-detail-link venue-flow-detail${venueClass}" data-member="${row[2]}" data-site="${row[0]}">${index === 0 ? componentBadge("B01") : ""}<strong>${row[7]}</strong><span>查看明细</span></button></td><td><button type="button" class="flow-detail-link recharge-flow-detail${rechargeClass}" data-member="${row[2]}" data-site="${row[0]}">${index === 0 ? componentBadge("B02") : ""}<strong>${row[8]}</strong><span>查看明细</span></button></td><td><strong class="amount ${row[9] !== "—" ? "flow-profit" : ""}">${row[9]}</strong><small class="table-subline">${row[10]}</small></td><td>${row[11]}</td><td>${row[12]}</td></tr>`;
+    }).join("");
+  }
+
+  function backupTransactionContent() {
+    return `<div class="risk-page-heading"><div><h1>流水查询-1</h1></div></div><section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid backup-flow-filters"><div class="risk-field"><label>站点</label><select><option>全部站点</option><option>旺财体育</option><option>财源客栈</option></select></div><div class="risk-field"><label>代理账号</label><input type="text" placeholder="请输入代理账号" /></div><div class="risk-field"><label>会员账号 / ID</label><input type="text" placeholder="请输入会员账号或ID" /></div><div class="risk-filter-actions"><button type="button" class="main-action primary-filter backup-flow-search">查询</button><button type="button" class="secondary-action backup-flow-reset">重置</button><button type="button" class="secondary-action backup-flow-export">导出</button></div></div></section><section class="flow-scope-note annotated" data-component-id="P01">${componentBadge("P01")}<strong>金额与流水口径</strong><p>总余额 = 可提现余额 + 锁定余额；场馆提现流水为各场馆及通用任务仍需解锁流水之和；充值提现流水按充值与系统发放彩金生成独立记录并按发生时间 FIFO 解锁。</p></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>会员打码流水统计</h2><span>共 8 条</span></div></div><div class="risk-table-wrap"><table class="risk-table backup-flow-table"><thead><tr><th>站点</th><th>代理</th><th>会员账号 / ID</th><th>币种</th><th>充值额度</th><th>总余额</th><th>可提现余额</th><th>锁定余额</th><th>场馆提现流水</th><th>充值提现流水</th><th>盈利解锁额度</th><th>最近充值时间</th><th>最近统计时间</th></tr></thead><tbody>${backupTransactionRows()}</tbody></table></div>${pagination(10, 8)}</section>`;
+  }
+
+  function unifiedFlowStack(items) {
+    return `<div class="unified-flow-stack">${items.map(([label, value, className = ""]) => `<span>${label}</span><strong class="${className}">${value}</strong>`).join("")}</div>`;
+  }
+
+  function unifiedTransactionRows() {
+    const rows = [
+      { site: "旺财体育", agent: "qiaodashang", member: "member_10086", recharge: "¥50,000.00", bonus: "¥2,000.00", total: "¥74,528.50", available: "¥64,152.50", locked: "¥10,376.00", venue: "¥31,320.00", source: "¥31,320.00", profit: "¥22,528.50", profitHint: "待本轮全部完成", met: false, recent: "2026-07-14 18:34", sync: "2026-07-14 21:20" },
+      { site: "旺财体育", agent: "WCO02", member: "wc_member02", recharge: "¥30,000.00", bonus: "¥800.00", total: "¥26,400.00", available: "¥20,400.00", locked: "¥6,000.00", venue: "¥15,000.00", source: "¥9,600.00", profit: "—", profitHint: "亏损无解锁", met: false, recent: "2026-07-14 16:06", sync: "2026-07-14 21:18" },
+      { site: "旺财体育", agent: "qiaodashang", member: "vip_8821", recharge: "¥18,000.00", bonus: "¥1,200.00", total: "¥20,000.00", available: "¥12,800.00", locked: "¥7,200.00", venue: "¥9,600.00", source: "¥9,000.00", profit: "¥2,000.00", profitHint: "待本轮全部完成", met: false, recent: "2026-07-13 22:20", sync: "2026-07-14 21:16" },
+      { site: "旺财体育", agent: "LGNB", member: "lgnb_5908", recharge: "¥12,000.00", bonus: "¥600.00", total: "¥14,850.00", available: "¥11,650.00", locked: "¥3,200.00", venue: "¥10,000.00", source: "¥6,400.00", profit: "¥2,850.00", profitHint: "待本轮全部完成", met: false, recent: "2026-07-14 19:49", sync: "2026-07-14 20:52" },
+      { site: "旺财体育", agent: "daliwei001", member: "single_0201", recharge: "¥26,000.00", bonus: "¥1,000.00", total: "¥31,560.00", available: "¥31,560.00", locked: "¥0.00", venue: "¥0.00", source: "¥0.00", profit: "¥5,560.00", profitHint: "可领取", met: true, recent: "2026-07-12 13:25", sync: "2026-07-14 21:08" },
+      { site: "财源客栈", agent: "FEE0426_A8", member: "fee_member8", recharge: "¥80,000.00", bonus: "¥3,000.00", total: "¥92,600.00", available: "¥80,600.00", locked: "¥12,000.00", venue: "¥28,000.00", source: "¥16,000.00", profit: "¥12,600.00", profitHint: "待本轮全部完成", met: false, recent: "2026-07-14 11:42", sync: "2026-07-14 21:15" }
+    ];
+    return rows.map((row, index) => {
+      const venueClass = index === 0 ? ' annotated" data-component-id="B01' : "";
+      const sourceClass = index === 0 ? ' annotated" data-component-id="B02' : "";
+      const statusClass = index === 0 ? ' annotated" data-component-id="S01' : "";
+      return `<tr><td class="sticky-unified-site">${row.site}</td><td class="sticky-unified-agent">${row.agent}</td><td class="sticky-unified-member"><strong>${row.member}</strong></td><td>CNY</td><td>${unifiedFlowStack([["充值", row.recharge], ["活动/彩金", row.bonus, "flow-profit"]])}</td><td>${unifiedFlowStack([["总余额", row.total], ["可提现", row.available, "flow-available"], ["锁定", row.locked]])}</td><td><button type="button" class="flow-detail-link unified-venue-flow-detail${venueClass}" data-member="${row.member}" data-site="${row.site}">${index === 0 ? componentBadge("B01") : ""}<strong>${row.venue}</strong><span>查看场馆明细</span></button></td><td><button type="button" class="flow-detail-link unified-source-flow-detail${sourceClass}" data-member="${row.member}" data-site="${row.site}">${index === 0 ? componentBadge("B02") : ""}<strong>${row.source}</strong><span>查看充值/活动明细</span></button></td><td><strong class="amount ${row.profit !== "—" ? "flow-profit" : ""}">${row.profit}</strong><small class="table-subline">${row.profitHint}</small></td><td class="unified-flow-status${statusClass}">${index === 0 ? componentBadge("S01") : ""}<span class="result-tag ${row.met ? "approved" : "rejected"}">${row.met ? "已达标" : "未达标"}</span><small>${row.met ? "可以提现" : "暂不可提现"}</small></td><td>${row.recent}</td><td>${row.sync}</td></tr>`;
+    }).join("");
+  }
+
+  function unifiedTransactionContent() {
+    const countedAt = timeRange("F02").replaceAll("申请时间", "计入时间");
+    return `<div class="risk-page-heading"><div><h1>流水查询-2</h1></div></div><section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid unified-flow-filters"><div class="risk-field"><label>站点</label><select><option>全部站点</option><option>旺财体育</option><option>财源客栈</option></select></div><div class="risk-field"><label>代理账号</label><input type="text" placeholder="请输入代理账号" /></div><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号" /></div><div class="risk-field"><label>流水来源</label><select><option>全部来源</option><option>充值</option><option>活动彩金</option><option>系统发放彩金</option></select></div><div class="risk-field"><label>活动名称 / 编号</label><input type="text" placeholder="请输入活动名称或编号" /></div><div class="risk-field"><label>关联单号</label><input type="text" placeholder="请输入充值单号或彩金单号" /></div><div class="risk-field"><label>流水状态</label><select><option>全部状态</option><option>未达标</option><option>已达标</option></select></div>${countedAt}<div class="risk-filter-actions"><button type="button" class="main-action primary-filter unified-flow-search">查询</button><button type="button" class="secondary-action reset-action">重置</button><button type="button" class="secondary-action unified-flow-export">导出</button></div></div></section><section class="flow-scope-note annotated" data-component-id="P01">${componentBadge("P01")}<strong>统一展示口径</strong><p>主表始终一名会员一行；充值/活动剩余流水沿用旧流水查询的“流水结余”口径。场馆剩余流水与充值/活动剩余流水分别展示，不重复计算；两项均为0且没有其他限制时，流水状态显示已达标、可以提现。</p></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>会员流水总览</h2><span>共 6 条</span></div></div><div class="risk-table-wrap"><table class="risk-table unified-flow-table"><thead><tr><th class="sticky-unified-site">站点</th><th class="sticky-unified-agent">上级代理</th><th class="sticky-unified-member">会员账号</th><th>币种</th><th>计入流水额度</th><th>资金概览</th><th>场馆剩余流水</th><th>充值/活动剩余流水</th><th>盈利解锁额度</th><th>流水状态</th><th>最近充值/彩金时间</th><th>流水同步时间</th></tr></thead><tbody>${unifiedTransactionRows()}</tbody></table></div>${pagination(10, 6)}</section>`;
+  }
+
+  function flowSummaryItem(label, value, hint = "", className = "") {
+    return `<div><span>${label}</span><strong class="${className}">${value}</strong>${hint ? `<small>${hint}</small>` : ""}</div>`;
+  }
+
+  function venueFlowModalBody(member = "member_10086", site = "旺财体育", unified = false) {
+    const rows = [["AG真人", "¥3,600.00", "¥26,900.00", "¥14,400.00", "¥0.00", "¥12,500.00"], ["PG电子", "¥2,850.00", "¥17,400.00", "¥8,750.00", "¥0.00", "¥8,650.00"], ["体育投注", "¥3,926.00", "¥20,950.00", "¥10,780.00", "¥0.00", "¥10,170.00"]];
+    const totalLabel = unified ? "场馆剩余流水" : "场馆提现流水";
+    return `<div class="flow-modal-content annotated" data-component-id="M01">${componentBadge("M01")}<p class="flow-modal-subtitle">${member} · ${site} · 统计截至 2026-07-14 21:20</p><section class="flow-modal-summary four">${flowSummaryItem("会员账号", member)}${flowSummaryItem("锁定余额", "¥10,376.00")}${flowSummaryItem(totalLabel, "¥31,320.00", "", "flow-profit")}${flowSummaryItem("当前状态", "进行中", "", "flow-status")}</section><div class="risk-table-wrap"><table class="risk-table flow-modal-table venue-flow-table"><thead><tr><th>场馆</th><th>锁定额度</th><th>目标流水</th><th>已完成有效流水</th><th>待确认流水</th><th>还需解锁流水</th><th>状态</th></tr></thead><tbody>${rows.map((row) => `<tr><td><strong>${row[0]}</strong></td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td><td><strong class="flow-profit">${row[5]}</strong></td><td><span class="result-tag">进行中</span></td></tr>`).join("")}</tbody></table></div><section class="flow-modal-note"><strong>统计口径</strong><p>单项还需解锁流水 = MAX（0，目标流水 - 已完成有效流水）；${unified ? "场馆剩余流水" : "总场馆提现流水"} = 各场馆及通用任务还需解锁流水之和。待确认流水仅展示进度，不提前计入已完成流水或释放锁定余额。</p></section></div>`;
+  }
+
+  function unifiedSourceFlowModalBody(member = "member_10086", site = "旺财体育") {
+    const rows = [
+      ["充值", "银行卡充值", "DP202607130018", "2026-07-13 10:18", "¥30,000.00", "1倍", "¥30,000.00", "¥30,000.00", "¥0.00", "已达标", "系统入账", "—"],
+      ["活动彩金", "首存送彩金 / ACT-2026-071", "BG202607130003", "2026-07-13 10:19", "¥1,000.00", "1倍", "¥1,000.00", "¥1,000.00", "¥0.00", "已达标", "自动发放", "promo.system"],
+      ["充值", "USDT充值", "DP202607140086", "2026-07-14 18:32", "¥20,000.00", "1.5倍", "¥30,000.00", "¥0.00", "¥30,000.00", "未达标", "系统入账", "—"],
+      ["活动彩金", "周末加码 / ACT-2026-088", "BG202607140012", "2026-07-14 18:34", "¥1,000.00", "1.32倍", "¥1,320.00", "¥0.00", "¥1,320.00", "待解锁", "人工发放", "mike.activity"]
+    ];
+    return `<div class="flow-modal-content annotated" data-component-id="M02">${componentBadge("M02")}<p class="flow-modal-subtitle">${member} · ${site} · 按计入时间 FIFO 解锁</p><section class="flow-modal-summary five">${flowSummaryItem("会员账号", member)}${flowSummaryItem("流水任务", "4 笔")}${flowSummaryItem("充值计入", "¥50,000.00")}${flowSummaryItem("活动/彩金计入", "¥2,000.00")}${flowSummaryItem("剩余流水", "¥31,320.00", "", "flow-profit")}</section><div class="risk-table-wrap"><table class="risk-table flow-modal-table unified-source-flow-table"><thead><tr><th>顺序</th><th>来源类型</th><th>来源名称 / 活动编号</th><th>关联单号</th><th>计入时间</th><th>计入金额</th><th>流水倍数</th><th>要求流水</th><th>已完成有效流水</th><th>剩余流水</th><th>状态</th><th>发放方式</th><th>操作员</th></tr></thead><tbody>${rows.map((row, index) => `<tr><td>${index + 1}</td><td><span class="data-tag ${row[0] === "活动彩金" ? "tag-amber" : ""}">${row[0]}</span></td><td><strong>${row[1]}</strong></td><td><span class="mono">${row[2]}</span></td><td>${row[3]}</td><td><strong class="amount">${row[4]}</strong></td><td>${row[5]}</td><td>${row[6]}</td><td>${row[7]}</td><td><strong class="${row[8] !== "¥0.00" ? "flow-profit" : ""}">${row[8]}</strong></td><td><span class="result-tag ${row[9] !== "已达标" ? "rejected" : "approved"}">${row[9]}</span></td><td>${row[10]}</td><td>${row[11]}</td></tr>`).join("")}</tbody></table></div><section class="flow-modal-note"><strong>统一任务口径</strong><p>充值、活动彩金和系统发放彩金分别建立流水任务，并按计入时间 FIFO 解锁；旧流水查询中的存款/红利金额、流水倍数、要求流水、完成流水、流水结余和达标情况均在本明细中统一展示。</p></section></div>`;
+  }
+
+  function rechargeFlowModalBody(member = "member_10086", site = "旺财体育") {
+    const rows = [["充值", "2026-07-13 10:18", "¥30,000.00", "¥30,000.00", "¥30,000.00", "¥0.00", "已完成"], ["系统发放彩金", "2026-07-13 10:19", "¥1,000.00", "¥1,000.00", "¥1,000.00", "¥0.00", "已完成"], ["充值", "2026-07-14 18:32", "¥20,000.00", "¥30,000.00", "¥0.00", "¥30,000.00", "进行中"], ["系统发放彩金", "2026-07-14 18:34", "¥1,000.00", "¥1,320.00", "¥0.00", "¥1,320.00", "待解锁"]];
+    return `<div class="flow-modal-content annotated" data-component-id="M02">${componentBadge("M02")}<p class="flow-modal-subtitle">${member} · ${site} · 充值与系统发放彩金按发生顺序 FIFO 解锁</p><section class="flow-modal-summary five">${flowSummaryItem("会员账号", member)}${flowSummaryItem("流水记录", "4 笔（充值 / 系统发放彩金）")}${flowSummaryItem("计入额度", "¥50,000.00 / ¥2,000.00")}${flowSummaryItem("还需解锁流水", "¥31,320.00", "", "flow-profit")}${flowSummaryItem("盈利解锁额度", "¥22,528.50", "待本轮全部完成")}</section><div class="risk-table-wrap"><table class="risk-table flow-modal-table recharge-flow-table"><thead><tr><th>顺序</th><th>类型</th><th>发生时间</th><th>计入额度</th><th>目标流水</th><th>已完成流水</th><th>还需解锁流水</th><th>状态</th></tr></thead><tbody>${rows.map((row, index) => `<tr><td>${index + 1}</td><td><span class="data-tag ${row[0] === "系统发放彩金" ? "tag-amber" : ""}">${row[0]}</span></td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td><td><strong class="${row[5] !== "¥0.00" ? "flow-profit" : ""}">${row[5]}</strong></td><td><span class="result-tag ${row[6] === "待解锁" ? "rejected" : ""}">${row[6]}</span></td></tr>`).join("")}</tbody></table></div><section class="flow-modal-note"><strong>统计口径</strong><p>成功充值与系统发放彩金均视为充值行为，独立建立流水记录，无需关联充值订单；按发生时间 FIFO 解锁，前一笔未完成时不得跳过。还需解锁流水为当前周期内各笔记录还需解锁流水之和；盈利解锁额度仅在用户盈利时展示，需本轮全部充值流水完成后才可领取。</p></section></div>`;
+  }
+
   function blacklistRows(type) {
     if (type === "ip") {
       const rows = [
@@ -304,68 +393,136 @@
   }
 
   function depositSettingsContent() {
-    return `<section class="risk-filter-panel"><div class="risk-filter-grid finance-setting-filters"><div class="risk-field"><label>存款类型</label><select><option>全部存款类型</option><option>USDT</option><option>支付宝</option><option>NEXUS</option></select></div><div class="risk-field"><label>存款币种</label><select><option>全部存款币种</option><option>人民币</option><option>USDT</option></select></div><div class="risk-field"><label>通道状态</label><select><option>全部状态</option><option>启用</option><option>停用</option></select></div>${financeFilterActions()}</div></section>
-      <div class="finance-setting-toolbar"><div><button type="button" class="secondary-action finance-add-setting">新增</button><button type="button" class="secondary-action finance-edit-selected">修改</button><button type="button" class="secondary-action finance-delete-selected">删除</button></div><label class="failure-limit-control annotated" data-component-id="F01">${componentBadge("F01")}<span>连续</span><input type="number" min="0" value="3" /><span>笔失败/取消充值订单后，禁止发起充值</span><button type="button" class="main-action finance-limit-save">确认更新</button></label></div>
-      <section class="risk-list-card"><div class="risk-list-heading"><div><h2>存款通道设置</h2><span>共 26 条</span></div></div><div class="risk-table-wrap"><table class="risk-table finance-settings-table"><thead><tr><th><input type="checkbox" aria-label="全选" /></th><th>ID</th><th>存款类型</th><th>存款币种</th><th>上游服务商</th><th>上游通道编码</th><th>展示排序</th><th>金额类型</th><th>支付区间</th><th>协议手续费</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead><tbody>${depositSettingsRows()}</tbody></table></div>${pagination(10, 26)}</section>`;
+    return `<section class="risk-filter-panel audit-difference-panel deposit-settings-filter"><div class="unchanged-scope-banner"><strong>生产原筛选区</strong><span>全部沿用，本次不修改</span></div><div class="unchanged-production"><div class="risk-filter-grid finance-setting-filters"><div class="risk-field"><label>存款类型</label><select><option>全部存款类型</option><option>USDT</option><option>支付宝</option><option>NEXUS</option></select></div><div class="risk-field"><label>存款币种</label><select><option>全部存款币种</option><option>人民币</option><option>USDT</option></select></div><div class="risk-field"><label>通道状态</label><select><option>全部状态</option><option>启用</option><option>停用</option></select></div>${financeFilterActions()}</div></div></section>
+      <div class="finance-setting-toolbar deposit-settings-change-toolbar"><div class="unchanged-production"><button type="button" class="secondary-action finance-add-setting">新增</button><button type="button" class="secondary-action finance-edit-selected">修改</button><button type="button" class="secondary-action finance-delete-selected">删除</button></div><label class="failure-limit-control annotated" data-component-id="F01">${componentBadge("F01")}<span>连续</span><input type="number" min="0" value="3" /><span>笔失败/取消充值订单后，禁止发起充值</span><button type="button" class="main-action finance-limit-save">确认更新</button></label></div>
+      <section class="risk-list-card unchanged-production-section deposit-settings-table-scope"><div class="unchanged-scope-banner compact"><strong>生产原数据表</strong><span>字段、数据、分页及操作全部沿用，本次不修改</span></div><div class="risk-list-heading"><div><h2>存款通道设置</h2><span>共 26 条</span></div></div><div class="risk-table-wrap"><table class="risk-table finance-settings-table"><thead><tr><th><input type="checkbox" aria-label="全选" /></th><th>ID</th><th>存款类型</th><th>存款币种</th><th>上游服务商</th><th>上游通道编码</th><th>展示排序</th><th>金额类型</th><th>支付区间</th><th>协议手续费</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead><tbody>${depositSettingsRows()}</tbody></table></div>${pagination(10, 26)}</section>`;
+  }
+
+  function blockedDepositCurrentRows() {
+    return blockedDepositUsers.map((user, index) => `<tr><td class="sticky-blocked-member"><label class="blocked-member-select"><input type="checkbox" class="blocked-row-check" data-member="${user.member}" ${blockedDepositSelection.has(user.member) ? "checked" : ""} /><a class="member-detail-link" href="javascript:void(0)">${user.member}</a></label></td><td>${user.site}</td><td>${user.vip}</td><td>${user.agent}</td><td><button type="button" class="failed-count-detail" data-member="${user.member}" aria-label="查看${user.member}的${user.count}笔未成功充值订单"><strong>${user.count}</strong><span>笔</span></button></td><td><strong class="amount">${user.amounts}</strong></td><td>${user.threshold} 笔</td><td><strong class="mono">${user.order}</strong></td><td>${user.appliedAt}</td><td>${user.blockedAt}</td><td class="row-actions sticky-blocked-action${index === 0 ? ' annotated" data-component-id="B01' : ""}">${index === 0 ? componentBadge("B01") : ""}<button type="button" class="link-action manual-unlock-action" data-member="${user.member}">人工解锁</button></td></tr>`).join("");
+  }
+
+  function blockedDepositLogRows() {
+    return blockedDepositUnlockLogs.map((log) => `<tr><td class="sticky-blocked-member"><strong>${log.member}</strong></td><td>${log.site}</td><td>${log.count} 笔</td><td><strong class="amount">${log.amounts}</strong></td><td class="unlock-reason-cell">${log.reason}</td><td>${log.operator}</td><td>${log.unlockedAt}</td><td><span class="result-tag approved">${log.result}</span></td></tr>`).join("");
+  }
+
+  function blockedDepositView(view = blockedDepositViewState) {
+    if (view === "logs") return `<section class="risk-list-card annotated" data-component-id="T02">${componentBadge("T02")}<div class="risk-list-heading"><div><h2>人工解锁记录</h2><span>共 ${blockedDepositUnlockLogs.length} 条</span></div></div><div class="risk-table-wrap"><table class="risk-table blocked-log-table"><thead><tr><th class="sticky-blocked-member">会员账号</th><th>所属站点</th><th>解锁前未成功笔数</th><th>解锁前未成功金额</th><th>解锁原因</th><th>操作人</th><th>解锁时间</th><th>结果</th></tr></thead><tbody>${blockedDepositLogRows()}</tbody></table></div>${pagination(50, blockedDepositUnlockLogs.length)}</section>`;
+    return `<section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading blocked-list-heading"><div><h2>当前禁止用户</h2><span>共 ${blockedDepositUsers.length} 条</span></div><button type="button" class="danger-action batch-unlock-action annotated" data-component-id="B02" ${blockedDepositSelection.size ? "" : "disabled"}>${componentBadge("B02")}批量解锁（${blockedDepositSelection.size}）</button></div><div class="risk-table-wrap"><table class="risk-table blocked-deposit-table"><thead><tr><th class="sticky-blocked-member"><label class="blocked-member-select"><input type="checkbox" class="blocked-check-all" ${blockedDepositUsers.length && blockedDepositSelection.size === blockedDepositUsers.length ? "checked" : ""} />会员账号</label></th><th>所属站点</th><th>VIP等级</th><th>上级代理</th><th class="blocked-count-header annotated" data-component-id="C01">${componentBadge("C01")}连续未成功笔数</th><th>连续未成功金额</th><th>当前触发阈值</th><th>最近未成功单号</th><th>最后一笔申请时间</th><th>禁止时间</th><th class="sticky-blocked-action">操作</th></tr></thead><tbody>${blockedDepositCurrentRows()}</tbody></table></div>${pagination(50, blockedDepositUsers.length)}</section>`;
+  }
+
+  function failedDepositModalBody(user) {
+    const types = ["支付宝", "USDT", "银行卡", "USDT", "支付宝", "银行卡"];
+    const providers = ["HiPay", "TronPay", "XMFPay"];
+    const rows = Array.from({ length: user.count }, (_, index) => {
+      const currency = types[index] === "USDT" ? "USDT" : "CNY";
+      const amount = [500, 120, 1000, 60, 588, 1500][index] || 100;
+      return `<tr><td><strong class="mono">DP20260717${String(index + 41).padStart(4, "0")}</strong></td><td>${types[index]}</td><td>2026-07-${index ? "16" : "17"} ${String(8 + index).padStart(2, "0")}:42:16</td><td>${currency}</td><td>${providers[index % providers.length]}</td><td><strong class="amount">${amount} ${currency}</strong></td></tr>`;
+    }).join("");
+    return `<div class="failed-deposit-modal annotated" data-component-id="M02">${componentBadge("M02")}<section class="failed-deposit-member"><div><span>会员账号</span><strong>${user.member}</strong></div><div><span>会员等级</span><strong>${user.vip}</strong></div></section><div class="risk-table-wrap"><table class="risk-table failed-deposit-table"><thead><tr><th>充值单号</th><th>充值类型</th><th>充值时间</th><th>充值币种</th><th>上游服务商</th><th>充值金额</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  }
+
+  function openFailedDepositDetails(member) {
+    const user = blockedDepositUsers.find((item) => item.member === member);
+    if (!user) return;
+    modal("连续未成功充值订单", failedDepositModalBody(user), "关闭");
+  }
+
+  function prohibitedDepositContent() {
+    return `<section class="risk-filter-panel annotated" data-component-id="F02">${componentBadge("F02")}<div class="risk-filter-grid blocked-deposit-filters"><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号" /></div><div class="risk-field"><label>所属站点</label><input type="text" placeholder="请输入所属站点" /></div><div class="risk-field"><label>VIP等级</label><select><option>全部等级</option><option>VIP3</option><option>VIP5</option><option>VIP7</option></select></div><div class="risk-field"><label>上级代理</label><input type="text" placeholder="请输入上级代理" /></div>${financeTimeRange("F03", "禁止时间", true)}${financeFilterActions()}</div></section><section class="auto-unlock-setting annotated" data-component-id="F04">${componentBadge("F04")}<label for="auto-unlock-hours">会员进入禁止存款状态</label><input id="auto-unlock-hours" type="number" class="auto-unlock-hours" min="0" step="1" value="${autoUnlockHours}" inputmode="numeric" /><span>小时后自动解锁，0 表示关闭</span><button type="button" class="main-action auto-unlock-save">确认更新</button></section><div class="inner-tabs blocked-view-tabs annotated" data-component-id="N02">${componentBadge("N02")}<button type="button" class="blocked-view-tab ${blockedDepositViewState === "current" ? "active" : ""}" data-blocked-view="current">当前禁止用户</button><button type="button" class="blocked-view-tab ${blockedDepositViewState === "logs" ? "active" : ""}" data-blocked-view="logs">人工解锁记录</button></div><div class="blocked-deposit-view">${blockedDepositView()}</div>`;
   }
 
   function depositAuditRows() {
     const rows = [
-      ["e1557e56c370408f", "afei666", "旺财体育", "HiPay", "支付宝", "CNY", "500", "—", "500", "0", "支付处理中", "2026-07-16 12:27:35"],
-      ["419b77a14c1a47d8", "mike966", "旺财体育", "TronPay", "USDT", "USDT", "1000", "1000", "986", "14", "充值待支付", "2026-07-16 12:05:31"],
-      ["0892615005924e67", "dengji000", "新旺体育", "XMFPay", "支付宝", "CNY", "588", "588", "588", "0", "用户主动取消", "2026-07-16 11:41:23"]
+      { order: "e1557e56c370408f", type: "会员", account: "afei666", accountId: "—", vip: "VIP7", site: "旺财体育", channel: "HiPay", rechargeType: "支付宝", transactionType: "充值", currency: "CNY", orderAmount: "500", rechargeAmount: "—", actual: "500", fee: "0", status: "支付处理中", time: "2026-07-17 09:27:35" },
+      { order: "419b77a14c1a47d8", type: "代理", account: "agent_087", accountId: "A10386", vip: "—", site: "旺财体育", channel: "TronPay", rechargeType: "USDT", transactionType: "存款", currency: "USDT", orderAmount: "1000", rechargeAmount: "1000", actual: "986", fee: "14", status: "充值待支付", time: "2026-07-17 09:05:31" },
+      { order: "0892615005924e67", type: "站点", account: "新旺体育", accountId: "—", vip: "—", site: "新旺体育", channel: "XMFPay", rechargeType: "支付宝", transactionType: "存款", currency: "CNY", orderAmount: "588", rechargeAmount: "588", actual: "588", fee: "0", status: "支付处理中", time: "2026-07-17 08:41:23" }
     ];
-    return rows.map((row, index) => `<tr><td class="sticky-finance-order"><strong class="mono">${row[0]}</strong></td><td class="sticky-finance-member"><a class="member-detail-link" href="javascript:void(0)">${row[1]}</a></td>${row.slice(2, 10).map((cell, cellIndex) => `<td>${[6,7,8,9].includes(cellIndex + 2) && cell !== "—" ? `<strong class="amount">${cell} ${row[5]}</strong>` : cell}</td>`).join("")}<td>—</td><td>—</td><td>${row[11]}</td><td class="sticky-finance-status"><span class="result-tag ${index === 2 ? "rejected" : ""}">${row[10]}</span></td><td class="row-actions sticky-finance-action"><button type="button" class="link-action">查看</button><button type="button" class="link-action">上分</button><button type="button" class="link-action">取消</button></td></tr>`).join("");
+    return rows.map((row) => `<tr><td class="sticky-finance-order"><strong class="mono">${row.order}</strong></td><td class="sticky-finance-member"><a class="member-detail-link" href="javascript:void(0)">${row.account}</a></td><td><span class="data-tag">${row.type}</span></td><td>${row.accountId}</td><td>${row.vip}</td><td>${row.site}</td><td>${row.channel}</td><td>${row.rechargeType}</td><td>${row.transactionType}</td><td>${row.currency}</td><td><strong class="amount">${row.orderAmount} ${row.currency}</strong></td><td>${row.rechargeAmount === "—" ? "—" : `<strong class="amount">${row.rechargeAmount} ${row.currency}</strong>`}</td><td><strong class="amount">${row.actual} ${row.currency}</strong></td><td><strong class="amount">${row.fee} ${row.currency}</strong></td><td>—</td><td>—</td><td>${row.time}</td><td class="sticky-finance-status"><span class="result-tag">${row.status}</span></td><td class="row-actions sticky-finance-action"><button type="button" class="link-action">查看</button><button type="button" class="link-action">上分</button><button type="button" class="link-action">取消</button></td></tr>`).join("");
   }
 
   function depositAuditContent() {
-    return `<section class="risk-filter-panel annotated" data-component-id="F02">${componentBadge("F02")}<div class="risk-filter-grid finance-audit-filters"><div class="risk-field"><label>单号</label><input type="text" placeholder="请输入单号" /></div><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号" /></div><div class="risk-field"><label>所属站点</label><input type="text" placeholder="请输入所属站点" /></div><div class="risk-field"><label>充值类型</label><select><option></option></select></div><div class="risk-field"><label>币种</label><select><option>全部币种</option><option>CNY</option><option>USDT</option></select></div><div class="risk-field"><label>状态</label><select><option>全部状态</option><option>充值待支付</option><option>支付处理中</option></select></div>${financeTimeRange("F04", "存款申请时间", true)}${financeFilterActions()}</div></section>
-      <section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>会员存款审核</h2><span>共 43 条</span></div></div><div class="risk-table-wrap"><table class="risk-table finance-audit-table"><thead><tr><th class="sticky-finance-order">单号</th><th class="sticky-finance-member">会员账号</th><th>站点名称</th><th>三方支付通道</th><th>充值类型</th><th>币种</th><th>订单金额</th><th>充值金额</th><th>实际到账</th><th>手续费</th><th>异常备注</th><th>官方备注</th><th>存款申请时间</th><th class="sticky-finance-status">状态</th><th class="sticky-finance-action">操作</th></tr></thead><tbody>${depositAuditRows()}</tbody></table></div>${pagination(50, 43)}</section>`;
+    return `<section class="risk-filter-panel audit-difference-panel"><div class="unchanged-scope-banner"><strong>生产原筛选区</strong><span>除高亮字段外全部沿用，本次不修改</span></div><div class="risk-filter-grid finance-global-audit-filters"><div class="risk-field unchanged-production"><label>单号</label><input type="text" placeholder="请输入单号" /></div><div class="risk-field unchanged-production"><label>账号类型</label><select><option>全部类型</option><option>会员</option><option>代理</option><option>站点</option></select></div><div class="risk-field unchanged-production"><label>账号名称</label><input type="text" placeholder="请输入账号名称" /></div><div class="risk-field unchanged-production"><label>账号ID / 编号</label><input type="text" placeholder="请输入账号ID或编号" /></div><div class="risk-field unchanged-production"><label>交易类型</label><select><option>全部交易类型</option><option>充值</option><option>存款</option></select></div><div class="risk-field unchanged-production"><label>所属站点</label><input type="text" placeholder="请输入所属站点" /></div><div class="risk-field unchanged-production"><label>充值类型</label><select><option>全部充值类型</option><option>支付宝</option><option>USDT</option></select></div><div class="risk-field unchanged-production"><label>币种</label><select><option>全部币种</option><option>CNY</option><option>USDT</option></select></div><div class="risk-field unchanged-production"><label>状态</label><select><option>全部状态</option><option>充值待支付</option><option>支付处理中</option></select></div>${financeTimeRange("F02", "存款申请时间", true)}<div class="unchanged-production unchanged-actions">${financeFilterActions()}</div></div></section>
+      <section class="risk-list-card unchanged-production-section"><div class="unchanged-scope-banner compact"><strong>生产原数据表</strong><span>字段、数据、分页及操作全部沿用，本次不修改</span></div><div class="risk-list-heading"><div><h2>存款审核</h2><span>共 43 条</span></div></div><div class="risk-table-wrap"><table class="risk-table finance-audit-table global-deposit-audit-table"><thead><tr><th class="sticky-finance-order">单号</th><th class="sticky-finance-member">账号名称</th><th>账号类型</th><th>账号ID / 编号</th><th>VIP等级</th><th>站点名称</th><th>三方支付通道</th><th>充值类型</th><th>交易类型</th><th>币种</th><th>订单金额</th><th>充值金额</th><th>实际到账</th><th>手续费</th><th>异常备注</th><th>官方备注</th><th>存款申请时间</th><th class="sticky-finance-status">状态</th><th class="sticky-finance-action">操作</th></tr></thead><tbody>${depositAuditRows()}</tbody></table></div>${pagination(50, 43)}</section>`;
   }
 
   function financeRecordRows(subjectType, withdrawal) {
     const identities = subjectType === "代理" ? ["agent_087", "agent_102", "agent_205"] : subjectType === "站点" ? ["旺财体育", "新旺体育", "彩虹站"] : ["afei666", "mike966", "dengji000"];
-    const states = subjectType === "会员" ? (withdrawal ? ["审核中", "转账中", "成功"] : ["确认中", "确认成功", "用户主动取消"]) : ["待确认", "待确认", "待确认"];
+    const states = withdrawal ? ["审核中", "转账中", "成功"] : subjectType === "会员" ? ["确认中", "确认成功", "用户主动取消"] : ["确认中", "确认失败", "确认成功"];
     const hasRisk = subjectType === "会员" && withdrawal;
     return identities.map((identity, index) => {
       const orderPrefix = withdrawal ? "WD" : "DP";
       const amount = [365, 1000, 588][index];
-      const statusClassName = states[index] === "成功" || states[index] === "确认成功" ? "approved" : states[index].includes("取消") ? "rejected" : "";
+      const statusClassName = states[index] === "成功" || states[index] === "确认成功" ? "approved" : ["失败", "拒绝", "取消"].some((keyword) => states[index].includes(keyword)) ? "rejected" : "";
+      const currency = index === 0 ? "USDT" : "CNY";
+      const actual = withdrawal ? amount - 12 : amount;
+      const converted = currency === "USDT" ? (amount * 6.76).toFixed(2) : amount.toFixed(2);
+      const before = [12000, 8800, 15500][index];
+      const after = withdrawal ? before - actual : before + actual;
       const riskColumns = hasRisk ? `<td>${index === 2 ? "risk_amy" : "mike.risk"}</td><td>2026-07-16 ${String(10 + index).padStart(2, "0")}:15:20</td>` : "";
       const agentNumber = subjectType === "代理" ? `<td class="finance-agent-number">AG${String(870 + index).padStart(4, "0")}</td>` : "";
       const siteColumn = subjectType === "会员" || subjectType === "代理" ? `<td>${index === 1 ? "新旺体育" : "旺财体育"}</td>` : "";
-      return `<tr><td class="sticky-finance-order"><strong class="mono">${orderPrefix}2026071600${index + 1}</strong></td><td class="sticky-finance-member"><a class="member-detail-link" href="javascript:void(0)">${identity}</a></td>${agentNumber}${siteColumn}<td>${index === 0 ? "USDT" : "支付宝"}</td><td>${index === 0 ? "USDT" : "CNY"}</td><td><strong class="amount">${amount} ${index === 0 ? "USDT" : "CNY"}</strong></td><td><strong class="amount">${withdrawal ? amount - 12 : amount} ${index === 0 ? "USDT" : "CNY"}</strong></td><td>${index === 0 ? "6.760000" : "1.000000"}</td><td><strong class="amount">${withdrawal ? 12 : 0} CNY</strong></td>${riskColumns}<td>mike.finance</td><td>—</td><td>2026-07-16 ${String(9 + index).padStart(2, "0")}:20:00</td><td>${withdrawal ? `2026-07-16 ${String(10 + index).padStart(2, "0")}:30:00` : "—"}</td><td class="sticky-finance-status"><span class="result-tag ${statusClassName}">${states[index]}</span></td><td class="row-actions sticky-finance-action finance-view-action"><button type="button" class="link-action">查看</button></td></tr>`;
+      return `<tr><td class="sticky-finance-order"><strong class="mono">${orderPrefix}2026071600${index + 1}</strong></td><td class="sticky-finance-member"><a class="member-detail-link" href="javascript:void(0)">${identity}</a></td>${agentNumber}${siteColumn}<td>${index === 0 ? "USDT" : "支付宝"}</td><td>${currency}</td><td><strong class="amount">${amount.toFixed(2)}</strong></td><td><strong class="amount">${actual.toFixed(2)}</strong></td><td><strong class="amount">${converted}</strong></td><td><strong class="amount">${before.toFixed(2)}</strong></td><td><strong class="amount">${after.toFixed(2)}</strong></td><td><strong class="amount">${converted}</strong></td><td>${currency === "USDT" ? "6.760000" : "1.000000"}</td><td><strong class="amount">${withdrawal ? "12.00" : "0.00"}</strong></td>${riskColumns}<td>mike.finance</td><td>—</td><td>2026-07-16 ${String(9 + index).padStart(2, "0")}:20:00</td><td>${withdrawal ? `2026-07-16 ${String(10 + index).padStart(2, "0")}:30:00` : "—"}</td><td class="sticky-finance-status"><span class="result-tag ${statusClassName}">${states[index]}</span></td><td class="row-actions sticky-finance-action finance-view-action"><button type="button" class="link-action">查看</button></td></tr>`;
     }).join("");
   }
 
-  function financeRecordContent(subjectType, withdrawal, filterId, tableId) {
+  function financeRecordTotalRow(subjectType, withdrawal, position) {
+    const values = withdrawal
+      ? ["1,953.00", "1,917.00", "12,957.56", "36,300.00", "34,383.00", "12,957.56", "—", "36.00"]
+      : ["1,953.00", "1,953.00", "12,957.56", "36,300.00", "38,253.00", "12,957.56", "—", "0.00"];
+    const cells = [
+      { value: "总计", className: "sticky-finance-order total-label" },
+      { value: "—", className: "sticky-finance-member" }
+    ];
+    if (subjectType === "代理") cells.push({ value: "—" });
+    if (subjectType === "会员" || subjectType === "代理") cells.push({ value: "—" });
+    cells.push({ value: "—" }, { value: "—" });
+    values.forEach((value, index) => cells.push({ value, className: index === 6 ? "" : "total-amount" }));
+    if (subjectType === "会员" && withdrawal) cells.push({ value: "—" }, { value: "—" });
+    cells.push({ value: "—" }, { value: "—" }, { value: "—" }, { value: "—" }, { value: "—", className: "sticky-finance-status" }, { value: "—", className: "sticky-finance-action finance-view-action" });
+    return `<tr class="finance-total-row ${position}">${cells.map((cell) => `<th class="${cell.className || ""}">${cell.value}</th>`).join("")}</tr>`;
+  }
+
+  function financeRecordContent(subjectType, withdrawal, filterId, tableId, timeIdsOverride) {
     const identityLabel = subjectType === "代理" ? "代理账号" : subjectType === "站点" ? "站点名称" : "会员账号";
-    const statusOptions = subjectType === "会员" ? (withdrawal ? ["审核中", "转账中", "拒绝", "成功", "失败"] : ["确认中", "确认失败", "确认成功", "待支付", "用户主动取消"]) : [];
+    const statusOptions = withdrawal ? ["审核中", "转账中", "拒绝", "成功", "失败"] : ["确认中", "确认失败", "确认成功", "待支付", ...(subjectType === "会员" ? ["用户主动取消"] : [])];
     const timeLabel = withdrawal ? "取款申请时间" : "存款申请时间";
     const title = `${subjectType}${withdrawal ? "取款" : "存款"}记录`;
-    const timeIds = subjectType === "会员" ? (withdrawal ? ["F04", "F05"] : ["F05"]) : (withdrawal ? ["F02"] : ["F01"]);
+    const timeIds = timeIdsOverride || (subjectType === "会员" ? (withdrawal ? ["F04", "F05"] : ["F05"]) : (withdrawal ? ["F02"] : ["F01"]));
     const hasRisk = subjectType === "会员" && withdrawal;
     const riskTime = hasRisk ? financeTimeRange(timeIds[1], "风控后创建时间", true) : "";
-    const riskHeaders = hasRisk ? "<th>风控审核人</th><th>风控后创建时间</th>" : "";
-    const agentHeader = subjectType === "代理" ? "<th>代理编号</th>" : "";
+    const riskHeaders = hasRisk ? '<th class="record-changed-cell">风控审核人</th><th class="record-changed-cell">风控后创建时间</th>' : "";
+    const agentHeader = subjectType === "代理" ? '<th class="record-changed-cell">代理编号</th>' : "";
     const siteHeader = subjectType === "会员" || subjectType === "代理" ? "<th>站点名称</th>" : "";
-    const statusOptionsHtml = statusOptions.length ? statusOptions.map((status) => `<option>${status}</option>`).join("") : '<option disabled>状态待确认</option>';
-    return `<section class="risk-filter-panel${filterId ? ' annotated' : ''}"${filterId ? ` data-component-id="${filterId}"` : ""}>${filterId ? componentBadge(filterId) : ""}<div class="risk-filter-grid finance-record-filters"><div class="risk-field"><label>单号</label><input type="text" placeholder="请输入单号" /></div><div class="risk-field"><label>${identityLabel}</label><input type="text" placeholder="请输入${identityLabel}" /></div>${subjectType === "站点" ? "" : '<div class="risk-field"><label>所属站点</label><input type="text" placeholder="请输入所属站点" /></div>'}<div class="risk-field"><label>支付类型</label><select><option>全部支付类型</option><option>支付宝</option><option>USDT</option></select></div><div class="risk-field"><label>状态</label><select><option>全部状态</option>${statusOptionsHtml}</select></div><div class="risk-field"><label>财务审核人</label><input type="text" placeholder="请输入财务审核人" /></div>${financeTimeRange(timeIds[0], timeLabel, true)}${riskTime}${financeFilterActions(true)}</div></section>
-      <section class="risk-list-card${tableId ? ' annotated' : ''}"${tableId ? ` data-component-id="${tableId}"` : ""}>${tableId ? componentBadge(tableId) : ""}<div class="risk-list-heading"><div><h2>${title}</h2><span>共 9 条</span></div></div><div class="risk-table-wrap"><table class="risk-table finance-record-table${subjectType !== "会员" ? " compact-identity-table" : ""}"><thead><tr><th class="sticky-finance-order">单号</th><th class="sticky-finance-member">${identityLabel}</th>${agentHeader}${siteHeader}<th>支付类型</th><th>币种</th><th>订单金额</th><th>实际交易金额</th><th>汇率</th><th>手续费</th>${riskHeaders}<th>财务审核人</th><th>审核备注</th><th>${timeLabel}</th><th>订单完成时间</th><th class="sticky-finance-status">状态</th><th class="sticky-finance-action finance-view-action">操作</th></tr></thead><tbody>${financeRecordRows(subjectType, withdrawal)}</tbody></table></div>${pagination(200, 9)}</section>`;
+    const statusOptionsHtml = statusOptions.map((status) => `<option>${status}</option>`).join("");
+    const isMember = subjectType === "会员";
+    const orderChanged = isMember ? " record-changed-cell" : "";
+    const identityChanged = " record-changed-cell";
+    const memberChanged = isMember ? " record-changed-cell" : "";
+    const unchanged = " unchanged-production";
+    const statusFieldClass = " record-changed-field";
+    const reviewerFieldClass = isMember ? " record-changed-field" : unchanged;
+    const agentNumberFilter = subjectType === "代理" ? '<div class="risk-field record-changed-field"><label>代理编号</label><input type="text" placeholder="请输入代理编号" /></div>' : "";
+    const primaryTime = isMember ? financeTimeRange(timeIds[0], timeLabel, true) : financeTimeRange(timeIds[0], timeLabel, true).replace("date-range-field", "date-range-field unchanged-production");
+    const filterActionsHtml = isMember ? financeFilterActions(true) : financeFilterActions(true).replace("risk-filter-actions", "risk-filter-actions unchanged-production");
+    const differenceText = isMember ? "仅高亮字段名称、时间与状态选项有调整" : `与生产会员记录一致的筛选项已弱化，仅${subjectType}主体字段和新增差异高亮`;
+    const tableDifferenceText = isMember ? "仅表头标识本次变更字段，数据内容保持弱化" : `与生产会员记录一致的表头和数据已弱化，仅${subjectType}主体字段和新增差异高亮`;
+    return `<section class="risk-filter-panel record-filter-panel record-difference-mode${filterId ? ' annotated' : ''}"${filterId ? ` data-component-id="${filterId}"` : ""}>${filterId ? componentBadge(filterId) : ""}<div class="unchanged-scope-banner compact"><strong>生产原筛选区</strong><span>${differenceText}</span></div><div class="risk-filter-grid finance-record-filters"><div class="risk-field ${unchanged}"><label>单号</label><input type="text" placeholder="请输入单号" /></div><div class="risk-field record-changed-field"><label>${identityLabel}</label><input type="text" placeholder="请输入${identityLabel}" /></div>${agentNumberFilter}${subjectType === "站点" ? "" : `<div class="risk-field ${unchanged}"><label>所属站点</label><input type="text" placeholder="请输入所属站点" /></div>`}<div class="risk-field ${unchanged}"><label>支付类型</label><select><option>全部支付类型</option><option>支付宝</option><option>USDT</option></select></div><div class="risk-field${statusFieldClass}"><label>状态</label><select><option>全部状态</option>${statusOptionsHtml}</select></div><div class="risk-field${reviewerFieldClass}"><label>财务审核人</label><input type="text" placeholder="请输入财务审核人" /></div>${primaryTime}${riskTime}${filterActionsHtml}</div></section>
+      <section class="risk-list-card record-list-card record-difference-mode${tableId ? ' annotated' : ''}"${tableId ? ` data-component-id="${tableId}"` : ""}>${tableId ? componentBadge(tableId) : ""}<div class="unchanged-scope-banner compact"><strong>生产原数据表</strong><span>${tableDifferenceText}</span></div><div class="risk-list-heading"><div><h2>${title}</h2><span>共 9 条</span></div></div><div class="risk-table-wrap"><table class="risk-table finance-record-table${subjectType !== "会员" ? " compact-identity-table" : ""}"><thead>${financeRecordTotalRow(subjectType, withdrawal, "top")}<tr><th class="sticky-finance-order${orderChanged}">单号</th><th class="sticky-finance-member${identityChanged}">${identityLabel}</th>${agentHeader}${siteHeader}<th>支付类型</th><th>币种</th><th>订单金额</th><th>实际交易金额</th><th>折算金额CNY</th><th>变动前金额</th><th>变动后金额</th><th>人民币金额</th><th>汇率</th><th>手续费</th>${riskHeaders}<th class="record-changed-cell">财务审核人</th><th>审核备注</th><th class="record-changed-cell">${timeLabel}</th><th>订单完成时间</th><th class="sticky-finance-status record-changed-cell">状态</th><th class="sticky-finance-action finance-view-action${memberChanged}">操作</th></tr></thead><tbody>${financeRecordRows(subjectType, withdrawal)}</tbody><tfoot>${financeRecordTotalRow(subjectType, withdrawal, "bottom")}</tfoot></table></div>${pagination(200, 9)}</section>`;
   }
 
   function withdrawalAuditRows() {
     const rows = [
-      ["WD1783498560783231", "dlwc0011", "旺财体育", "VIP7", "USDT提币", "-90.00 U", "88.00 U", "2.00 CNY", "处理中", "待审核", "未提交"],
-      ["WD1783493903745929", "testhd021", "旺财体育", "VIP6", "USDT提币", "-10.00 U", "9.50 U", "3.40 CNY", "处理中", "待审核", "未提交"],
-      ["WD1783390901534802", "dlwc0011", "新旺体育", "VIP7", "人民币", "-100.00 U", "98.00 U", "2.00 CNY", "处理中", "待审核", "未提交"]
+      { order: "WD1783498560783231", type: "会员", account: "dlwc0011", accountId: "—", site: "旺财体育", vip: "VIP7", registeredAt: "2026-06-11 11:45:03", transactionType: "取款", withdrawalType: "USDT提币", amount: "-90.00 U", actual: "88.00 U", fee: "2.00 CNY", userStatus: "处理中", platformStatus: "待审核", thirdStatus: "未提交" },
+      { order: "WD1783493903745929", type: "代理", account: "agent_087", accountId: "A10386", site: "旺财体育", vip: "—", registeredAt: "—", transactionType: "代理取款", withdrawalType: "USDT提币", amount: "-10.00 U", actual: "9.50 U", fee: "3.40 CNY", userStatus: "处理中", platformStatus: "待审核", thirdStatus: "未提交" },
+      { order: "WD1783390901534802", type: "站点", account: "新旺体育", accountId: "—", site: "新旺体育", vip: "—", registeredAt: "—", transactionType: "站点取款", withdrawalType: "人民币", amount: "-100.00 CNY", actual: "98.00 CNY", fee: "2.00 CNY", userStatus: "处理中", platformStatus: "待审核", thirdStatus: "未提交" }
     ];
-    return rows.map((row, index) => `<tr><td class="sticky-finance-order"><strong class="mono">${row[0]}</strong></td><td class="sticky-finance-member"><a class="member-detail-link" href="javascript:void(0)">${row[1]}</a></td><td>${row[2]}</td><td><span class="data-tag">${riskTags[index]}</span></td><td>${row[3]}</td><td>2026-06-${String(11 - index).padStart(2, "0")} 11:45:03</td><td>${row[4]}</td><td><strong class="amount amount-negative">${row[5]}</strong></td><td><strong class="amount">${row[6]}</strong></td><td>${row[7]}</td><td>${index === 2 ? "ALIPAY,支付宝" : "ERC20"}</td><td>${index === 2 ? "老李" : "罚罪"}</td><td class="mono">${index === 2 ? "15588889999" : "0xf59e59348407dc..."}</td><td>—</td><td>${index === 2 ? "risk_amy" : "mike.risk"}</td><td>2026-07-16 10:${10 + index}:00</td><td>2026-07-16 10:${20 + index}:00</td><td class="sticky-finance-user-status"><span class="result-tag">${row[8]}</span></td><td class="sticky-finance-platform-status"><span class="result-tag">${row[9]}</span></td><td class="sticky-finance-third-status"><span class="result-tag">${row[10]}</span></td><td class="row-actions sticky-finance-action"><button type="button" class="link-action">查看</button><button type="button" class="link-action">查询三方</button><button type="button" class="link-action finance-withdraw-audit">审核</button></td></tr>`).join("");
+    return rows.map((row, index) => `<tr><td class="sticky-finance-order"><strong class="mono">${row.order}</strong></td><td class="sticky-finance-member"><a class="member-detail-link" href="javascript:void(0)">${row.account}</a></td><td><span class="data-tag">${row.type}</span></td><td>${row.type === "会员" ? "—" : row.accountId}</td><td>${row.site}</td><td>${row.type === "会员" ? `<span class="data-tag">${riskTags[index]}</span>` : "—"}</td><td>${row.vip}</td><td>${row.registeredAt}</td><td>${row.transactionType}</td><td>${row.withdrawalType}</td><td><strong class="amount amount-negative">${row.amount}</strong></td><td><strong class="amount">${row.actual}</strong></td><td>${row.fee}</td><td>${row.withdrawalType === "人民币" ? "ALIPAY,支付宝" : "ERC20"}</td><td>${row.type === "会员" ? "罚罪" : "—"}</td><td class="mono">${row.withdrawalType === "人民币" ? "15588889999" : "0xf59e59348407dc..."}</td><td>—</td><td>${row.type === "会员" ? "mike.risk" : "—"}</td><td>2026-07-17 09:${10 + index}:00</td><td>mike.finance</td><td>2026-07-17 09:${20 + index}:00</td><td class="sticky-finance-user-status"><span class="result-tag">${row.userStatus}</span></td><td class="sticky-finance-platform-status"><span class="result-tag">${row.platformStatus}</span></td><td class="sticky-finance-third-status"><span class="result-tag">${row.thirdStatus}</span></td><td class="row-actions sticky-finance-action"><button type="button" class="link-action">查看</button><button type="button" class="link-action">查询三方</button><button type="button" class="link-action finance-withdraw-audit" data-order="${row.order}" data-account-type="${row.type}" data-account="${row.account}">审核</button></td></tr>`).join("");
   }
 
   function withdrawalAuditContent() {
-    return `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid finance-withdraw-filters"><div class="risk-field"><label>单号</label><input type="text" placeholder="请输入单号" /></div><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号" /></div><div class="risk-field"><label>所属站点</label><input type="text" placeholder="请输入所属站点" /></div><div class="risk-field"><label>风控标签</label><select><option>全部风控标签</option></select></div><div class="risk-field"><label>取款类型</label><select><option>全部取款类型</option><option>人民币</option><option>USDT提币</option></select></div><div class="risk-field"><label>用户状态</label><select><option>全部用户状态</option></select></div><div class="risk-field"><label>平台状态</label><select><option>全部平台状态</option></select></div><div class="risk-field"><label>三方状态</label><select><option>全部三方状态</option></select></div>${financeTimeRange("F03", "取款申请时间", true)}${financeFilterActions()}</div></section>
-      <section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>会员取款审核</h2><span>共 43 条</span></div></div><div class="risk-table-wrap"><table class="risk-table finance-withdraw-audit-table"><thead><tr><th class="sticky-finance-order">单号</th><th class="sticky-finance-member">会员账号</th><th>站点名称</th><th>风控标签</th><th>等级</th><th>注册日期</th><th>取款类型</th><th>取款金额</th><th>实际到账</th><th>手续费</th><th>银行名称</th><th>账户姓名</th><th>银行账号</th><th>操作备注</th><th>风控审核人</th><th>风控后创建时间</th><th>取款申请时间</th><th class="sticky-finance-user-status">用户状态</th><th class="sticky-finance-platform-status">平台状态</th><th class="sticky-finance-third-status">三方状态</th><th class="sticky-finance-action">操作</th></tr></thead><tbody>${withdrawalAuditRows()}</tbody></table></div>${pagination(50, 43)}</section>`;
+    return `<section class="risk-filter-panel audit-difference-panel"><div class="unchanged-scope-banner"><strong>生产原筛选区</strong><span>除高亮字段外全部沿用，本次不修改</span></div><div class="risk-filter-grid finance-global-audit-filters"><div class="risk-field unchanged-production"><label>单号</label><input type="text" placeholder="请输入单号" /></div><div class="risk-field unchanged-production"><label>账号类型</label><select><option>全部类型</option><option>会员</option><option>代理</option><option>站点</option></select></div><div class="risk-field unchanged-production"><label>账号名称</label><input type="text" placeholder="请输入账号名称" /></div><div class="risk-field unchanged-production"><label>账号ID / 编号</label><input type="text" placeholder="请输入账号ID或编号" /></div><div class="risk-field unchanged-production"><label>交易类型</label><select><option>全部交易类型</option><option>取款</option><option>代理取款</option><option>站点取款</option></select></div><div class="risk-field unchanged-production"><label>所属站点</label><input type="text" placeholder="请输入所属站点" /></div><div class="risk-field unchanged-production"><label>风控标签</label><select><option>全部风控标签</option></select></div><div class="risk-field unchanged-production"><label>取款类型</label><select><option>全部取款类型</option><option>人民币</option><option>USDT提币</option></select></div><div class="risk-field unchanged-production"><label>用户状态</label><select><option>全部用户状态</option></select></div><div class="risk-field unchanged-production"><label>平台状态</label><select><option>全部平台状态</option></select></div><div class="risk-field unchanged-production"><label>三方状态</label><select><option>全部三方状态</option></select></div>${financeTimeRange("F02", "取款申请时间", true)}<div class="unchanged-production unchanged-actions">${financeFilterActions()}</div></div></section>
+      <section class="risk-list-card unchanged-production-section withdrawal-table-scope annotated" data-component-id="T01">${componentBadge("T01")}<div class="unchanged-scope-banner compact"><strong>生产原数据表</strong><span>新增风控审核人、风控后创建时间；审核人更名为财务审核人</span></div><div class="risk-list-heading"><div><h2>取款审核</h2><span>共 43 条</span></div></div><div class="risk-table-wrap"><table class="risk-table finance-withdraw-audit-table global-withdraw-audit-table"><thead><tr><th class="sticky-finance-order">单号</th><th class="sticky-finance-member">账号名称</th><th>账号类型</th><th>账号ID / 编号</th><th>站点名称</th><th>风控标签</th><th>VIP等级</th><th>注册日期</th><th>交易类型</th><th>取款类型</th><th>取款金额</th><th>实际到账</th><th>手续费</th><th>银行名称</th><th>账户姓名</th><th>银行账号</th><th>操作备注</th><th class="audit-changed-cell">风控审核人</th><th class="audit-changed-cell">风控后创建时间</th><th class="audit-changed-cell">财务审核人</th><th>取款申请时间</th><th class="sticky-finance-user-status">用户状态</th><th class="sticky-finance-platform-status">平台状态</th><th class="sticky-finance-third-status">三方状态</th><th class="sticky-finance-action">操作</th></tr></thead><tbody>${withdrawalAuditRows()}</tbody></table></div>${pagination(50, 43)}</section>`;
   }
 
   function unchangedFinanceContent(page) {
@@ -373,15 +530,14 @@
   }
 
   function financeTabBody(page, activeTab) {
-    if (page.key === "member-deposit") {
+    if (page.key === "deposit-withdraw-settings") {
       if (activeTab === "存款设置") return depositSettingsContent();
-      if (activeTab === "存款审核") return depositAuditContent();
-      return financeRecordContent("会员", false, "F03", "T02");
+      if (activeTab === "取款设置") return `<section class="reserved-area unchanged-page compact"><div><strong>取款设置无修改</strong><span>原有设置内容和逻辑保持生产现状。</span></div></section>`;
+      return prohibitedDepositContent();
     }
-    if (page.key === "member-withdrawal") {
-      if (activeTab === "取款设置") return `<section class="reserved-area unchanged-page compact"><div><strong>取款设置无修改</strong><span>原有设置内容保持生产现状。</span></div></section>`;
-      if (activeTab === "取款审核") return withdrawalAuditContent();
-      return financeRecordContent("会员", true, "F02", "T02");
+    if (page.key === "member-transactions") {
+      if (activeTab === "存款记录") return financeRecordContent("会员", false, "F01", "T01", ["F02"]);
+      return financeRecordContent("会员", true, "F03", "T02", ["F04", "F05"]);
     }
     const subjectType = page.key === "agent-transactions" ? "代理" : "站点";
     return financeRecordContent(subjectType, activeTab.includes("取款"), "", activeTab.includes("取款") ? "T02" : "T01");
@@ -390,6 +546,10 @@
   function financeGroupedContent(page) {
     const activeTab = financeTabState[page.key] || page.tabs[0];
     return `<div class="risk-page-heading finance-page-heading"><div><h1>${page.name}</h1></div><span class="prototype-only-label">变更标记仅用于原型评审</span></div>${financeMenuChangeSummary(page)}${financeTabs(page, activeTab)}<div class="finance-tab-body">${financeTabBody(page, activeTab)}</div>`;
+  }
+
+  function financeStandaloneContent(page, content) {
+    return `<div class="risk-page-heading finance-page-heading"><div><h1>${page.name}</h1></div><span class="prototype-only-label">变更标记仅用于原型评审</span></div>${financeMenuChangeSummary(page)}${content}`;
   }
 
   function tabPlaceholderContent(page) {
@@ -402,13 +562,17 @@
 
   function pageContent(page) {
     if (page.unchanged) return unchangedFinanceContent(page);
-    if (["member-deposit", "member-withdrawal", "agent-transactions", "site-transactions"].includes(page.key)) return financeGroupedContent(page);
+    if (["deposit-withdraw-settings", "member-transactions", "agent-transactions", "site-transactions"].includes(page.key)) return financeGroupedContent(page);
+    if (page.key === "deposit-audit") return financeStandaloneContent(page, depositAuditContent());
+    if (page.key === "withdrawal-audit") return financeStandaloneContent(page, withdrawalAuditContent());
     if (page.key === "withdraw-review") return withdrawReviewContent();
     if (page.key === "hold-review") return holdReviewContent();
     if (page.key === "review-history") return historyContent();
     if (page.key === "withdraw-monitor") return monitorContent();
     if (page.key === "member-login-log") return memberLoginContent();
     if (page.key === "transaction-query") return transactionQueryContent();
+    if (page.key === "transaction-query-backup") return backupTransactionContent();
+    if (page.key === "transaction-query-unified") return unifiedTransactionContent();
     if (page.key === "risk-list-library") return riskListLibraryContent(page);
     if (page.tabs) return tabPlaceholderContent(page);
     return emptyPageContent(page);
@@ -452,7 +616,8 @@
   }
 
   function detailView(requirement, requestedPageKey) {
-    const page = requirement.pages.find((item) => item.key === requestedPageKey) || requirement.pages[0];
+    const pages = visiblePages(requirement);
+    const page = pages.find((item) => item.key === requestedPageKey) || pages[0];
     if (page.key !== requestedPageKey) window.history.replaceState(null, "", `#requirement/${encodeURIComponent(requirement.id)}/page/${page.key}`);
     if (page.key === "member-login-log") loginState.searched = false;
     if (page.key === "transaction-query") transactionState.searched = false;
@@ -579,21 +744,69 @@
     return `<div class="config-form finance-channel-form"><label>存款类型<select><option>支付宝</option><option>USDT</option><option>NEXUS</option></select></label><label>存款币种<select><option>人民币</option><option>USDT</option></select></label><label>上游服务商<input type="text" value="HiPay" /></label><label>支付区间<input type="text" value="1-10000" /></label><label>状态<select><option>启用</option><option>停用</option></select></label></div>`;
   }
 
-  function withdrawalAuditModalBody() {
-    return `<div class="withdraw-audit-modal annotated" data-component-id="M01">${componentBadge("M01")}<section class="withdraw-member-summary"><div><span class="data-tag">会员</span><em class="data-tag tag-amber">VIP6</em><p><span>账号名称：</span><strong>testhd021</strong></p><small>注册日期：2026-05-01 14:38:50</small></div><div class="withdraw-risk-box"><span>风控标签</span><p>未加风控标签 <button type="button" class="link-action">+添加</button></p></div></section><section class="withdraw-amount-grid"><div><span>取款类型</span><strong>USDT提币</strong></div><div><span>人民币金额</span><strong>68.00</strong></div><div><span>取款金额</span><strong>-10.00 U</strong></div><div><span>实际到账</span><strong>9.50 U</strong></div><div><span>手续费</span><strong>3.40</strong></div><div><span>资金池</span><strong class="pool-amount">1977728.41</strong></div></section><label class="modal-field"><span>添加审核备注 <small>（选填）</small></span><textarea placeholder="请输入详细的审核备注信息"></textarea></label></div>`;
+  function withdrawalAuditModalBody(accountType = "会员", account = "testhd021") {
+    const memberOnly = accountType === "会员";
+    return `<div class="withdraw-audit-modal"><section class="withdraw-member-summary unchanged-production"><div><span class="data-tag">${accountType}</span><em class="data-tag tag-amber">${memberOnly ? "VIP6" : "—"}</em><p><span>账号名称：</span><strong>${account}</strong></p><small>注册日期：${memberOnly ? "2026-05-01 14:38:50" : "—"}</small></div><div class="withdraw-risk-box"><span>风控标签</span><p>${memberOnly ? '未加风控标签 <button type="button" class="link-action">+添加</button>' : "—"}</p></div></section><section class="withdraw-amount-grid annotated changed-amount-scope" data-component-id="M01">${componentBadge("M01")}<div class="unchanged-amount-item"><span>取款类型</span><strong>USDT提币</strong></div><div class="unchanged-amount-item"><span>人民币金额</span><strong>68.00</strong></div><div><span>取款金额</span><strong>-10.00 <small>U</small></strong></div><div><span>实际到账</span><strong>9.50 <small>U</small></strong></div><div><span>手续费</span><strong>3.40 <small>U</small></strong></div><div class="unchanged-amount-item"><span>资金池</span><strong class="pool-amount">1977728.41</strong></div></section><label class="modal-field unchanged-production"><span>添加审核备注 <small>（选填）</small></span><textarea placeholder="请输入详细的审核备注信息"></textarea></label></div>`;
   }
 
   function withdrawalAuditModalFooter() {
     return `<footer class="withdraw-modal-footer"><button type="button" class="secondary-action withdraw-modal-cancel">取消</button><div><button type="button" class="freeze-action withdraw-review-action" data-result="冻结">冻结</button><button type="button" class="danger-action withdraw-review-action" data-result="拒绝">拒绝</button><button type="button" class="approve-action withdraw-review-action" data-result="通过">通过</button></div></footer>`;
   }
 
+  function renderBlockedDepositView(view = blockedDepositViewState) {
+    blockedDepositViewState = view;
+    document.querySelectorAll(".blocked-view-tab").forEach((button) => button.classList.toggle("active", button.dataset.blockedView === view));
+    const container = document.querySelector(".blocked-deposit-view");
+    if (container) container.innerHTML = blockedDepositView(view);
+    bindBlockedDepositActions();
+    bindComponentLinks();
+    applyTableRowLimits(container || document);
+  }
+
+  function openManualUnlock(member) {
+    const user = blockedDepositUsers.find((item) => item.member === member);
+    if (!user) return;
+    openUnlockConfirm([user]);
+  }
+
+  function openUnlockConfirm(users) {
+    const batch = users.length > 1;
+    const summary = batch ? `<div class="unlock-batch-members">${users.map((user) => `<span>${user.member}</span>`).join("")}</div>` : `<div class="unlock-summary"><span>会员账号</span><strong>${users[0].member}</strong><span>连续未成功</span><strong>${users[0].count} 笔 / ${users[0].amounts}</strong></div>`;
+    modal(batch ? `批量解锁确认（${users.length}人）` : "人工解锁确认", `<div class="manual-unlock-modal"><p class="danger-confirm">您现在操作的是<strong>【${batch ? "批量解锁" : "人工解锁"}】</strong></p>${summary}<label class="modal-field"><span>解锁原因 <small>（必填）</small></span><textarea class="unlock-reason" placeholder="请输入人工解锁原因"></textarea></label><p class="unlock-consequence">确认后每位会员的连续未成功笔数和金额清零，并分别生成一条人工解锁记录。</p></div>`, batch ? "确认批量解锁" : "确认解锁");
+    const reason = document.querySelector(".unlock-reason");
+    const confirm = document.querySelector(".modal-confirm");
+    if (confirm) confirm.disabled = true;
+    reason?.addEventListener("input", () => { if (confirm) confirm.disabled = !reason.value.trim(); });
+    confirm?.addEventListener("click", () => {
+      const value = reason?.value.trim();
+      if (!value) return;
+      users.forEach((user) => blockedDepositUnlockLogs.unshift({ member: user.member, site: user.site, count: user.count, amounts: user.amounts, reason: value, operator: "mike.finance", unlockedAt: "2026-07-17 17:42:00", result: "解锁成功" }));
+      const members = new Set(users.map((user) => user.member));
+      blockedDepositUsers = blockedDepositUsers.filter((item) => !members.has(item.member));
+      users.forEach((user) => blockedDepositSelection.delete(user.member));
+      renderBlockedDepositView("current");
+    }, { capture: true });
+  }
+
+  function bindBlockedDepositActions() {
+    document.querySelectorAll(".blocked-view-tab").forEach((button) => { if (button.dataset.blockedBound) return; button.dataset.blockedBound = "true"; button.addEventListener("click", () => renderBlockedDepositView(button.dataset.blockedView)); });
+    document.querySelectorAll(".manual-unlock-action").forEach((button) => { if (button.dataset.blockedBound) return; button.dataset.blockedBound = "true"; button.addEventListener("click", () => openManualUnlock(button.dataset.member)); });
+    document.querySelectorAll(".failed-count-detail").forEach((button) => { if (button.dataset.blockedBound) return; button.dataset.blockedBound = "true"; button.addEventListener("click", () => openFailedDepositDetails(button.dataset.member)); });
+    document.querySelectorAll(".blocked-row-check").forEach((checkbox) => checkbox.addEventListener("change", () => { checkbox.checked ? blockedDepositSelection.add(checkbox.dataset.member) : blockedDepositSelection.delete(checkbox.dataset.member); renderBlockedDepositView("current"); }));
+    document.querySelector(".blocked-check-all")?.addEventListener("change", (event) => { blockedDepositSelection.clear(); if (event.currentTarget.checked) blockedDepositUsers.forEach((user) => blockedDepositSelection.add(user.member)); renderBlockedDepositView("current"); });
+    document.querySelector(".batch-unlock-action")?.addEventListener("click", () => openUnlockConfirm(blockedDepositUsers.filter((user) => blockedDepositSelection.has(user.member))));
+    document.querySelectorAll(".blocked-deposit-view .member-detail-link").forEach((link) => link.addEventListener("click", (event) => event.preventDefault()));
+  }
+
   function bindFinanceBodyActions(page) {
     document.querySelectorAll(".finance-tab-body .reset-action").forEach((button) => button.addEventListener("click", () => { const panel = button.closest(".risk-filter-panel"); panel?.querySelectorAll("input[type='text']").forEach((input) => { input.value = ""; }); panel?.querySelectorAll("select").forEach((select) => { select.selectedIndex = 0; }); }));
     document.querySelector(".finance-limit-save")?.addEventListener("click", () => { const input = document.querySelector(".failure-limit-control input"); const value = Number(input?.value); if (!Number.isInteger(value) || value < 0) { modal("配置错误", "<p>连续笔数仅允许输入大于或等于0的整数。</p>", "关闭"); return; } modal("配置已更新", `<p>连续未成功充值订单限制已设置为 <strong>${value}</strong> 笔。${value === 0 ? "当前不启用限制。" : ""}</p>`, "关闭"); });
+    document.querySelector(".auto-unlock-save")?.addEventListener("click", () => { const input = document.querySelector(".auto-unlock-hours"); const value = Number(input?.value); if (!Number.isInteger(value) || value < 0) { modal("配置错误", "<p>自动解锁时长仅允许输入大于或等于0的整数。</p>", "关闭"); return; } autoUnlockHours = value; modal("设置已保存", `<p>${value === 0 ? "自动解锁已关闭。" : `会员进入禁止存款状态 <strong>${value}</strong> 小时后自动解锁。`}</p>`, "关闭"); });
     document.querySelector(".finance-add-setting")?.addEventListener("click", () => modal("新增存款设置", financeSettingModalBody(), "保存"));
     document.querySelectorAll(".finance-edit-setting,.finance-edit-selected").forEach((button) => button.addEventListener("click", () => modal("修改存款设置", financeSettingModalBody(), "保存")));
     document.querySelectorAll(".finance-delete-setting,.finance-delete-selected").forEach((button) => button.addEventListener("click", () => modal("删除存款设置", '<p class="danger-confirm">您现在操作的是<strong>【删除】</strong></p><p>确认删除所选存款通道设置？</p>', "确认删除")));
-    document.querySelectorAll(".finance-withdraw-audit").forEach((button) => button.addEventListener("click", () => { modal("取款审核 - WD1783493903745929", withdrawalAuditModalBody(), "", withdrawalAuditModalFooter()); document.querySelectorAll(".withdraw-review-action").forEach((action) => action.addEventListener("click", () => modal(`${action.dataset.result}确认`, `<p class="danger-confirm">您现在操作的是<strong>【${action.dataset.result}】</strong></p><p>确认后将更新该取款订单状态。</p>`, `确认${action.dataset.result}`))); }));
+    document.querySelectorAll(".finance-withdraw-audit").forEach((button) => button.addEventListener("click", () => { modal(`取款审核 - ${button.dataset.order}`, withdrawalAuditModalBody(button.dataset.accountType, button.dataset.account), "", withdrawalAuditModalFooter()); document.querySelectorAll(".withdraw-review-action").forEach((action) => action.addEventListener("click", () => modal(`${action.dataset.result}确认`, `<p class="danger-confirm">您现在操作的是<strong>【${action.dataset.result}】</strong></p><p>确认后将更新该取款订单状态。</p>`, `确认${action.dataset.result}`))); }));
+    bindBlockedDepositActions();
     document.querySelectorAll(".finance-tab-body .member-detail-link").forEach((link) => link.addEventListener("click", (event) => event.preventDefault()));
     bindComponentLinks();
     bindDatePickers();
@@ -607,6 +820,7 @@
     const body = document.querySelector(".finance-tab-body");
     if (!body) return;
     body.innerHTML = financeTabBody(page, tabName);
+    syncFinanceTabSpec(page, tabName);
     const annotations = visibleAnnotations(page, tabName);
     const annotationList = document.querySelector(".annotation-list");
     if (annotationList) annotationList.innerHTML = annotations.map(annotationCard).join("");
@@ -617,8 +831,48 @@
     bindFinanceBodyActions(page);
   }
 
+  function syncFinanceTabSpec(page, tabName) {
+    const specScroll = document.querySelector(".spec-scroll");
+    const heading = specScroll?.querySelector(".spec-section-heading");
+    if (!specScroll || !heading) return;
+    if (["agent-transactions", "site-transactions"].includes(page.key)) {
+      specScroll.querySelector(".page-note")?.remove();
+      specScroll.querySelector(".adjustment-note")?.remove();
+      specScroll.querySelector(".record-withdraw-logic")?.remove();
+      const subject = page.key === "agent-transactions" ? "代理" : "站点";
+      const target = document.createElement("section");
+      target.className = "page-note";
+      target.innerHTML = `<span>页面目标</span><p>独立展示${subject}${tabName.includes("取款") ? "取款" : "存款"}记录及对应查询、汇总信息。</p>`;
+      heading.insertAdjacentElement("beforebegin", target);
+      if (tabName.includes("取款")) {
+        const logic = document.createElement("section");
+        logic.className = "record-withdraw-logic";
+        logic.innerHTML = `<span>逻辑说明</span><p>${subject}取款无需经过风控审核。</p>`;
+        target.insertAdjacentElement("beforebegin", logic);
+      }
+      return;
+    }
+    if (page.key !== "deposit-withdraw-settings") return;
+    specScroll.querySelector(".page-note")?.remove();
+    if (tabName === "禁止存款用户") {
+      specScroll.querySelector(".adjustment-note")?.remove();
+      const target = document.createElement("section");
+      target.className = "page-note";
+      target.innerHTML = "<span>页面目标</span><p>被禁止充值的用户列表展示和操作。</p>";
+      heading.insertAdjacentElement("beforebegin", target);
+      return;
+    }
+    if (!specScroll.querySelector(".adjustment-note")) {
+      heading.insertAdjacentHTML("beforebegin", '<section class="adjustment-note"><span>调整说明</span><p>未标注的地方均为未修改，保持原页面内容和逻辑即可。</p></section>');
+    }
+  }
+
   function bindFinanceBehavior(page) {
-    if (!document.querySelector(".finance-tab-body")) return;
+    if (!document.querySelector(".finance-tab-body")) {
+      if (["deposit-audit", "withdrawal-audit"].includes(page.key)) bindFinanceBodyActions(page);
+      return;
+    }
+    syncFinanceTabSpec(page, financeTabState[page.key] || page.tabs[0]);
     document.querySelectorAll(".finance-tab").forEach((tab) => tab.addEventListener("click", () => renderFinanceTab(page, tab.dataset.financeTab)));
     bindFinanceBodyActions(page);
   }
@@ -707,6 +961,15 @@
       setTransactionState(true);
     });
     document.querySelectorAll(".balance-detail").forEach((button) => button.addEventListener("click", () => selectComponent("B01", "component")));
+    document.querySelectorAll(".venue-flow-detail").forEach((button) => button.addEventListener("click", () => modal("场馆提现流水明细", venueFlowModalBody(button.dataset.member, button.dataset.site), "关闭")));
+    document.querySelectorAll(".recharge-flow-detail").forEach((button) => button.addEventListener("click", () => modal("充值提现流水明细", rechargeFlowModalBody(button.dataset.member, button.dataset.site), "关闭")));
+    document.querySelectorAll(".unified-venue-flow-detail").forEach((button) => button.addEventListener("click", () => modal("场馆剩余流水明细", venueFlowModalBody(button.dataset.member, button.dataset.site, true), "关闭")));
+    document.querySelectorAll(".unified-source-flow-detail").forEach((button) => button.addEventListener("click", () => modal("充值/活动剩余流水明细", unifiedSourceFlowModalBody(button.dataset.member, button.dataset.site), "关闭")));
+    document.querySelector(".backup-flow-reset")?.addEventListener("click", () => { const panel = document.querySelector(".backup-flow-filters"); panel?.querySelectorAll("input").forEach((input) => { input.value = ""; }); panel?.querySelectorAll("select").forEach((select) => { select.selectedIndex = 0; }); });
+    document.querySelector(".backup-flow-search")?.addEventListener("click", () => document.querySelectorAll(".backup-flow-filters input").forEach((input) => { input.value = input.value.trim(); }));
+    document.querySelector(".backup-flow-export")?.addEventListener("click", () => modal("导出流水统计", "<p>将按当前筛选条件导出会员打码流水统计数据。</p>", "确认导出"));
+    document.querySelector(".unified-flow-search")?.addEventListener("click", () => document.querySelectorAll(".unified-flow-filters input[type='text']").forEach((input) => { input.value = input.value.trim(); }));
+    document.querySelector(".unified-flow-export")?.addEventListener("click", () => modal("导出会员流水总览", "<p>按当前筛选条件导出会员流水总览；导出范围与当前账号可查询的数据权限一致。</p>", "确认导出"));
     document.querySelector(".transaction-overlay-view")?.addEventListener("click", (event) => event.currentTarget.closest(".transaction-confirm-overlay")?.remove());
     document.querySelectorAll(".reset-action").forEach((button) => button.addEventListener("click", () => { const panel = button.closest(".risk-filter-panel"); panel?.querySelectorAll("input[type='text']").forEach((input) => { input.value = ""; input.classList.remove("is-invalid"); }); panel?.querySelectorAll("select").forEach((select) => { select.selectedIndex = 0; }); panel?.querySelectorAll(".field-error").forEach((error) => { error.hidden = true; }); }));
   }
@@ -746,7 +1009,7 @@
     if (!match) { listView(); document.title = "产品需求原型库"; return; }
     const requirement = requirements.find((item) => item.id === decodeURIComponent(match[1]));
     if (!requirement) { window.location.hash = ""; return; }
-    detailView(requirement, match[2] || requirement.pages[0].key);
+    detailView(requirement, match[2] || visiblePages(requirement)[0].key);
     document.title = `${requirement.title} · 产品需求原型库`;
   }
 
