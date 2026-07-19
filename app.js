@@ -30,6 +30,16 @@
   let blockedDepositUnlockLogs = [
     { member: "test_member8", site: "旺财体育", count: 3, amounts: "CNY 2,400 / USDT 50", reason: "已联系会员确认异常订单，允许重新发起存款。", operator: "mike.finance", unlockedAt: "2026-07-17 07:35:20", result: "解锁成功" }
   ];
+  const exceptionAgentCurrentRows = [
+    { site: "旺财体育", number: "AG20318", account: "north_star", parentAgent: "main_agent", parentNumber: "AG10001", type: "多层级代理", status: "正常", subordinateCount: 42, activeCount: 7, abnormalCount: 5, note: "有效会员流水/存款偏低；同IP占比异常", detectedAt: "2026-07-19 00:18:36", rules: ["规则1", "规则6"] },
+    { site: "新旺体育", number: "AG10872", account: "river_88", parentAgent: "star_center", parentNumber: "AG10027", type: "星级代理", status: "正常", subordinateCount: 68, activeCount: 11, abnormalCount: 8, note: "低返水会员集中；相同设备号占比异常", detectedAt: "2026-07-19 00:18:36", rules: ["规则4", "规则7"] },
+    { site: "彩虹站", number: "AG30651", account: "bright_team", parentAgent: "rainbow_top", parentNumber: "AG30002", type: "多层级代理", status: "停用", subordinateCount: 19, activeCount: 4, abnormalCount: 3, note: "首存后长期未登录会员集中", detectedAt: "2026-07-19 00:18:36", rules: ["规则5"] }
+  ];
+  const exceptionAgentHistoryRows = [
+    { site: "旺财体育", number: "AG20318", account: "north_star", parentAgent: "main_agent", parentNumber: "AG10001", type: "多层级代理", status: "正常", subordinateCount: 39, activeCount: 6, abnormalCount: 4, note: "有效会员流水/存款偏低", detectedAt: "2026-07-16 00:16:20", cancelledAt: "2026-07-18 00:17:42", rules: ["规则1"] },
+    { site: "新旺体育", number: "AG10872", account: "river_88", parentAgent: "star_center", parentNumber: "AG10027", type: "星级代理", status: "正常", subordinateCount: 61, activeCount: 9, abnormalCount: 6, note: "相同设备号占比异常", detectedAt: "2026-07-14 00:15:08", cancelledAt: "2026-07-17 00:16:51", rules: ["规则7"] },
+    { site: "旺财体育", number: "AG20318", account: "north_star", parentAgent: "main_agent", parentNumber: "AG10001", type: "多层级代理", status: "正常", subordinateCount: 31, activeCount: 5, abnormalCount: 3, note: "低额返水会员集中", detectedAt: "2026-07-10 00:13:45", cancelledAt: "2026-07-13 00:14:29", rules: ["规则4"] }
+  ];
 
   function escapeHtml(value) {
     return String(value ?? "")
@@ -52,7 +62,7 @@
     const inProgress = requirements.filter((item) => item.status === "进行中").length;
     const pending = requirements.filter((item) => item.status === "待开始").length;
     const completedThisMonth = requirements.filter((item) => item.status === "已完成" && item.completionDate?.startsWith("2026-07")).length;
-    const rows = requirements.map((item) => `
+    const rows = [...requirements].sort((a, b) => Number(String(b.id).replace(/\D/g, "")) - Number(String(a.id).replace(/\D/g, ""))).map((item) => `
       <tr class="requirement-row" tabindex="0" data-requirement-id="${escapeHtml(item.id)}" aria-label="查看 ${escapeHtml(item.title)}">
         <td><span class="requirement-id">${escapeHtml(item.id)}</span></td>
         <td><strong class="requirement-title">${escapeHtml(item.title)}</strong><span class="requirement-summary">${escapeHtml(item.summary)}</span></td>
@@ -360,6 +370,59 @@
     return `<div class="risk-page-heading"><div><h1>风控名单库</h1></div></div><div class="inner-tabs annotated blacklist-tabs" data-component-id="N01">${componentBadge("N01")}${page.tabs.map((tab) => { const type = tab === "设备黑名单" ? "device" : tab === "IP黑名单" ? "ip" : "legacy"; return `<button type="button" class="blacklist-tab ${type === "device" ? "active" : ""}" data-blacklist-type="${type}">${tab}</button>`; }).join("")}</div><div id="blacklist-view">${blacklistView("device")}</div>`;
   }
 
+  function exceptionAgentRuleTags(rules) {
+    return `<div class="exception-rule-tags">${rules.map((rule) => `<span>${rule}</span>`).join("")}</div>`;
+  }
+
+  function exceptionAgentRows(history = false) {
+    const rows = history ? exceptionAgentHistoryRows : exceptionAgentCurrentRows;
+    return rows.map((row, index) => `<tr><td>${index + 1}</td><td><strong>${row.site}</strong></td><td><strong class="mono">${row.number}</strong></td><td>${row.account}</td><td><div class="stack-cell"><strong>${row.parentAgent}</strong><span>${row.parentNumber}</span></div></td><td>${row.type}</td><td><span class="result-tag ${row.status === "正常" ? "approved" : "rejected"}">${row.status}</span></td><td>${row.subordinateCount}</td><td>${row.activeCount}</td><td><strong class="exception-count">${row.abnormalCount}</strong></td><td>${row.detectedAt}</td>${history ? `<td>${row.cancelledAt}</td>` : ""}<td class="exception-rules-cell">${exceptionAgentRuleTags(row.rules)}</td><td class="exception-note-cell">${row.note}</td></tr>`).join("");
+  }
+
+  function exceptionAgentFilters(history = false) {
+    const filterId = history ? "F03" : "F01";
+    const timeId = history ? "F04" : "F02";
+    const exportId = history ? "B03" : "B01";
+    const timeField = timeRange(timeId).replaceAll("申请时间", "异常判定时间");
+    return `<section class="risk-filter-panel annotated exception-agent-filter" data-component-id="${filterId}">${componentBadge(filterId)}<div class="risk-filter-grid exception-agent-filter-grid"><div class="risk-field site-field"><label>所属站点</label><input type="text" placeholder="请输入所属站点" autocomplete="off" /><div class="site-options" hidden><button type="button">旺财体育</button><button type="button">新旺体育</button><button type="button">彩虹站</button></div></div><div class="risk-field"><label>代理编号</label><input type="text" placeholder="请输入代理编号" /></div><div class="risk-field"><label>代理账号</label><input type="text" placeholder="请输入代理账号" /></div><div class="risk-field"><label>代理状态</label><select><option>全部状态</option><option>正常</option><option>停用</option></select></div>${timeField}<div class="risk-filter-actions"><button type="button" class="main-action primary-filter exception-agent-search">筛选</button><button type="button" class="secondary-action exception-agent-reset">重置</button><button type="button" class="secondary-action annotated exception-agent-export" data-component-id="${exportId}">${componentBadge(exportId)}导出</button></div></div></section>`;
+  }
+
+  function exceptionAgentTabBody(tabName) {
+    const history = tabName === "历史记录";
+    const tableId = history ? "T02" : "T01";
+    const headers = `<th>序号</th><th>站点</th><th>代理编号</th><th>代理账号</th><th>上级代理</th><th>代理类型</th><th>代理状态</th><th>下级人数</th><th>有效活跃人数</th><th>异常会员数</th><th>异常判定时间</th>${history ? "<th>取消异常时间</th>" : ""}<th>命中规则</th><th>异常备注</th>`;
+    const scanNote = history ? "" : `<section class="exception-scan-note annotated" data-component-id="P01">${componentBadge("P01")}<div><strong>全平台每日检测</strong><span>仅检测注册大于7天且小于等于31天的代理；首次命中创建快照，不再命中时自动归档，再次命中创建新快照。</span></div><button type="button" class="secondary-action annotated exception-rule-config-action" data-component-id="B02">${componentBadge("B02")}异常规则配置</button></section>`;
+    return `${exceptionAgentFilters(history)}${scanNote}<section class="risk-list-card annotated exception-agent-list-card" data-component-id="${tableId}">${componentBadge(tableId)}<div class="risk-list-heading"><div><h2>${history ? "异常代理历史记录" : "当前异常代理"}</h2><span>共 ${history ? exceptionAgentHistoryRows.length : exceptionAgentCurrentRows.length} 条</span></div></div><div class="risk-table-wrap"><table class="risk-table exception-agent-table${history ? " history" : ""}"><thead><tr>${headers}</tr></thead><tbody>${exceptionAgentRows(history)}</tbody></table></div>${pagination(20, history ? exceptionAgentHistoryRows.length : exceptionAgentCurrentRows.length)}</section>`;
+  }
+
+  function exceptionAgentContent(page) {
+    const activeTab = financeTabState[page.key] || page.tabs[0];
+    return `<div class="risk-page-heading"><div><h1>异常代理</h1></div><span class="page-status">全平台每日更新一次</span></div><div class="inner-tabs annotated exception-agent-tabs" data-component-id="N01">${componentBadge("N01")}${page.tabs.map((tab) => `<button type="button" class="exception-agent-tab ${tab === activeTab ? "active" : ""}" data-exception-tab="${tab}">${tab}</button>`).join("")}</div><div class="exception-agent-tab-body">${exceptionAgentTabBody(activeTab)}</div>`;
+  }
+
+  function exceptionRuleInput(label, suffix, extraClass = "") {
+    const integerOnly = suffix === "人" || suffix === "天";
+    const max = suffix === "%" ? ' max="100"' : "";
+    return `<label class="exception-rule-input ${extraClass}"><span>${label}</span><input type="number" min="0"${max} step="${integerOnly ? 1 : 0.01}" data-unit="${suffix}" placeholder="请输入" /><em>${suffix}</em></label>`;
+  }
+
+  function exceptionRuleRow(number, content, checked = false) {
+    return `<section class="exception-rule-row"><label class="exception-rule-switch"><input type="checkbox" ${checked ? "checked" : ""} /><span class="switch-track"></span><strong>规则${number}</strong></label><div>${content}</div></section>`;
+  }
+
+  function exceptionAgentRuleConfigBody() {
+    return `<div class="exception-rule-config annotated" data-component-id="M01">${componentBadge("M01")}<section class="exception-rule-scope"><strong>检测总前提</strong><span>仅检测注册大于7天且小于等于31天的代理。规则1-5统计周期待确认；规则6-8按全平台滚动近3个月数据计算。</span></section><div class="exception-rule-list">
+      ${exceptionRuleRow(1, `<p>线下有效会员 ${exceptionRuleInput("≤", "人")}，且有效会员的【总有效流水/总存款】 ${exceptionRuleInput("≤", "%")}</p>`, true)}
+      ${exceptionRuleRow(2, `<p>任意一笔充值订单金额区间 ${exceptionRuleInput("最低", "元")} 至 ${exceptionRuleInput("最高", "元")} 的线下有效会员数 ${exceptionRuleInput("≥", "人")}</p>`, true)}
+      ${exceptionRuleRow(3, `<p>【总有效流水/总存款】 ${exceptionRuleInput("≤", "%")} 的线下有效会员数 ${exceptionRuleInput("≥", "人")}</p>`)}
+      ${exceptionRuleRow(4, `<p>返水 ${exceptionRuleInput("≤", "元")} 的线下有效会员数 ${exceptionRuleInput("≥", "人")}</p>`)}
+      ${exceptionRuleRow(5, `<p>首存后 ${exceptionRuleInput("天数", "天")} 内未登录过的线下有效会员数 ${exceptionRuleInput("≥", "人")}</p>`)}
+      ${exceptionRuleRow(6, `<p>全平台近3个月与本代理有效会员使用相同IP的重叠人数 ${exceptionRuleInput("≥", "人")}，且重叠人数占本代理有效会员总数 ${exceptionRuleInput("≥", "%")}</p>`, true)}
+      ${exceptionRuleRow(7, `<p>全平台近3个月与本代理有效会员使用相同设备号的重叠人数 ${exceptionRuleInput("≥", "人")}，且重叠人数占本代理有效会员总数 ${exceptionRuleInput("≥", "%")}</p>`)}
+      ${exceptionRuleRow(8, `<p>全平台近3个月与本代理有效会员使用相同虚拟币地址的重叠人数 ${exceptionRuleInput("≥", "人")}，且重叠人数占本代理有效会员总数 ${exceptionRuleInput("≥", "%")}</p>`)}
+    </div><p class="exception-rule-validation" role="alert" hidden></p><p class="exception-rule-footnote">符合任意一条已开启规则时，系统自动加入异常代理库。</p></div>`;
+  }
+
   function financeTimeRange(id, label, fullDay = false) {
     const componentId = id || "__finance_time";
     let html = timeRange(componentId).replaceAll("申请时间", label);
@@ -538,7 +601,8 @@
   }
 
   function unchangedFinanceContent(page) {
-    return `<div class="risk-page-heading"><div><h1>${page.name}</h1></div></div><section class="reserved-area unchanged-page"><div><strong>此页面无修改</strong><span>原有功能、字段、权限和交互保持生产现状。</span></div></section>`;
+    const componentId = page.annotations?.some((annotation) => annotation.id === "P01") ? "P01" : "";
+    return `<div class="risk-page-heading"><div><h1>${page.name}</h1></div></div><section class="reserved-area unchanged-page${componentId ? " annotated" : ""}"${componentId ? ` data-component-id="${componentId}"` : ""}>${componentId ? componentBadge(componentId) : ""}<div><strong>此页面无任何修改</strong><span>页面内容、字段、权限、数据和交互全部沿用#406。</span></div></section>`;
   }
 
   function financeTabBody(page, activeTab) {
@@ -586,6 +650,7 @@
     if (page.key === "transaction-query-backup") return backupTransactionContent();
     if (page.key === "transaction-query-unified") return unifiedTransactionContent();
     if (page.key === "risk-list-library") return riskListLibraryContent(page);
+    if (page.key === "exception-agent") return exceptionAgentContent(page);
     if (page.tabs) return tabPlaceholderContent(page);
     return emptyPageContent(page);
   }
@@ -889,6 +954,81 @@
     bindFinanceBodyActions(page);
   }
 
+  function syncExceptionAgentSpec(page, tabName) {
+    const annotations = visibleAnnotations(page, tabName);
+    const annotationList = document.querySelector(".annotation-list");
+    if (annotationList) annotationList.innerHTML = annotations.map(annotationCard).join("");
+    const annotationCount = document.querySelector(".spec-section-heading span");
+    if (annotationCount) annotationCount.textContent = `${annotations.length} 项`;
+    const questionsSlot = document.querySelector(".questions-slot");
+    if (questionsSlot) questionsSlot.innerHTML = questionsBlock(page, tabName);
+  }
+
+  function bindExceptionAgentBodyActions(page) {
+    const panel = document.querySelector(".exception-agent-filter");
+    panel?.querySelector(".exception-agent-search")?.addEventListener("click", () => {
+      panel.querySelectorAll("input[type='text']").forEach((input) => { input.value = input.value.trim(); });
+    });
+    panel?.querySelector(".exception-agent-reset")?.addEventListener("click", () => {
+      panel.querySelectorAll("input[type='text']").forEach((input) => { input.value = ""; });
+      panel.querySelectorAll("select").forEach((select) => { select.selectedIndex = 0; });
+    });
+    panel?.querySelector(".exception-agent-export")?.addEventListener("click", () => {
+      const history = (financeTabState[page.key] || page.tabs[0]) === "历史记录";
+      modal(history ? "导出异常代理历史记录" : "导出异常代理", `<p>将导出当前筛选条件命中的全部${history ? "历史快照" : "异常代理"}，不限制当前页。</p>`, "确认导出");
+    });
+    document.querySelector(".exception-rule-config-action")?.addEventListener("click", () => {
+      modal("异常规则配置", exceptionAgentRuleConfigBody(), "保存配置");
+      const root = document.getElementById("modal-root");
+      const originalSave = root.querySelector(".modal-confirm");
+      const save = originalSave?.cloneNode(true);
+      if (originalSave && save) originalSave.replaceWith(save);
+      save?.addEventListener("click", () => {
+        const config = root.querySelector(".exception-rule-config");
+        const error = config?.querySelector(".exception-rule-validation");
+        const enabledRows = Array.from(config?.querySelectorAll(".exception-rule-row") || []).filter((row) => row.querySelector("input[type='checkbox']")?.checked);
+        let message = "";
+        if (!enabledRows.length) message = "至少开启一条异常检测规则。";
+        for (const row of enabledRows) {
+          const inputs = Array.from(row.querySelectorAll("input[type='number']"));
+          const ruleName = row.querySelector("strong")?.textContent || "已开启规则";
+          if (inputs.some((input) => input.value === "")) { message = `${ruleName}的阈值必须填写完整。`; break; }
+          if (inputs.some((input) => !input.validity.valid)) { message = `${ruleName}存在超出范围或格式不正确的数值。`; break; }
+          if (ruleName === "规则2" && Number(inputs[0].value) > Number(inputs[1].value)) { message = "规则2的最低金额不得高于最高金额。"; break; }
+        }
+        if (message) {
+          if (error) { error.textContent = message; error.hidden = false; }
+          return;
+        }
+        root.innerHTML = "";
+        modal("配置保存成功", "<p>异常代理规则已保存，将从下一次每日检测脚本执行时生效。</p>", "关闭");
+      });
+      bindComponentLinks();
+    });
+    bindSiteAutocomplete();
+    bindDatePickers();
+    bindComponentLinks();
+    addTopPaginators();
+    applyTableRowLimits(document.querySelector(".exception-agent-tab-body") || document);
+  }
+
+  function renderExceptionAgentTab(page, tabName) {
+    financeTabState[page.key] = tabName;
+    document.querySelectorAll(".exception-agent-tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.exceptionTab === tabName));
+    const body = document.querySelector(".exception-agent-tab-body");
+    if (!body) return;
+    body.innerHTML = exceptionAgentTabBody(tabName);
+    syncExceptionAgentSpec(page, tabName);
+    bindExceptionAgentBodyActions(page);
+  }
+
+  function bindExceptionAgentBehavior(page) {
+    if (page.key !== "exception-agent") return;
+    financeTabState[page.key] ||= page.tabs[0];
+    document.querySelectorAll(".exception-agent-tab").forEach((tab) => tab.addEventListener("click", () => renderExceptionAgentTab(page, tab.dataset.exceptionTab)));
+    bindExceptionAgentBodyActions(page);
+  }
+
   function renderLoginResultsView() {
     const container = document.getElementById("login-results");
     if (!container) return;
@@ -959,11 +1099,12 @@
     document.querySelectorAll(".ignore-action").forEach((button)=>button.addEventListener("click",()=>modal("忽略确认",'<p class="danger-confirm">您现在操作的是<strong>【忽略】</strong></p><p>确认后记录进入审核历史，审核记录标记为人工忽略。</p>',"确认忽略")));
     document.querySelectorAll(".finish-action").forEach((button)=>button.addEventListener("click",()=>modal("完结确认",'<p class="danger-confirm">您现在操作的是<strong>【完结】</strong></p><p>确认后记录进入审核历史，审核记录标记为人工完结。</p>',"确认完结")));
     document.querySelector(".config-action")?.addEventListener("click",()=>openConfigModal());
-    document.querySelectorAll(".inner-tabs:not(:has(.monitor-tab)):not(:has(.blacklist-tab)) button").forEach((button)=>button.addEventListener("click",()=>{button.parentElement.querySelectorAll("button").forEach(item=>item.classList.remove("active"));button.classList.add("active");}));
+    document.querySelectorAll(".inner-tabs:not(:has(.monitor-tab)):not(:has(.blacklist-tab)):not(:has(.exception-agent-tab)) button").forEach((button)=>button.addEventListener("click",()=>{button.parentElement.querySelectorAll("button").forEach(item=>item.classList.remove("active"));button.classList.add("active");}));
     bindSiteAutocomplete();
     bindLoginLogBehavior();
     bindBlacklistBehavior();
     bindFinanceBehavior(page);
+    bindExceptionAgentBehavior(page);
     document.querySelectorAll(".member-detail-link").forEach((link) => link.addEventListener("click", (event) => {
       event.preventDefault();
       const targetId = { "withdraw-review": "B04", "hold-review": "B03", "review-history": "B01" }[page.key];
