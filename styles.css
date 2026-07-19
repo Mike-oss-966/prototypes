@@ -265,7 +265,7 @@ td { border-top: 1px solid #e8ece9; padding: 18px; font-size: 13px; vertical-ali
 .flow-available,.flow-profit { color: #138057 !important; }.flow-status { display: inline-block; width: fit-content; padding: 3px 7px; color: #506058 !important; background: #eef1ef; font-size: 12px !important; }
 .flow-detail-link { position: relative; display: grid; justify-items: start; gap: 2px; padding: 0; color: var(--blue); background: transparent; border: 0; cursor: pointer; text-align: left; white-space: nowrap; }
 .flow-detail-link strong { color: var(--blue); font-size: 12px; }.flow-detail-link span { font-size: 10px; }.flow-detail-link:hover span { text-decoration: underline; }.flow-detail-link .component-badge { top: -12px; right: -12px; }
-.risk-modal:has(.flow-modal-content) { width: min(1120px, 100%); }.risk-modal:has(.flow-modal-content) .modal-body { max-height: min(70vh, 650px); overflow: auto; }
+.risk-modal:has(.flow-modal-content) { box-sizing: border-box; width: min(1120px, calc(100% - 40px)); min-width: 0; max-width: 100%; }.risk-modal:has(.flow-modal-content) .modal-body { box-sizing: border-box; min-width: 0; max-width: 100%; max-height: min(70vh, 650px); overflow: auto; }
 .flow-modal-content { position: relative; min-width: 0; }.flow-modal-content > .component-badge { top: -11px; right: -8px; }
 .flow-modal-subtitle { margin: -8px 0 16px; color: #7c8881; font-size: 12px; }
 .flow-modal-summary { display: grid; margin-bottom: 16px; border: 1px solid #dfe5e1; background: #fbfcfb; }.flow-modal-summary.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }.flow-modal-summary.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
