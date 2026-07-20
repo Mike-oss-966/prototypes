@@ -35,10 +35,10 @@
     { member: "test_member8", site: "旺财体育", count: 3, amounts: "CNY 2,400 / USDT 50", reason: "已联系会员确认异常订单，允许重新发起存款。", operator: "mike.finance", unlockedAt: "2026-07-17 07:35:20", result: "解锁成功" }
   ];
   const exceptionAgentCurrentRows = [
-    { site: "旺财体育", number: "AG20318", account: "north_star", parentAgent: "main_agent", parentNumber: "AG10001", type: "多层级代理", status: "正常", subordinateCount: 42, activeCount: 7, abnormalCount: 5, notes: ["规则1 → 线下有效会员数：7人", "规则4 → 返水≤X元：返水18元", "规则6 → 近3个月使用相同IP：5人", "规则7 → 近3个月使用相同设备号：4人"], detectedAt: "2026-07-20 00:18:36", rules: ["规则1", "规则4", "规则6", "规则7"] },
-    { site: "新旺体育", number: "AG10872", account: "river_88", parentAgent: "star_center", parentNumber: "AG10027", type: "星级代理", status: "正常", subordinateCount: 68, activeCount: 11, abnormalCount: 8, notes: ["任意一笔充值订单金额区间", "近3个月使用相同设备号"], detectedAt: "2026-07-20 00:18:36", rules: ["规则2", "规则7"] },
-    { site: "彩虹站", number: "AG30651", account: "bright_team", parentAgent: "rainbow_top", parentNumber: "AG30002", type: "多层级代理", status: "停用", subordinateCount: 19, activeCount: 4, abnormalCount: 3, notes: ["【总有效流水/总存款】≤百分比", "近3个月使用相同虚拟币地址"], detectedAt: "2026-07-20 00:18:36", rules: ["规则3", "规则8"] },
-    { site: "旺财体育", number: "AG20196", account: "summer_line", parentAgent: "main_agent", parentNumber: "AG10001", type: "星级代理", status: "正常", subordinateCount: 27, activeCount: 5, abnormalCount: 4, notes: ["返水≤X元", "首存后X天内未登录过"], detectedAt: "2026-07-20 00:18:36", rules: ["规则4", "规则5"] }
+    { site: "旺财体育", number: "AG20318", account: "north_star", parentAgent: "main_agent", parentNumber: "AG10001", type: "多层级代理", status: "正常", subordinateCount: 42, activeCount: 7, abnormalCount: 5, notes: ["规则1 → 线下有效会员数", "规则4 → 返水≤X元", "规则6 → 近3个月使用相同IP", "规则7 → 近3个月使用相同设备号"], detectedAt: "2026-07-20 00:18:36", rules: ["规则1", "规则4", "规则6", "规则7"] },
+    { site: "新旺体育", number: "AG10872", account: "river_88", parentAgent: "star_center", parentNumber: "AG10027", type: "星级代理", status: "正常", subordinateCount: 68, activeCount: 11, abnormalCount: 8, notes: ["规则2 → 任意一笔充值订单金额区间", "规则7 → 近3个月使用相同设备号"], detectedAt: "2026-07-20 00:18:36", rules: ["规则2", "规则7"] },
+    { site: "彩虹站", number: "AG30651", account: "bright_team", parentAgent: "rainbow_top", parentNumber: "AG30002", type: "多层级代理", status: "停用", subordinateCount: 19, activeCount: 4, abnormalCount: 3, notes: ["规则3 → 【总有效流水/总存款】≤百分比", "规则8 → 近3个月使用相同虚拟币地址"], detectedAt: "2026-07-20 00:18:36", rules: ["规则3", "规则8"] },
+    { site: "旺财体育", number: "AG20196", account: "summer_line", parentAgent: "main_agent", parentNumber: "AG10001", type: "星级代理", status: "正常", subordinateCount: 27, activeCount: 5, abnormalCount: 4, notes: ["规则4 → 返水≤X元", "规则5 → 首存后X天内未登录过"], detectedAt: "2026-07-20 00:18:36", rules: ["规则4", "规则5"] }
   ];
 
   function escapeHtml(value) {
