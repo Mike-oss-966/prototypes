@@ -22,6 +22,10 @@
   let blockedDepositViewState = "current";
   const blockedDepositSelection = new Set();
   let autoUnlockHours = 24;
+
+  function visibleRequirements() {
+    return requirements.filter((requirement) => !requirement.localOnly || isLocalPrototype);
+  }
   let blockedDepositUsers = [
     { member: "afei666", site: "旺财体育", vip: "VIP7", agent: "agent_087 / A10386", count: 4, amounts: "CNY 3,588 / USDT 120", threshold: 3, order: "DP202607170041", appliedAt: "2026-07-17 08:42:16", blockedAt: "2026-07-17 08:42:18" },
     { member: "mike966", site: "新旺体育", vip: "VIP5", agent: "agent_102 / A10822", count: 3, amounts: "CNY 6,000", threshold: 3, order: "DP202607170037", appliedAt: "2026-07-17 08:13:52", blockedAt: "2026-07-17 08:13:55" },
@@ -31,14 +35,10 @@
     { member: "test_member8", site: "旺财体育", count: 3, amounts: "CNY 2,400 / USDT 50", reason: "已联系会员确认异常订单，允许重新发起存款。", operator: "mike.finance", unlockedAt: "2026-07-17 07:35:20", result: "解锁成功" }
   ];
   const exceptionAgentCurrentRows = [
-    { site: "旺财体育", number: "AG20318", account: "north_star", parentAgent: "main_agent", parentNumber: "AG10001", type: "多层级代理", status: "正常", subordinateCount: 42, activeCount: 7, abnormalCount: 5, note: "有效会员流水/存款偏低；同IP占比异常", detectedAt: "2026-07-19 00:18:36", rules: ["规则1", "规则6"] },
-    { site: "新旺体育", number: "AG10872", account: "river_88", parentAgent: "star_center", parentNumber: "AG10027", type: "星级代理", status: "正常", subordinateCount: 68, activeCount: 11, abnormalCount: 8, note: "低返水会员集中；相同设备号占比异常", detectedAt: "2026-07-19 00:18:36", rules: ["规则4", "规则7"] },
-    { site: "彩虹站", number: "AG30651", account: "bright_team", parentAgent: "rainbow_top", parentNumber: "AG30002", type: "多层级代理", status: "停用", subordinateCount: 19, activeCount: 4, abnormalCount: 3, note: "首存后长期未登录会员集中", detectedAt: "2026-07-19 00:18:36", rules: ["规则5"] }
-  ];
-  const exceptionAgentHistoryRows = [
-    { site: "旺财体育", number: "AG20318", account: "north_star", parentAgent: "main_agent", parentNumber: "AG10001", type: "多层级代理", status: "正常", subordinateCount: 39, activeCount: 6, abnormalCount: 4, note: "有效会员流水/存款偏低", detectedAt: "2026-07-16 00:16:20", cancelledAt: "2026-07-18 00:17:42", rules: ["规则1"] },
-    { site: "新旺体育", number: "AG10872", account: "river_88", parentAgent: "star_center", parentNumber: "AG10027", type: "星级代理", status: "正常", subordinateCount: 61, activeCount: 9, abnormalCount: 6, note: "相同设备号占比异常", detectedAt: "2026-07-14 00:15:08", cancelledAt: "2026-07-17 00:16:51", rules: ["规则7"] },
-    { site: "旺财体育", number: "AG20318", account: "north_star", parentAgent: "main_agent", parentNumber: "AG10001", type: "多层级代理", status: "正常", subordinateCount: 31, activeCount: 5, abnormalCount: 3, note: "低额返水会员集中", detectedAt: "2026-07-10 00:13:45", cancelledAt: "2026-07-13 00:14:29", rules: ["规则4"] }
+    { site: "旺财体育", number: "AG20318", account: "north_star", parentAgent: "main_agent", parentNumber: "AG10001", type: "多层级代理", status: "正常", subordinateCount: 42, activeCount: 7, abnormalCount: 5, notes: ["规则1 → 线下有效会员数：7人", "规则4 → 返水≤X元：返水18元", "规则6 → 近3个月使用相同IP：5人", "规则7 → 近3个月使用相同设备号：4人"], detectedAt: "2026-07-20 00:18:36", rules: ["规则1", "规则4", "规则6", "规则7"] },
+    { site: "新旺体育", number: "AG10872", account: "river_88", parentAgent: "star_center", parentNumber: "AG10027", type: "星级代理", status: "正常", subordinateCount: 68, activeCount: 11, abnormalCount: 8, notes: ["任意一笔充值订单金额区间", "近3个月使用相同设备号"], detectedAt: "2026-07-20 00:18:36", rules: ["规则2", "规则7"] },
+    { site: "彩虹站", number: "AG30651", account: "bright_team", parentAgent: "rainbow_top", parentNumber: "AG30002", type: "多层级代理", status: "停用", subordinateCount: 19, activeCount: 4, abnormalCount: 3, notes: ["【总有效流水/总存款】≤百分比", "近3个月使用相同虚拟币地址"], detectedAt: "2026-07-20 00:18:36", rules: ["规则3", "规则8"] },
+    { site: "旺财体育", number: "AG20196", account: "summer_line", parentAgent: "main_agent", parentNumber: "AG10001", type: "星级代理", status: "正常", subordinateCount: 27, activeCount: 5, abnormalCount: 4, notes: ["返水≤X元", "首存后X天内未登录过"], detectedAt: "2026-07-20 00:18:36", rules: ["规则4", "规则5"] }
   ];
 
   function escapeHtml(value) {
@@ -51,7 +51,7 @@
   }
 
   function statusClass(status) {
-    return { "进行中": "status-progress", "待开始": "status-pending", "已完成": "status-done" }[status] || "";
+    return { "进行中": "status-progress", "待开始": "status-pending", "已完成": "status-done", "已合并": "status-done" }[status] || "";
   }
 
   function componentBadge(id) {
@@ -59,10 +59,11 @@
   }
 
   function listView() {
-    const inProgress = requirements.filter((item) => item.status === "进行中").length;
-    const pending = requirements.filter((item) => item.status === "待开始").length;
-    const completedThisMonth = requirements.filter((item) => item.status === "已完成" && item.completionDate?.startsWith("2026-07")).length;
-    const rows = [...requirements].sort((a, b) => Number(String(b.id).replace(/\D/g, "")) - Number(String(a.id).replace(/\D/g, ""))).map((item) => `
+    const listRequirements = visibleRequirements();
+    const inProgress = listRequirements.filter((item) => item.status === "进行中").length;
+    const pending = listRequirements.filter((item) => item.status === "待开始").length;
+    const completedThisMonth = listRequirements.filter((item) => item.status === "已完成" && item.completionDate?.startsWith("2026-07")).length;
+    const rows = [...listRequirements].sort((a, b) => Number(String(b.id).replace(/\D/g, "")) - Number(String(a.id).replace(/\D/g, ""))).map((item) => `
       <tr class="requirement-row" tabindex="0" data-requirement-id="${escapeHtml(item.id)}" aria-label="查看 ${escapeHtml(item.title)}">
         <td><span class="requirement-id">${escapeHtml(item.id)}</span></td>
         <td><strong class="requirement-title">${escapeHtml(item.title)}</strong><span class="requirement-summary">${escapeHtml(item.summary)}</span></td>
@@ -119,12 +120,25 @@
 
   function sidebar(requirement, page) {
     const finance = requirement.moduleName === "财务管理";
-    const brand = finance ? "Finance" : "RiskControl";
-    const brandMark = finance ? "F" : "R";
+    const member = requirement.moduleName === "会员管理";
+    const brand = finance ? "Finance" : member ? "MemberCenter" : "RiskControl";
+    const brandMark = finance ? "F" : member ? "M" : "R";
     const moduleName = requirement.moduleName || "风控管理";
     const workspaceName = requirement.workspaceName || "风控工作台";
     const roleName = requirement.roleName || "风控审核员";
-    const links = visiblePages(requirement).map((item) => `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${item.key}" class="${item.key === page.key ? "active" : ""}"><span class="menu-symbol">${item.key === page.key ? "■" : "□"}</span><span class="menu-name">${item.name}</span>${item.changeLabel ? `<em class="menu-change-badge ${item.changeType === "纯新增" ? "is-new" : "is-merged"}">${item.changeLabel}</em>` : ""}</a>`).join("");
+    const memberDetailActive = member && member488DetailPages.some(([key]) => key === page.key);
+    const navigationPages = member ? visiblePages(requirement).filter((item) => ["member-list-488", "member-logs-488"].includes(item.key)) : visiblePages(requirement);
+    let links = navigationPages.map((item) => {
+      const active = item.key === page.key || (item.key === "member-list-488" && memberDetailActive);
+      const newBadge = item.key === "member-logs-488" ? '<em class="menu-change-badge is-new">新增</em>' : "";
+      return `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${item.key}" class="${active ? "active" : ""}"><span class="menu-symbol">${active ? "■" : "□"}</span><span class="menu-name">${item.name}</span>${newBadge || (item.changeLabel ? `<em class="menu-change-badge ${item.changeType === "纯新增" ? "is-new" : "is-merged"}">${item.changeLabel}</em>` : "")}</a>`;
+    }).join("");
+    if (member) {
+      const listLink = links.match(/<a[^>]*member-list-488[\s\S]*?<\/a>/)?.[0] || "";
+      const logLink = links.match(/<a[^>]*member-logs-488[\s\S]*?<\/a>/)?.[0] || "";
+      const unchanged = ["同IP会员列表", "VIP会员设置", "会员推广邀请奖励设置", "会员实名认证列表"].map((name) => `<div class="member-menu-static"><span class="menu-symbol">□</span><span>${name}</span></div>`).join("");
+      links = `${listLink}${unchanged}${logLink}`;
+    }
     return `<aside class="risk-sidebar"><div class="risk-brand"><span>${brandMark}</span><div><strong>${brand}</strong><small>${workspaceName}</small></div></div><div class="risk-menu-label">${moduleName}</div><nav>${links}</nav><div class="risk-user"><span>MK</span><div><strong>Mike</strong><small>${roleName}</small></div></div></aside>`;
   }
 
@@ -133,8 +147,24 @@
     return `<div class="risk-field risk-field-wide annotated date-range-field" data-component-id="${id}">${componentBadge(id)}<div class="field-title-row"><label>申请时间</label><div class="quick-ranges"><button type="button">今日</button><button type="button">昨日</button><button type="button">本周</button><button type="button">30天</button><button type="button">90天</button><button type="button">180天</button></div></div><button class="risk-range" type="button" data-date-trigger><span>2026-07-12 00:00:00</span><b>至</b><span>2026-07-12 14:41:00</span></button><div class="date-picker-popover dual-calendar" hidden><div class="calendar-panel"><header><button type="button">‹</button><strong>2026年7月</strong><span></span></header><div class="calendar-week"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div class="calendar-days">${days}</div><label class="calendar-time">开始时间<input type="time" value="00:00:00" step="1" /></label></div><div class="calendar-panel"><header><span></span><strong>2026年7月</strong><button type="button">›</button></header><div class="calendar-week"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div class="calendar-days">${days}</div><label class="calendar-time">结束时间<input type="time" value="14:41:00" step="1" /></label></div><footer><button type="button" class="secondary-action date-close">取消</button><button type="button" class="main-action date-apply">确定</button></footer></div></div>`;
   }
 
+  const siteOptions = ["旺财体育", "新旺体育", "彩虹站", "财源客栈"];
+  const agentOptions = [
+    ["agent_087", "AG10386"],
+    ["agent_102", "AG10822"],
+    ["agent_205", "AG12051"],
+    ["north_star", "AG20318"]
+  ];
+
+  function siteMultiSelect(label = "所属站点", extraClass = "") {
+    return `<div class="risk-field site-multi-field ${extraClass}"><label>${label}</label><button type="button" class="site-multi-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="site-multi-value">全部站点</span><b>▾</b></button><div class="site-multi-options" role="listbox" aria-multiselectable="true" hidden><label class="site-select-all"><input type="checkbox" data-site-all checked />全选站点</label>${siteOptions.map((site) => `<label><input type="checkbox" value="${site}" checked />${site}</label>`).join("")}</div></div>`;
+  }
+
+  function agentSmartField(extraClass = "", label = "代理账号/编号") {
+    return `<div class="risk-field agent-smart-field ${extraClass}"><label>${label}</label><input type="text" placeholder="请输入代理账号或编号" autocomplete="off" /><div class="agent-smart-options" hidden>${agentOptions.map(([account, number]) => `<button type="button" data-agent-account="${account}" data-agent-number="${number}"><strong>${account}</strong><span>${number}</span></button>`).join("")}</div></div>`;
+  }
+
   function baseFilters(extra = "") {
-    return `<div class="risk-field"><label>订单号</label><input type="text" placeholder="请输入订单号" /></div><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号" /></div><div class="risk-field"><label>会员VIP等级</label><select><option>全部等级</option><option>VIP1</option><option>VIP2</option><option>VIP3</option><option>VIP12</option></select></div><div class="risk-field"><label>真实姓名</label><input type="text" placeholder="请输入真实姓名" /></div><div class="risk-field site-field"><label>所属站点</label><input type="text" placeholder="请输入所属站点" autocomplete="off" /><div class="site-options" hidden><button type="button">旺财体育</button><button type="button">新旺体育</button><button type="button">彩虹站</button></div></div>${extra}`;
+    return `<div class="risk-field"><label>订单号</label><input type="text" placeholder="请输入订单号" /></div><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号" /></div><div class="risk-field"><label>会员VIP等级</label><select><option>全部等级</option><option>VIP1</option><option>VIP2</option><option>VIP3</option><option>VIP12</option></select></div><div class="risk-field"><label>真实姓名</label><input type="text" placeholder="请输入真实姓名" /></div>${siteMultiSelect()}${extra}`;
   }
 
   function filterActions(exportButton = false) {
@@ -218,7 +248,7 @@
 
   function monitorView(history) {
     const monitorTime = timeRange("F02").replace("申请时间", "监控成立时间");
-    const siteField = `<div class="risk-field site-field"><label>所属站点</label><input type="text" placeholder="请输入所属站点" autocomplete="off" /><div class="site-options" hidden><button type="button">旺财体育</button><button type="button">新旺体育</button><button type="button">彩虹站</button></div></div>`;
+    const siteField = siteMultiSelect();
     const filters = `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid monitor-filters"><div class="risk-field"><label>会员账号</label><input placeholder="请输入会员账号" /></div><div class="risk-field"><label>真实姓名</label><input placeholder="请输入真实姓名" /></div><div class="risk-field"><label>会员VIP等级</label><select><option>全部等级</option><option>VIP1</option><option>VIP12</option></select></div>${siteField}${monitorTime}<div class="risk-filter-actions"><button class="main-action primary-filter">筛选</button><button class="secondary-action reset-action">重置</button></div></div></section>`;
     const toolbar = history ? "" : `<div class="monitor-toolbar"><button class="secondary-action annotated" data-component-id="B01" disabled>${componentBadge("B01")}批量拒绝</button><label class="switch-row annotated" data-component-id="S01">${componentBadge("S01")}<input type="checkbox" id="auto-ignore" /><span class="switch-track"></span><b>自动拒绝</b></label><button class="secondary-action annotated config-action" data-component-id="M01">${componentBadge("M01")}流水审核配置</button></div>`;
     const extraHeaders = history ? "<th>审核记录</th><th>审核人</th><th>审核时间</th>" : "";
@@ -253,7 +283,7 @@
 
   function memberLoginContent() {
     const loginTime = timeRange("F02").replace("<label>申请时间</label>", "<label>登录时间</label>");
-    const siteField = `<div class="risk-field site-field"><label>所属站点</label><input type="text" placeholder="请输入所属站点" autocomplete="off" /><div class="site-options" hidden><button type="button">旺财体育</button><button type="button">新旺体育</button><button type="button">彩虹站</button></div></div>`;
+    const siteField = siteMultiSelect();
     return `<div class="risk-page-heading"><div><h1>会员登录日志</h1></div></div>
       <section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid login-filter-grid"><div class="risk-field"><label>设备号</label><input type="text" placeholder="请输入设备号" /></div><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号" /></div>${siteField}<div class="risk-field"><label>上级代理</label><input type="text" placeholder="请输入上级代理" /></div><div class="risk-field"><label>上级代理编号</label><input type="text" placeholder="请输入代理编号" /></div><div class="risk-field ip-filter-field"><label>登录IP</label><input type="text" placeholder="例如 103.27.14.86" inputmode="decimal" /><span class="field-error" hidden>请输入正确的IPv4地址</span></div><div class="risk-field region-field"><label>登录地址</label><div class="region-selects"><select aria-label="省份"><option>全部省份</option><option>上海市</option><option>广东省</option></select><select aria-label="城市"><option>全部城市</option><option>上海市</option><option>深圳市</option></select></div></div><div class="risk-field"><label>登录设备</label><input type="text" placeholder="请输入操作系统或设备" /></div><div class="risk-field"><label>版本号</label><select><option>全部版本</option><option>0712</option><option>0719</option></select></div>${loginTime}<div class="risk-filter-actions"><button type="button" class="main-action primary-filter login-filter-action">筛选</button><button type="button" class="secondary-action reset-action">重置</button><button type="button" class="secondary-action export-action">导出表格</button></div></div></section>
       <div class="login-toolbar"><button type="button" class="secondary-action annotated login-batch-device" data-component-id="B01" disabled>${componentBadge("B01")}批量拉黑设备</button><button type="button" class="secondary-action annotated login-batch-ip" data-component-id="B02" disabled>${componentBadge("B02")}批量拉黑IP</button><button type="button" class="secondary-action annotated login-dedup-action" data-component-id="B03">${componentBadge("B03")}数据去重</button></div>
@@ -261,9 +291,16 @@
   }
 
   function transactionQueryContent() {
-    const rows = [1, 2, 3].map((index) => { const balance = index === 1 ? 0 : index * 1500; const met = balance === 0; const annotation = index === 1 ? ` annotated" data-component-id="B01` : ""; const statusAnnotation = index === 1 ? ` annotated" data-component-id="S02` : ""; return `<tr><td class="sticky-transaction-member">${memberCell(index === 2 ? "evan888" : "dengji000")}</td><td class="sticky-transaction-agent">${agentCell()}</td><td>${dateTimeCell("2026-07-1${3 - index}",`0${8 + index}:20:00`)}</td><td><strong class="amount">¥ ${money(index * 1000)}</strong></td><td>${index === 1 ? "银行卡存款" : "数字货币存款"}</td><td>${index + 1} 倍</td><td><strong class="amount">¥ ${money(index * 3000)}</strong></td><td><strong class="amount">¥ ${money(index * (met ? 3000 : 1800))}</strong></td><td><strong class="amount">¥ ${money(index * 200)}</strong></td><td>${index === 1 ? "存款红利" : "活动红利"}</td><td>${index + 2} 倍</td><td><strong class="amount">¥ ${money(index * 800)}</strong></td><td><strong class="amount">¥ ${money(index * (met ? 800 : 500))}</strong></td><td><strong class="amount">¥ ${money(index * (met ? 3800 : 2300))}</strong></td><td><button type="button" class="balance-detail link-action${annotation}">${index === 1 ? componentBadge("B01") : ""}<strong class="amount">¥ ${money(balance)}</strong></button></td><td class="${statusAnnotation}">${index === 1 ? componentBadge("S02") : ""}<span class="result-tag ${met ? "approved" : "rejected"}">${met ? "已达标" : "未达标"}</span></td><td>${dateTimeCell("2026-07-12",`14:3${index}:00`)}</td></tr>`; }).join("");
-    const siteField = `<div class="risk-field site-field"><label>所属站点</label><input type="text" placeholder="请输入所属站点" autocomplete="off" /><div class="site-options" hidden><button type="button">旺财体育</button><button type="button">新旺体育</button><button type="button">彩虹站</button></div></div>`;
-    return `<div class="transaction-page"><div class="transaction-confirm-overlay"><div><strong>待提现流水算法和页面确认</strong><button type="button" class="main-action transaction-overlay-view">查看</button></div></div><div class="risk-page-heading"><div><h1>流水查询</h1></div></div><section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid transaction-filter-grid"><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号" /></div>${siteField}<div class="risk-filter-actions"><button type="button" class="main-action primary-filter transaction-search">筛选</button><button type="button" class="secondary-action reset-action">重置</button></div></div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>会员流水任务</h2><span class="transaction-count" ${transactionState.searched ? "" : "hidden"}>共 3 条</span></div></div><div class="search-empty-state transaction-empty" ${transactionState.searched ? "hidden" : ""}><strong>请先设置筛选条件并点击筛选</strong><span>未搜索前，数据表不显示任何数据</span></div><div class="transaction-results" ${transactionState.searched ? "" : "hidden"}><div class="risk-table-wrap"><table class="risk-table transaction-table"><thead><tr><th class="sticky-transaction-member">会员信息</th><th class="sticky-transaction-agent">上级代理</th><th>存款时间</th><th>存款金额</th><th>存款类型</th><th>存款流水倍数</th><th>存款要求流水</th><th>存款完成流水</th><th>红利金额</th><th>红利类型</th><th>红利流水倍数</th><th>红利要求流水</th><th>红利完成流水</th><th>总完成流水</th><th>流水结余</th><th>达标情况</th><th>流水同步时间</th></tr></thead><tbody>${rows}</tbody></table></div>${pagination()}</div></section></div>`;
+    const rows = [1, 2, 3].map((index) => {
+      const balance = index === 1 ? 0 : index * 1500;
+      const met = balance === 0;
+      const member = index === 2 ? "evan888" : "dengji000";
+      const annotation = index === 1 ? ` annotated" data-component-id="B01` : "";
+      const statusAnnotation = index === 1 ? ` annotated" data-component-id="S02` : "";
+      return `<tr><td class="sticky-transaction-member">${memberCell(member)}</td><td class="sticky-transaction-agent">${agentCell()}</td><td>${dateTimeCell("2026-07-1${3 - index}",`${String(8 + index).padStart(2, "0")}:20:00`)}</td><td><strong class="amount">¥ ${money(index * 1000)}</strong></td><td>${index === 1 ? "银行卡存款" : "数字货币存款"}</td><td>${index + 1} 倍</td><td><strong class="amount">¥ ${money(index * 3000)}</strong></td><td><strong class="amount">¥ ${money(index * (met ? 3000 : 1800))}</strong></td><td><strong class="amount">¥ ${money(index * 200)}</strong></td><td>${index === 1 ? "存款红利" : "活动红利"}</td><td>${index + 2} 倍</td><td><strong class="amount">¥ ${money(index * 800)}</strong></td><td><strong class="amount">¥ ${money(index * (met ? 800 : 500))}</strong></td><td><strong class="amount">¥ ${money(index * (met ? 3800 : 2300))}</strong></td><td><button type="button" class="balance-detail link-action${annotation}" data-member="${member}" data-site="旺财体育">${index === 1 ? componentBadge("B01") : ""}<strong class="amount">¥ ${money(balance)}</strong></button></td><td class="${statusAnnotation}">${index === 1 ? componentBadge("S02") : ""}<span class="result-tag ${met ? "approved" : "rejected"}">${met ? "已达标" : "未达标"}</span></td><td>${dateTimeCell("2026-07-12",`14:3${index}:00`)}</td></tr>`;
+    }).join("");
+    const siteField = siteMultiSelect();
+    return `<div class="transaction-page"><div class="risk-page-heading"><div><h1>流水查询</h1></div></div><section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid transaction-filter-grid"><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号" /></div>${siteField}<div class="risk-filter-actions"><button type="button" class="main-action primary-filter transaction-search">筛选</button><button type="button" class="secondary-action reset-action">重置</button></div></div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>会员流水任务</h2><span class="transaction-count" ${transactionState.searched ? "" : "hidden"}>共 3 条</span></div></div><div class="search-empty-state transaction-empty" ${transactionState.searched ? "hidden" : ""}><strong>请先设置筛选条件并点击筛选</strong><span>未搜索前，数据表不显示任何数据</span></div><div class="transaction-results" ${transactionState.searched ? "" : "hidden"}><div class="risk-table-wrap"><table class="risk-table transaction-table"><thead><tr><th class="sticky-transaction-member">会员信息</th><th class="sticky-transaction-agent">上级代理</th><th>存款时间</th><th>存款金额</th><th>存款类型</th><th>存款流水倍数</th><th>存款要求流水</th><th>存款完成流水</th><th>红利金额</th><th>红利类型</th><th>红利流水倍数</th><th>红利要求流水</th><th>红利完成流水</th><th>总完成流水</th><th>流水结余</th><th>达标情况</th><th>流水同步时间</th></tr></thead><tbody>${rows}</tbody></table></div>${pagination()}</div></section></div>`;
   }
 
   function backupTransactionRows() {
@@ -339,6 +376,28 @@
     return `<div class="flow-modal-content annotated" data-component-id="M02">${componentBadge("M02")}<p class="flow-modal-subtitle">${member} · ${site} · 充值与系统发放彩金按发生顺序 FIFO 解锁</p><section class="flow-modal-summary five">${flowSummaryItem("会员账号", member)}${flowSummaryItem("流水记录", "4 笔（充值 / 系统发放彩金）")}${flowSummaryItem("计入额度", "¥50,000.00 / ¥2,000.00")}${flowSummaryItem("还需解锁流水", "¥31,320.00", "", "flow-profit")}${flowSummaryItem("盈利解锁额度", "¥22,528.50", "待本轮全部完成")}</section><div class="risk-table-wrap"><table class="risk-table flow-modal-table recharge-flow-table"><thead><tr><th>顺序</th><th>类型</th><th>发生时间</th><th>计入额度</th><th>目标流水</th><th>已完成流水</th><th>还需解锁流水</th><th>状态</th></tr></thead><tbody>${rows.map((row, index) => `<tr><td>${index + 1}</td><td><span class="data-tag ${row[0] === "系统发放彩金" ? "tag-amber" : ""}">${row[0]}</span></td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td><td><strong class="${row[5] !== "¥0.00" ? "flow-profit" : ""}">${row[5]}</strong></td><td><span class="result-tag ${row[6] === "待解锁" ? "rejected" : ""}">${row[6]}</span></td></tr>`).join("")}</tbody></table></div><section class="flow-modal-note"><strong>统计口径</strong><p>成功充值与系统发放彩金均视为充值行为，独立建立流水记录，无需关联充值订单；按发生时间 FIFO 解锁，前一笔未完成时不得跳过。还需解锁流水为当前周期内各笔记录还需解锁流水之和；盈利解锁额度仅在用户盈利时展示，需本轮全部充值流水完成后才可领取。</p></section></div>`;
   }
 
+  function transactionRechargeFlowModalBody(button) {
+    const cells = button.closest("tr")?.cells;
+    const value = (index) => {
+      const cell = cells?.[index];
+      if (!cell) return "—";
+      const dateTime = cell.querySelector(".datetime-cell");
+      if (dateTime) return `${dateTime.querySelector("strong")?.textContent.trim()} ${dateTime.querySelector("span")?.textContent.trim()}`;
+      const content = cell.cloneNode(true);
+      content.querySelectorAll(".component-badge").forEach((badge) => badge.remove());
+      return content.innerText.trim() || "—";
+    };
+    const member = button.dataset.member;
+    const site = button.dataset.site;
+    const amountValue = (text) => Number(text.replace(/[^\d.-]/g, "")) || 0;
+    const remaining = (required, completed) => `¥ ${money(Math.max(0, amountValue(required) - amountValue(completed)))}`;
+    const detailRows = [
+      ["充值", value(4), value(2), value(3), value(5), value(6), value(7)],
+      ["红利", value(9), value(2), value(8), value(10), value(11), value(12)]
+    ];
+    return `<div class="flow-modal-content annotated" data-component-id="M01">${componentBadge("M01")}<p class="flow-modal-subtitle">${member} · ${site} · 当前流水结余对应的单笔充值及关联红利</p><section class="flow-modal-summary four">${flowSummaryItem("会员账号", member)}${flowSummaryItem("充值时间", value(2))}${flowSummaryItem("充值金额", value(3))}${flowSummaryItem("任务总流水结余", value(14), "", "flow-profit")}</section><div class="risk-table-wrap"><table class="risk-table flow-modal-table transaction-recharge-detail-table"><thead><tr><th>类型</th><th>名称 / 来源</th><th>发生时间</th><th>计入金额</th><th>流水倍数</th><th>要求流水</th><th>完成流水</th><th>剩余流水</th><th>达标情况</th></tr></thead><tbody>${detailRows.map((row) => { const rowRemaining = remaining(row[5], row[6]); const met = amountValue(rowRemaining) === 0; return `<tr><td><span class="data-tag ${row[0] === "红利" ? "tag-amber" : ""}">${row[0]}</span></td><td>${row[1]}</td><td>${row[2]}</td><td><strong class="amount">${row[3]}</strong></td><td>${row[4]}</td><td>${row[5]}</td><td>${row[6]}</td><td><strong class="${met ? "" : "flow-profit"}">${rowRemaining}</strong></td><td><span class="result-tag ${met ? "approved" : "rejected"}">${met ? "已达标" : "未达标"}</span></td></tr>`; }).join("")}</tbody></table></div></div>`;
+  }
+
   function blacklistRows(type) {
     if (type === "ip") {
       const rows = [
@@ -374,30 +433,28 @@
     return `<div class="exception-rule-tags">${rules.map((rule) => `<span>${rule}</span>`).join("")}</div>`;
   }
 
-  function exceptionAgentRows(history = false) {
-    const rows = history ? exceptionAgentHistoryRows : exceptionAgentCurrentRows;
-    return rows.map((row, index) => `<tr><td>${index + 1}</td><td><strong>${row.site}</strong></td><td><strong class="mono">${row.number}</strong></td><td>${row.account}</td><td><div class="stack-cell"><strong>${row.parentAgent}</strong><span>${row.parentNumber}</span></div></td><td>${row.type}</td><td><span class="result-tag ${row.status === "正常" ? "approved" : "rejected"}">${row.status}</span></td><td>${row.subordinateCount}</td><td>${row.activeCount}</td><td><strong class="exception-count">${row.abnormalCount}</strong></td><td>${row.detectedAt}</td>${history ? `<td>${row.cancelledAt}</td>` : ""}<td class="exception-rules-cell">${exceptionAgentRuleTags(row.rules)}</td><td class="exception-note-cell">${row.note}</td></tr>`).join("");
+  function exceptionAgentNotes(notes) {
+    const lines = notes.map((note) => escapeHtml(note));
+    return `<div class="exception-note-preview" tabindex="0"><div class="exception-note-clamp">${lines.join("<br />")}</div>${notes.length > 2 ? `<div class="exception-note-tooltip"><strong>完整异常备注</strong><ul>${lines.map((note) => `<li>${note}</li>`).join("")}</ul></div>` : ""}</div>`;
   }
 
-  function exceptionAgentFilters(history = false) {
-    const filterId = history ? "F03" : "F01";
-    const timeId = history ? "F04" : "F02";
-    const exportId = history ? "B03" : "B01";
-    const timeField = timeRange(timeId).replaceAll("申请时间", "异常判定时间");
-    return `<section class="risk-filter-panel annotated exception-agent-filter" data-component-id="${filterId}">${componentBadge(filterId)}<div class="risk-filter-grid exception-agent-filter-grid"><div class="risk-field site-field"><label>所属站点</label><input type="text" placeholder="请输入所属站点" autocomplete="off" /><div class="site-options" hidden><button type="button">旺财体育</button><button type="button">新旺体育</button><button type="button">彩虹站</button></div></div><div class="risk-field"><label>代理编号</label><input type="text" placeholder="请输入代理编号" /></div><div class="risk-field"><label>代理账号</label><input type="text" placeholder="请输入代理账号" /></div><div class="risk-field"><label>代理状态</label><select><option>全部状态</option><option>正常</option><option>停用</option></select></div>${timeField}<div class="risk-filter-actions"><button type="button" class="main-action primary-filter exception-agent-search">筛选</button><button type="button" class="secondary-action exception-agent-reset">重置</button><button type="button" class="secondary-action annotated exception-agent-export" data-component-id="${exportId}">${componentBadge(exportId)}导出</button></div></div></section>`;
+  function exceptionAgentRows() {
+    return exceptionAgentCurrentRows.map((row, index) => `<tr><td>${index + 1}</td><td><strong>${row.site}</strong></td><td><strong class="mono">${row.number}</strong></td><td>${row.account}</td><td><div class="stack-cell"><strong>${row.parentAgent}</strong><span>${row.parentNumber}</span></div></td><td>${row.type}</td><td><span class="result-tag ${row.status === "正常" ? "approved" : "rejected"}">${row.status}</span></td><td>${row.subordinateCount}</td><td>${row.activeCount}</td><td><strong class="exception-count">${row.abnormalCount}</strong></td><td>${row.detectedAt}</td><td class="exception-rules-cell">${exceptionAgentRuleTags(row.rules)}</td><td class="exception-note-cell">${exceptionAgentNotes(row.notes)}</td></tr>`).join("");
   }
 
-  function exceptionAgentTabBody(tabName) {
-    const history = tabName === "历史记录";
-    const tableId = history ? "T02" : "T01";
-    const headers = `<th>序号</th><th>站点</th><th>代理编号</th><th>代理账号</th><th>上级代理</th><th>代理类型</th><th>代理状态</th><th>下级人数</th><th>有效活跃人数</th><th>异常会员数</th><th>异常判定时间</th>${history ? "<th>取消异常时间</th>" : ""}<th>命中规则</th><th>异常备注</th>`;
-    const scanNote = history ? "" : `<section class="exception-scan-note annotated" data-component-id="P01">${componentBadge("P01")}<div><strong>全平台每日检测</strong><span>仅检测注册大于7天且小于等于31天的代理；首次命中创建快照，不再命中时自动归档，再次命中创建新快照。</span></div><button type="button" class="secondary-action annotated exception-rule-config-action" data-component-id="B02">${componentBadge("B02")}异常规则配置</button></section>`;
-    return `${exceptionAgentFilters(history)}${scanNote}<section class="risk-list-card annotated exception-agent-list-card" data-component-id="${tableId}">${componentBadge(tableId)}<div class="risk-list-heading"><div><h2>${history ? "异常代理历史记录" : "当前异常代理"}</h2><span>共 ${history ? exceptionAgentHistoryRows.length : exceptionAgentCurrentRows.length} 条</span></div></div><div class="risk-table-wrap"><table class="risk-table exception-agent-table${history ? " history" : ""}"><thead><tr>${headers}</tr></thead><tbody>${exceptionAgentRows(history)}</tbody></table></div>${pagination(20, history ? exceptionAgentHistoryRows.length : exceptionAgentCurrentRows.length)}</section>`;
+  function exceptionAgentFilters() {
+    const timeField = timeRange("F02").replaceAll("申请时间", "异常判定时间");
+    return `<section class="risk-filter-panel annotated exception-agent-filter" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid exception-agent-filter-grid">${siteMultiSelect()}${agentSmartField()}<div class="risk-field"><label>代理状态</label><select><option>全部状态</option><option>正常</option><option>停用</option></select></div>${timeField}<div class="risk-filter-actions"><button type="button" class="main-action primary-filter exception-agent-search">筛选</button><button type="button" class="secondary-action exception-agent-reset">重置</button><button type="button" class="secondary-action annotated exception-agent-export" data-component-id="B01">${componentBadge("B01")}导出</button></div></div></section>`;
   }
 
-  function exceptionAgentContent(page) {
-    const activeTab = financeTabState[page.key] || page.tabs[0];
-    return `<div class="risk-page-heading"><div><h1>异常代理</h1></div><span class="page-status">全平台每日更新一次</span></div><div class="inner-tabs annotated exception-agent-tabs" data-component-id="N01">${componentBadge("N01")}${page.tabs.map((tab) => `<button type="button" class="exception-agent-tab ${tab === activeTab ? "active" : ""}" data-exception-tab="${tab}">${tab}</button>`).join("")}</div><div class="exception-agent-tab-body">${exceptionAgentTabBody(activeTab)}</div>`;
+  function exceptionAgentTabBody() {
+    const headers = '<th>序号</th><th>站点</th><th>代理编号</th><th>代理账号</th><th>上级代理</th><th>代理类型</th><th>代理状态</th><th>下级人数</th><th>有效活跃人数</th><th>异常会员数</th><th>异常判定时间</th><th>命中规则</th><th class="annotated exception-note-header" data-component-id="C01">' + componentBadge("C01") + "异常备注</th>";
+    const scanNote = `<section class="exception-scan-note annotated" data-component-id="P01">${componentBadge("P01")}<div><strong>全平台每日检测</strong><span>仅检测注册大于7天且小于等于31天的代理；代理数据统计范围为注册日至今日。未命中任一开启规则的代理不进入列表，也不保存历史记录。</span></div><button type="button" class="secondary-action annotated exception-rule-config-action" data-component-id="B02">${componentBadge("B02")}异常规则配置</button></section>`;
+    return `${exceptionAgentFilters()}${scanNote}<section class="risk-list-card annotated exception-agent-list-card" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>当前异常代理</h2><span>共 ${exceptionAgentCurrentRows.length} 条</span></div></div><div class="risk-table-wrap"><table class="risk-table exception-agent-table"><thead><tr>${headers}</tr></thead><tbody>${exceptionAgentRows()}</tbody></table></div>${pagination(20, exceptionAgentCurrentRows.length)}</section>`;
+  }
+
+  function exceptionAgentContent() {
+    return `<div class="risk-page-heading"><div><h1>异常代理</h1></div><span class="page-status">全平台每日更新一次</span></div><div class="exception-agent-tab-body">${exceptionAgentTabBody()}</div>`;
   }
 
   function exceptionRuleInput(label, suffix, extraClass = "") {
@@ -411,7 +468,7 @@
   }
 
   function exceptionAgentRuleConfigBody() {
-    return `<div class="exception-rule-config annotated" data-component-id="M01">${componentBadge("M01")}<section class="exception-rule-scope"><strong>检测总前提</strong><span>仅检测注册大于7天且小于等于31天的代理。规则1-5统计周期待确认；规则6-8按全平台滚动近3个月数据计算。</span></section><div class="exception-rule-list">
+    return `<div class="exception-rule-config annotated" data-component-id="M01">${componentBadge("M01")}<section class="exception-rule-scope"><strong>检测总前提</strong><span>仅检测注册大于7天且小于等于31天的代理；代理自身数据统计范围统一为注册日至今日。规则6-8的全平台相同信息比对范围为滚动近3个月。</span></section><div class="exception-rule-list">
       ${exceptionRuleRow(1, `<p>线下有效会员 ${exceptionRuleInput("≤", "人")}，且有效会员的【总有效流水/总存款】 ${exceptionRuleInput("≤", "%")}</p>`, true)}
       ${exceptionRuleRow(2, `<p>任意一笔充值订单金额区间 ${exceptionRuleInput("最低", "元")} 至 ${exceptionRuleInput("最高", "元")} 的线下有效会员数 ${exceptionRuleInput("≥", "人")}</p>`, true)}
       ${exceptionRuleRow(3, `<p>【总有效流水/总存款】 ${exceptionRuleInput("≤", "%")} 的线下有效会员数 ${exceptionRuleInput("≥", "人")}</p>`)}
@@ -628,6 +685,157 @@
     return `<div class="risk-page-heading finance-page-heading"><div><h1>${page.name}</h1></div><span class="prototype-only-label">变更标记仅用于原型评审</span></div>${financeMenuChangeSummary(page)}${content}`;
   }
 
+  const member488DetailPages = [
+    ["member-basic-488", "基本信息"], ["member-overview-488", "数据概览"], ["member-wallet-488", "中心钱包"],
+    ["member-statistics-488", "用户统计"], ["bet-records-488", "投注记录"], ["deposit-info-488", "存款信息"],
+    ["withdrawal-info-488", "提款信息"], ["bonus-info-488", "红利信息"], ["rebate-info-488", "返水信息"],
+    ["manual-adjustments-488", "人工上下分记录"], ["account-adjustment-488", "账户调整"],
+    ["balance-change-488", "账变记录"], ["risk-record-488", "风控记录"]
+  ];
+
+  function member488DateRange(id, label, annotated = true) {
+    const annotation = annotated ? ` annotated" data-component-id="${id}` : "";
+    return `<div class="risk-field risk-field-wide date-range-field${annotation}">${annotated ? componentBadge(id) : ""}<div class="field-title-row"><label>${label}</label><div class="quick-ranges"><button type="button">今日</button><button type="button">昨日</button><button type="button">本周</button><button type="button">30天</button><button type="button">90天</button><button type="button">180天</button></div></div><button class="risk-range" type="button" data-date-trigger><span>2026-07-19 00:00:00</span><b>至</b><span>2026-07-19 18:30:00</span></button><div class="date-picker-popover" hidden><div><label>开始时间<input type="datetime-local" step="1" value="2026-07-19T00:00:00" /></label><label>结束时间<input type="datetime-local" step="1" value="2026-07-19T18:30:00" /></label></div><footer><button type="button" class="secondary-action date-close">取消</button><button type="button" class="main-action date-apply">确定</button></footer></div></div>`;
+  }
+
+  function member488DetailHeader(page) {
+    const tabs = member488DetailPages.map(([key, name]) => `<a href="#requirement/${encodeURIComponent("#488")}/page/${key}" class="${key === page.key ? "active" : ""}">${name}</a>`).join("");
+    const annotation = page.key === "member-basic-488" ? ` annotated" data-component-id="N01` : "";
+    return `<section class="member-context${annotation}">${page.key === "member-basic-488" ? componentBadge("N01") : ""}<div class="member-context-main"><div class="member-context-identity"><strong>会员账号：member_10086</strong><span>会员ID：<em>10886421</em></span><span>账号状态：<b>正常</b></span><span>会员等级：<b>VIP6</b></span></div><div class="member-context-search"><input type="text" placeholder="请输入会员账号" /><button type="button" class="main-action member-search-action">搜索</button><a href="#requirement/${encodeURIComponent("#488")}/page/member-list-488" aria-label="关闭会员详情" title="关闭会员详情">×</a></div></div><div class="member-detail-section-title">会员信息</div><nav class="member-detail-tabs" aria-label="会员详情三级菜单">${tabs}</nav></section>`;
+  }
+
+  function member488DetailPage(page, body) {
+    return `${member488DetailHeader(page)}<div class="risk-page-heading member-page-heading"><div><h1>${page.name}</h1></div></div>${body}`;
+  }
+
+  function member488ListRows() {
+    const rows = [
+      { account: "member_10086", id: "10886421", site: "旺财体育", realName: "陈小明", gender: "男", birthday: "1992-08-18", status: "正常", vip: "VIP6", referral: "REF8M21K", agent: "agent_087", agentNo: "AG10386", region: "中国 / 上海", phone: "13800138899", attribution: "上海移动", qq: "81521086", wechat: "wx_member86", email: "member10086@mail.test", registerType: "代理" },
+      { account: "summer_728", id: "10885137", site: "旺财体育", realName: "林夏", gender: "女", birthday: "1996-03-21", status: "正常", vip: "VIP3", referral: "REF3P18Q", agent: "star_009", agentNo: "AG10218", region: "中国 / 广东", phone: "13699882098", attribution: "广东联通", qq: "—", wechat: "summer728", email: "summer728@mail.test", registerType: "代理" },
+      { account: "player_2026", id: "10883229", site: "彩虹站", realName: "佐藤健", gender: "男", birthday: "1989-11-02", status: "禁用", vip: "VIP1", referral: "REF1A09N", agent: "—", agentNo: "—", region: "日本 / 东京", phone: "08099166132", attribution: "Tokyo Mobile", qq: "—", wechat: "—", email: "player2026@mail.test", registerType: "直客" }
+    ];
+    return rows.map((row, index) => {
+      const marker = (id) => index === 0 ? ` annotated" data-component-id="${id}` : "";
+      const registerDate = `2026-06-${12 + index} 10:25:00`;
+      const loginDate = `2026-07-${19 - index} ${16 - index}:25:36`;
+      return `<tr><td class="sticky-member-account"><div class="member-list-stack"><div class="member-account-line"><strong>${row.account}</strong><button type="button" class="member-status-switch ${row.status === "禁用" ? "off" : ""}${marker("B02")}" data-member="${row.account}" data-status="${row.status === "禁用" ? "启用" : "禁用"}" aria-label="${row.status === "禁用" ? "启用" : "禁用"}${row.account}">${index === 0 ? componentBadge("B02") : ""}<span></span>${row.status}</button></div><span><i>会员ID：</i><b>${row.id}</b></span><span><i>所属站点：</i><b>${row.site}</b></span><span><i>真实姓名：</i><b>${row.realName}</b></span><span><i>性别 / 生日：</i><b>${row.gender} / ${row.birthday}</b></span><span><i>会员等级：</i><b>${row.vip}</b></span><span><i>推荐码：</i><b>${row.referral}</b></span></div></td><td><div class="member-list-stack"><span><i>中心钱包：</i><b>${money(15880 - index * 3920)} CNY</b></span><span><i>锁定钱包：</i><b>${money(index * 280)} CNY</b></span><span><i>场馆钱包：</i><b>${money(3600 - index * 670)} CNY</b></span><span><i>最后投注时间：</i><b>2026-07-${18-index} 22:18:36</b></span><span><i>最后存款成功：</i><b>2026-07-${17-index} 09:28:11</b></span></div></td><td><div class="member-list-stack"><span><i>国家 / 地区：</i><b>${row.region}</b></span><span><i>手机号：</i><b>${row.phone}</b></span><span><i>归属地：</i><b>${row.attribution}</b></span><span><i>QQ：</i><b>${row.qq}</b></span><span><i>微信：</i><b>${row.wechat}</b></span><span><i>邮箱：</i><b>${row.email}</b></span></div></td><td><div class="member-list-stack"><span><i>上级代理：</i><b>${row.agent}</b></span><span><i>代理编号：</i><b>${row.agentNo}</b></span><span><i>代理级别：</i><b>${row.agent === "—" ? "—" : "3级 / 1星"}</b></span><span><i>是否代理：</i><b>否</b></span></div></td><td><div class="member-list-stack"><span><i>注册时间：</i><b>${registerDate}</b></span><span><i>注册IP：</i><b>103.21.18.${21 + index}</b></span><span><i>登录时间：</i><b>${loginDate}</b></span><span><i>登录IP：</i><b>103.21.19.${31 + index}</b></span><span><i>注册类型：</i><b>${row.registerType}</b></span><span><i>注册设备：</i><b>${index ? "Android 14" : "iPhone 15 Pro / iOS 18"}</b></span><span><i>注册域名：</i><b>m.example.test</b></span><span><i>设备号：</i><b>DEV-${index + 1}8F31-A920</b></span><button type="button" class="link-action member-login-log${marker("B04")}" data-member="${row.account}">${index === 0 ? componentBadge("B04") : ""}查看登录日志</button></div></td><td><div class="member-empty-reserved${marker("S01")}">${index === 0 ? componentBadge("S01") : ""}<span>标签</span><b>—</b><span>备注</span><b>—</b></div></td><td class="row-actions member-list-actions"><button type="button" class="link-action member-488-detail${marker("B01")}" data-member="${row.account}">${index === 0 ? componentBadge("B01") : ""}详情</button><button type="button" class="link-action member-488-edit${marker("M01")}" data-member="${row.account}">${index === 0 ? componentBadge("M01") : ""}编辑</button><button type="button" class="link-action member-account-action${marker("B03")}" data-action="一键回收" data-member="${row.account}">${index === 0 ? componentBadge("B03") : ""}一键回收</button><button type="button" class="link-action member-account-action" data-action="修改登录密码" data-member="${row.account}">修改登录密码</button><button type="button" class="link-action member-account-action" data-action="重置取款密码" data-member="${row.account}">重置取款密码</button></td></tr>`;
+    }).join("");
+  }
+
+  function member488ListContent() {
+    return `<div class="risk-page-heading"><div><h1>会员列表</h1></div></div><section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid member-list-filters"><div class="risk-field site-field"><label>站点</label><input type="text" placeholder="请输入站点" /><div class="site-options" hidden><button type="button">旺财体育</button><button type="button">新旺体育</button></div></div><div class="risk-field member-account-batch"><label>会员账号</label><input type="text" placeholder="多个账号用英文逗号分隔，最多200个" /></div><div class="risk-field"><label>手机号</label><input type="text" placeholder="请输入手机号" /></div><div class="risk-field"><label>邮箱</label><input type="text" placeholder="请输入邮箱" /></div><div class="risk-field"><label>代理账号</label><input type="text" placeholder="请输入代理账号" /></div><div class="risk-field"><label>代理编号</label><input type="text" placeholder="请输入代理编号" /></div><div class="risk-field"><label>状态</label><select><option>全部状态</option><option>正常</option><option>禁用</option></select></div><div class="risk-field"><label>会员等级</label><select><option>全部等级</option><option>VIP1</option><option>VIP3</option><option>VIP6</option></select></div><div class="risk-field"><label>最近登录IP</label><input type="text" placeholder="请输入IP" /></div><div class="risk-field"><label>注册IP</label><input type="text" placeholder="请输入IP" /></div><div class="risk-field"><label>会员标签</label><select><option>全部标签</option><option>高盈利会员</option><option>普通会员</option></select></div>${filterActions(false)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>会员列表</h2><span>共 12,680 条</span></div></div><div class="risk-table-wrap"><table class="risk-table member-list-table"><thead><tr><th class="sticky-member-account">会员信息</th><th>账户信息</th><th>联系信息</th><th>代理信息</th><th>注册登录信息</th><th>标签与备注</th><th>操作</th></tr></thead><tbody>${member488ListRows()}</tbody></table></div>${pagination(20, 12680)}</section>`;
+  }
+
+  function member488BasicContent(page) {
+    const group = (title, fields) => `<section><h2>${title}</h2><div class="member-info-grid">${fields.map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`).join("")}</div></section>`;
+    const multi = (...values) => `<span class="member-multi-values">${values.map((value) => `<b>${value}</b>`).join("")}</span>`;
+    const body = `<div class="member-profile-groups annotated" data-component-id="P01">${componentBadge("P01")}${group("会员信息", [["所属站点","旺财体育"],["账号状态","正常"],["会员等级","VIP6"],["上级代理","agent_087"],["上级代理编号","AG10386"],["会员标签","高盈利会员、重点观察"]])}${group("个人资料", [["真实姓名","陈小明"],["性别","男"],["生日","1992-08-18"],["手机号","13800138899"],["邮箱","member10086@mail.test"],["QQ","81521086"],["微信","wx_member86"]])}${group("注册信息", [["注册时间","2026-06-12 10:25:00"],["最后登录时间","2026-07-19 16:25:36"],["注册IP","103.21.18.21"],["最近登录IP","103.21.19.31"],["注册设备","iPhone 15 Pro / iOS 18"],["最近登录设备","Chrome Mobile / Android 14"],["注册域名","m.example.test"],["最近登录设备号","DEV-8F31-A920"]])}${group("收款信息", [["银行卡信息",multi("招商银行 6225886500011886","中国银行 6217856100266931")],["EB地址",multi("EB-928351","EB-116820")],["支付宝账户",multi("member10086@alipay.test","13800138899")],["微信账户",multi("wx_member86","wx_member_backup")],["数字人民币账户",multi("DCEP-10886421","DCEP-10886421-02")],["USDT地址",multi("TRC20: TQx8bN7VKL3e2Fm9R4Jc6P1sA5dHv2Nc","ERC20: 0x86d94a62b1705e810a468f1d029ec251")]])}</div>`;
+    return member488DetailPage(page, body);
+  }
+
+  function member488OverviewContent(page) {
+    const cards = [
+      ["总输赢", "+18,650 CNY"], ["总有效投注", "690,820 CNY"], ["总存款", "168,800 CNY"], ["总提款", "121,300 CNY"],
+      ["总存提差", "47,500 CNY"], ["总收入", "28,560 CNY", [["被转账", "12,800 CNY"], ["红包金额", "3,260 CNY"], ["额度增加", "12,500 CNY"]]],
+      ["总支出", "9,680 CNY"], ["总红利", "8,620 CNY", [["会员推荐会员奖励", "1,200 CNY"], ["活动奖励", "3,100 CNY"], ["人工发彩金", "1,500 CNY"], ["VIP周礼金", "820 CNY"], ["VIP月礼金", "900 CNY"], ["VIP晋升礼金", "700 CNY"], ["VIP生日礼金", "400 CNY"]]],
+      ["总返水", "6,380 CNY"], ["总打赏金额", "1,280 CNY"], ["总打码金额", "712,460 CNY"]
+    ];
+    return member488DetailPage(page, `<section class="risk-filter-panel"><div class="risk-filter-grid">${member488DateRange("F01", "统计时间")}${filterActions()}</div></section><section class="member-stat-grid annotated" data-component-id="P01">${componentBadge("P01")}${cards.map(([label, value, details], index) => `<article class="${details ? "bonus-hover" : ""}${details && index === 5 ? " annotated" : ""}"${details && index === 5 ? ' data-component-id="C01"' : ""}>${details && index === 5 ? componentBadge("C01") : ""}<span>${label}</span><strong>${value}</strong>${details ? `<div class="bonus-tooltip">${details.map(([name, amount]) => `<span><b>${name}</b><em>${amount}</em></span>`).join("")}</div>` : ""}</article>`).join("")}</section>`);
+  }
+
+  function member488WalletContent(page) {
+    const wallets = [
+      ["中心钱包", "15,880.00 CNY", "正常"], ["锁定钱包", "560.00 CNY", "正常"], ["GOD彩票", "—", "暂未进入该场馆"], ["旺财体育", "3,680.00 CNY", "正常"],
+      ["旺财棋牌", "1,820.00 CNY", "正常"], ["旺财彩票", "—", "暂未进入该场馆"], ["旺财电子", "1,260.00 CNY", "正常"], ["旺财真人", "820.50 USDT", "正常"],
+      ["PG电子", "580.00 CNY", "正常"], ["PP电子", "—", "暂未进入该场馆"], ["DB哈希", "0 CNY", "维护中"], ["V8棋牌", "—", "暂未进入该场馆"],
+      ["DB多宝电子", "0 CNY", "维护中"], ["NetEnt电子", "0 CNY", "维护中"], ["MG电子", "—", "暂未进入该场馆"], ["JDB电子", "—", "暂未进入该场馆"],
+      ["DG视讯", "—", "暂未进入该场馆"], ["FC电子", "0 CNY", "维护中"], ["AG真人", "—", "暂未进入该场馆"], ["EVOPLAY电子", "—", "维护中"],
+      ["PP真人", "—", "暂未进入该场馆"], ["RED TIGER电子", "0 CNY", "维护中"], ["BBIN真人", "0 CNY", "维护中"], ["SBO体育", "0 CNY", "维护中"],
+      ["KV体育", "—", "暂未进入该场馆"], ["旺财电竞", "—", "暂未进入该场馆"], ["VM体育", "0 CNY", "维护中"], ["IM体育", "0 CNY", "维护中"],
+      ["DB体育", "—", "暂未进入该场馆"], ["天成彩票", "—", "暂未进入该场馆"], ["PM棋牌", "0 CNY", "维护中"], ["DP棋牌", "—", "暂未进入该场馆"],
+      ["PM电竞", "0 CNY", "维护中"], ["DP真人", "0 CNY", "维护中"], ["PM捕鱼", "—", "暂未进入该场馆"], ["VM真人", "0 CNY", "维护中"],
+      ["旺财捕鱼", "—", "暂未进入该场馆"], ["PM彩票", "0 CNY", "维护中"]
+    ];
+    return member488DetailPage(page, `<section class="member-wallet-toolbar annotated" data-component-id="P01">${componentBadge("P01")}<button type="button" class="main-action member-wallet-recycle">一键回收</button><div><span>场馆钱包总计余额</span><strong>10,481.78 CNY</strong><small>全部场馆均为人民币，更新于 2026-07-19 18:28:16</small></div><button type="button" class="secondary-action member-wallet-refresh">↻ 刷新余额</button></section><section class="member-wallet-grid annotated" data-component-id="T01">${componentBadge("T01")}${wallets.map(([name,balance,status])=>`<article><strong>${name}</strong><b>${balance}</b><span class="${status === "正常" ? "is-normal" : ""}">${status}</span></article>`).join("")}</section>`);
+  }
+
+  function member488StatisticsContent(page) {
+    const venues = [["DW体育","82,680","79,520","186","+6,820"],["SABA体育","51,300","48,900","102","-3,650"],["FB体育","26,880","24,560","68","+1,260"]];
+    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid"><div class="risk-field"><label>场馆名称</label><select><option>全部场馆</option><option>DW体育</option><option>SABA体育</option></select></div>${member488DateRange("F01", "下注时间", false)}${filterActions(true)}</div></section><div class="inner-tabs member-category-tabs annotated" data-component-id="N01">${componentBadge("N01")}${["体育","真人","电子","电竞","棋牌","捕鱼","彩票","哈希"].map((x,i)=>`<button class="${i===0?"active":""}">${x}</button>`).join("")}</div><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>场馆统计</h2><span>总下注 160,860 CNY · 有效投注 152,980 CNY · 总盈亏 +4,430 CNY</span></div></div><div class="risk-table-wrap"><table class="risk-table"><thead><tr><th>序号</th><th>场馆名称</th><th>总下注</th><th>有效投注</th><th>注单笔数</th><th>总盈亏（会员视角）</th></tr></thead><tbody>${venues.map((r,i)=>`<tr><td>${i+1}</td><td>${r[0]}</td><td><strong class="amount">${r[1]} CNY</strong></td><td>${r[2]} CNY</td><td>${r[3]}</td><td><strong class="${r[4].startsWith("-")?"amount-negative":"amount"}">${r[4]} CNY</strong></td></tr>`).join("")}</tbody></table></div>${pagination(20,3)}</section>`);
+  }
+
+  function member488BetContent(page) {
+    const rows = [
+      ["BT26071900081","DW体育","体育","英超","让球 -0.5","1,000","980","赢 +860 CNY","已结算","阿森纳 vs 切尔西","亚洲让球","阿森纳","主队 -0.5","1.86"],
+      ["BT26071900065","AG真人","真人","百家乐","庄","500","500","输 -500 CNY","已结算","旗舰厅 A12桌","庄闲","庄","庄","1.00"],
+      ["BT26071900032","PG电子","电子","麻将胡了","普通投注","200","200","未结算","未结算","麻将胡了","普通投注","基础局","—","—"]
+    ];
+    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid member-record-filters"><div class="risk-field"><label>注单号</label><input type="text" placeholder="请输入注单号" /></div><div class="risk-field"><label>场馆类型</label><select><option>全部类型</option><option>体育</option><option>真人</option><option>电子</option></select></div><div class="risk-field"><label>场馆名称</label><select><option>全部场馆</option><option>DW体育</option><option>AG真人</option></select></div><div class="risk-field"><label>游戏名称</label><input type="text" placeholder="请输入游戏名称" /></div><div class="risk-field"><label>状态</label><select><option>全部状态</option><option>未结算</option><option>已结算</option><option>已取消</option><option>已作废</option></select></div>${member488DateRange("F01", "下注时间", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>投注记录</h2><span>共 356 条</span></div></div><div class="risk-table-wrap"><table class="risk-table member-bet-table"><thead><tr><th class="sticky-member-seq">序号</th><th class="sticky-member-order with-seq">注单号</th><th>场馆名称</th><th>场馆类型</th><th>游戏名称</th><th>游戏类型</th><th>输赢情况</th><th>下注金额</th><th>有效下注</th><th class="sticky-member-detail">下注详情</th><th>下注时间</th><th>开赛时间</th><th>结算时间</th><th class="sticky-member-status">状态</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td class="sticky-member-seq">${i+1}</td><td class="sticky-member-order with-seq"><strong class="mono">${r[0]}</strong></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[7]}</td><td>${r[5]} CNY</td><td>${r[6]} CNY</td><td class="sticky-member-detail"><div class="bet-detail-preview${i===0?' annotated" data-component-id="C01':''}" tabindex="0">${i===0?componentBadge("C01"):""}<span>${r[9]}</span><span>${r[10]}</span><span>${r[11]}</span><div class="bet-record-tooltip"><b>完整投注记录</b><span>赛事/游戏：${r[9]}</span><span>玩法：${r[10]}</span><span>下注内容：${r[11]}</span><span>盘口：${r[12]}</span><span>赔率：${r[13]}</span><span>下注金额：${r[5]} CNY</span><span>有效下注：${r[6]} CNY</span><span>输赢情况：${r[7]}</span><span>状态：${r[8]}</span></div></div></td><td>2026-07-19 ${12+i}:20:18</td><td>${i===0?"2026-07-19 15:00:00":"—"}</td><td>${i===2?"—":`2026-07-19 ${14+i}:32:10`}</td><td class="sticky-member-status"><span class="result-tag">${r[8]}</span></td></tr>`).join("")}</tbody></table></div>${pagination(20,356)}</section>`);
+  }
+
+  function member488MoneyRecordContent(page, withdrawal = false) {
+    const title = withdrawal ? "提款" : "存款";
+    const stateOptions = withdrawal ? ["审核中","转账中","拒绝","成功","失败"] : ["确认中","确认失败","确认成功","待支付","用户主动取消"];
+    const headers = withdrawal ? ["订单号","订单类型","提现通道","提现金额","到账金额","开户行","银行卡号","币种","汇率","地址","订单时间","风控审核完成时间","风控操作人","风控审核备注","出款完成时间","财务操作人","财务审核备注","状态"] : ["订单号","虚拟币金额","汇率","订单金额","到账金额","上分金额","存款优惠","支付方式","订单时间","确认付款时间","完成时间","状态","取消原因","操作人"];
+    const cells = withdrawal ? ["WD2607190086","会员提款","极速出款","5,000","4,980","招商银行","6225 **** 1886","CNY","1.000000","上海市浦东新区","2026-07-19 10:20:18","2026-07-19 10:32:20","mike.risk","正常通过","2026-07-19 11:05:18","mike.finance","已核验","成功"] : ["DP2607190068","—","1.000000","2,000","2,000","2,000","80","支付宝","2026-07-19 09:20:18","2026-07-19 09:21:16","2026-07-19 09:22:08","确认成功","—","mike.finance"];
+    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid member-record-filters"><div class="risk-field"><label>订单号</label><input type="text" placeholder="请输入订单号" /></div><div class="risk-field"><label>订单状态</label><select><option>全部状态</option>${stateOptions.map(x=>`<option>${x}</option>`).join("")}</select></div><div class="risk-field"><label>${withdrawal?"订单类型":"支付方式"}</label><select><option>全部类型</option><option>${withdrawal?"会员提款":"支付宝"}</option></select></div>${member488DateRange("F01", "订单时间", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>${title}信息</h2><span>共 68 条</span></div></div><div class="risk-table-wrap"><table class="risk-table member-money-table"><thead><tr><th class="sticky-member-seq">序号</th>${headers.map((h,i)=>`<th class="${i===0?"sticky-member-order with-seq":i===headers.length-1?"sticky-member-status":""}">${h}</th>`).join("")}</tr></thead><tbody>${[0,1,2].map((_,row)=>`<tr><td class="sticky-member-seq">${row+1}</td>${cells.map((c,i)=>`<td class="${i===0?"sticky-member-order with-seq":i===cells.length-1?"sticky-member-status":""}">${i===0?`<strong class="mono">${c.slice(0,-1)}${8-row}</strong>`:i===cells.length-1?`<span class="result-tag">${row===2?stateOptions[1]:c}</span>`:c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${pagination(20,68)}</section>`);
+  }
+
+  function member488BonusContent(page) {
+    const rows = [["BN2607190018","彩金","周末体育加码","680","场馆钱包","DW体育","3","已发放","2026-07-19 12:00:00","自动"],["BN2607180092","彩金","VIP晋级礼金","388","中心钱包","中心钱包","1","未发放","2026-07-18 09:30:00","手动"]];
+    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid member-record-filters"><div class="risk-field"><label>红利类型</label><select><option>全部类型</option><option>彩金</option></select></div><div class="risk-field"><label>发放状态</label><select><option>全部状态</option><option>未发放</option><option>已发放</option></select></div><div class="risk-field"><label>钱包类型</label><select><option>全部钱包</option><option>中心钱包</option><option>场馆钱包</option></select></div><div class="risk-field"><label>钱包名称</label><select><option>全部钱包名称</option><option>DW体育</option></select></div>${member488DateRange("F01", "红利申请时间", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>红利信息</h2><span>共 28 条</span></div></div><div class="risk-table-wrap"><table class="risk-table member-record-table"><thead><tr><th>序号</th><th>订单号</th><th>红利类型</th><th>红利标题</th><th>红利金额</th><th>钱包类型</th><th>钱包名称</th><th>流水倍数</th><th>发放状态</th><th>申请时间</th><th>发放类型</th><th>审核备注</th><th>发放时间</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td>${r.map((c,j)=>`<td>${j===3?`<strong class="amount">${c} CNY</strong>`:j===7?`<span class="result-tag">${c}</span>`:c}</td>`).join("")}<td>${i?"运营审批":"系统任务"}</td><td>${i?"—":"2026-07-19 12:10:18"}</td></tr>`).join("")}</tbody></table></div>${pagination(20,28)}</section>`);
+  }
+
+  function member488RebateContent(page) {
+    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid member-record-filters"><div class="risk-field"><label>订单号</label><input type="text" placeholder="请输入订单号" /></div><div class="risk-field"><label>返水等级</label><select><option>全部等级</option><option>VIP6</option></select></div><div class="risk-field"><label>返水状态</label><select><option>全部状态</option><option>未领取</option><option>已领取</option><option>已过期</option></select></div>${member488DateRange("", "返水日期", false)}${member488DateRange("", "领取日期", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>返水信息</h2><span>共 16 条</span></div></div><div class="risk-table-wrap"><table class="risk-table"><thead><tr><th>序号</th><th>订单号</th><th>返水等级</th><th>返水金额</th><th>流水倍数</th><th>返水生成时间</th><th>领取时间</th><th>过期时间</th><th>状态</th></tr></thead><tbody>${["已领取","未领取","已过期"].map((s,i)=>`<tr><td>${i+1}</td><td><strong class="mono">RB26071${9-i}008${i}</strong></td><td>VIP6</td><td><strong class="amount">${280-i*60} CNY</strong></td><td>${i+1}</td><td>2026-07-${19-i} 02:00:00</td><td>${i===1?"—":`2026-07-${19-i} 10:18:20`}</td><td>2026-07-${26-i} 23:59:59</td><td><span class="result-tag">${s}</span></td></tr>`).join("")}</tbody></table></div>${pagination(20,16)}</section>`);
+  }
+
+  function member488ManualContent(page) {
+    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid"><div class="risk-field"><label>类型</label><select><option>全部</option><option>上分</option><option>下分</option></select></div><div class="risk-field"><label>来源</label><select><option>全部来源</option><option>账户调整</option><option>手动上下分</option></select></div><div class="risk-field"><label>状态</label><select><option>全部状态</option><option>成功</option><option>失败</option></select></div>${member488DateRange("F01", "完成时间", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>人工上下分记录</h2><span>共 19 条</span></div></div><div class="risk-table-wrap"><table class="risk-table"><thead><tr><th>序号</th><th>订单号</th><th>来源</th><th>类型</th><th>操作金额</th><th>调整钱包</th><th>流水倍数</th><th>原因备注</th><th>完成时间</th><th>操作人</th><th>状态</th></tr></thead><tbody>${[["AD2607190081","账户调整","上分","680","DW体育","3","补发活动彩金","mike.finance","成功"],["MN2607180062","手动上下分","下分","120","中心钱包","0","订单冲正","amy.finance","成功"]].map((r,i)=>`<tr><td>${i+1}</td><td><strong class="mono">${r[0]}</strong></td><td>${r[1]}</td><td>${r[2]}</td><td><strong class="amount">${r[3]} CNY</strong></td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td><td>2026-07-${19-i} 11:28:16</td><td>${r[7]}</td><td><span class="result-tag">${r[8]}</span></td></tr>`).join("")}</tbody></table></div>${pagination(20,19)}</section>`);
+  }
+
+  function member488AdjustmentContent(page) {
+    return member488DetailPage(page, `<section class="member-adjustment-form annotated" data-component-id="F01">${componentBadge("F01")}<label class="member-locked-field"><span>会员账号</span><div><input type="text" value="member_10086" disabled /><b>已锁定</b></div></label><label class="member-locked-field"><span>中心钱包余额</span><div><input type="text" value="15,880 CNY" disabled /><button type="button" class="secondary-action member-wallet-refresh" title="刷新中心钱包余额">↻ 刷新</button></div><small>余额在打开页面和提交前均重新校验</small></label><label><span>调整类型</span><select id="member-adjust-type"><option>系统调整</option><option>输赢调整</option></select><small>系统调整不影响代理佣金；输赢调整影响代理佣金</small></label><label><span>调整方向</span><div class="segmented-control"><button type="button" class="active" data-direction="上分">上分</button><button type="button" data-direction="下分">下分</button></div></label><label><span>调整钱包</span><select id="member-adjust-wallet"><option>中心钱包</option><option>DW体育</option><option>AG真人</option></select></label><label><span>流水要求</span><div class="segmented-control"><button type="button" class="active" data-flow="无需流水">无需流水</button><button type="button" data-flow="需要流水">需要流水</button></div></label><label class="member-flow-multiple" hidden><span>流水倍数</span><input type="number" min="0" value="1" /><small>仅允许输入非负数</small></label><label><span>调整金额</span><div class="input-suffix"><input type="number" min="0.01" value="680" /><b>CNY</b></div></label><label><span>原因备注</span><textarea class="member-adjust-note" maxlength="200" placeholder="请输入本次调整原因，必填">补发活动彩金</textarea><small class="member-adjust-count">6/200</small></label><div class="adjustment-submit annotated" data-component-id="B01">${componentBadge("B01")}<button type="button" class="danger-action member-adjust-submit">提交账户调整</button></div></section>`);
+  }
+
+  function member488BalanceContent(page) {
+    const rows = [["BC2607190088","存款","收入","2,000","13,880","15,880","成功","支付宝存款到账"],["BC2607190072","代理后台代客充值","收入","1,000","14,880","15,880","成功","代理 agent_087 为会员代客充值 1,000元"],["BC2607190069","场馆转入失败","—","0","15,880","15,880","失败","中心钱包转入AG真人失败：网络波动"]];
+    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid"><div class="risk-field"><label>账变类型</label><select><option>全部类型</option><option>存款</option><option>提款</option><option>红利</option><option>返水</option><option>账户调整</option><option>手动上下分</option><option>代理后台代客充值</option><option>场馆转入</option><option>场馆转出</option><option>场馆转入失败</option><option>场馆转出失败</option></select></div>${member488DateRange("F01", "账变时间", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>账变记录</h2><span>共 286 条</span></div></div><div class="risk-table-wrap"><table class="risk-table"><thead><tr><th>订单号</th><th>账变类型</th><th>收支方向</th><th>账变金额</th><th>账变前金额</th><th>账变后金额</th><th>账变时间</th><th>执行结果</th><th>备注</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td><strong class="mono">${r[0]}</strong></td><td>${r[1]}</td><td>${r[2]}</td><td><strong class="amount">${r[3]} CNY</strong></td><td><strong class="amount">${r[4]} CNY</strong></td><td><strong class="amount">${r[5]} CNY</strong></td><td>2026-07-19 ${12-i}:20:18</td><td><span class="result-tag ${r[6]==="失败"?"failed":""}">${r[6]}</span></td><td>${r[7]}</td></tr>`).join("")}</tbody></table></div>${pagination(20,286)}</section>`);
+  }
+
+  function member488RiskContent(page) {
+    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid">${member488DateRange("F01", "操作时间", false)}${filterActions()}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>风控记录</h2><span>共 12 条</span></div></div><div class="risk-table-wrap"><table class="risk-table member-risk-record-table"><thead><tr><th>操作时间</th><th>记录类型</th><th>变更动作</th><th>变更前</th><th>变更后</th><th>操作原因</th><th>操作人账号</th></tr></thead><tbody><tr><td>2026-07-19 10:28:16</td><td>风控标签</td><td><span class="result-tag">新增</span></td><td>—</td><td>大额提款复核</td><td>会员近期提款金额异常</td><td>mike.risk</td></tr><tr><td>2026-07-18 16:03:22</td><td>风控标签</td><td><span class="result-tag">修改</span></td><td>疑似同设备</td><td>同设备重点观察</td><td>补充关联设备核查结论</td><td>amy.risk</td></tr><tr><td>2026-07-17 09:42:10</td><td>会员黑名单</td><td><span class="result-tag failed">拉黑</span></td><td>正常</td><td>已拉黑</td><td>多次触发异常提款规则</td><td>mike.risk</td></tr><tr><td>2026-07-16 14:18:06</td><td>会员黑名单</td><td><span class="result-tag">解黑</span></td><td>已拉黑</td><td>正常</td><td>复核通过，解除限制</td><td>risk.manager</td></tr></tbody></table></div>${pagination(20,12)}</section>`);
+  }
+
+  function member488LogBody(tab) {
+    if (tab === "行为日志") return `<section class="risk-filter-panel annotated member-log-panel" data-component-id="F02">${componentBadge("F02")}<div class="risk-filter-grid"><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号" /></div><div class="risk-field"><label>IP地址</label><input type="text" placeholder="请输入IP地址" /></div><div class="risk-field"><label>执行结果</label><select><option>全部结果</option><option>成功</option><option>失败</option></select></div>${member488DateRange("F02", "行为时间", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated member-log-panel" data-component-id="T02">${componentBadge("T02")}<div class="risk-list-heading"><div><h2>行为日志</h2><span>共 2,186 条</span></div></div><div class="risk-table-wrap"><table class="risk-table member-behavior-log-table"><thead><tr><th>序号</th><th>日志类型</th><th>操作类型</th><th>会员ID</th><th>会员账号</th><th>站点编码</th><th>IP地址</th><th>地区信息</th><th>浏览器 / App</th><th>操作系统</th><th>设备信息</th><th>执行结果</th><th>消息</th><th>发生时间</th></tr></thead><tbody><tr><td>1</td><td>登录日志</td><td>会员登录</td><td>10886421</td><td>member_10086</td><td>333333</td><td>103.21.19.31</td><td>中国 上海</td><td>Chrome Mobile 149</td><td>Android 14</td><td>Pixel 8 / DEV-8F31-A920</td><td><span class="result-tag">成功</span></td><td>用户登录成功</td><td>2026-07-19 16:25:36</td></tr><tr><td>2</td><td>登录日志</td><td>会员登录</td><td>10885137</td><td>summer_728</td><td>333333</td><td>103.21.19.42</td><td>中国 广东</td><td>iOS App 8.2.1</td><td>iOS 18</td><td>iPhone 15 / DEV-931A-2230</td><td><span class="result-tag failed">失败</span></td><td>登录密码错误</td><td>2026-07-19 14:02:18</td></tr></tbody></table></div>${pagination(20,2186)}</section>`;
+    return `<section class="risk-filter-panel annotated member-log-panel" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid"><div class="risk-field"><label>操作人</label><input type="text" placeholder="请输入操作人" /></div><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号" /></div><div class="risk-field"><label>操作来源</label><select><option>全部来源</option><option>会员客户端</option><option>系统</option><option>后台</option></select></div>${member488DateRange("F01", "操作时间", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated member-log-panel" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>会员日志</h2><span>共 856 条</span></div></div><div class="risk-table-wrap"><table class="risk-table member-log-table"><thead><tr><th>序号</th><th>会员账号</th><th>操作菜单</th><th>操作内容</th><th>修改前</th><th>修改后</th><th>修改备注</th><th>操作人</th><th>操作来源</th><th>操作时间</th></tr></thead><tbody><tr><td>1</td><td>member_10086</td><td>会员信息-会员等级</td><td>设置会员等级</td><td>VIP5</td><td>VIP6</td><td>满足晋级条件</td><td>系统</td><td>系统</td><td>2026-07-19 02:00:00</td></tr><tr><td>2</td><td>summer_728</td><td>会员信息-手机号</td><td>修改手机号</td><td>13699881886</td><td>13699882098</td><td>会员提交客服修改</td><td>mike.cs</td><td>后台</td><td>2026-07-18 14:18:20</td></tr></tbody></table></div>${pagination(20,856)}</section>`;
+  }
+
+  function member488LogsContent(page) {
+    const active = financeTabState[page.key] || page.tabs[0];
+    return `<div class="risk-page-heading"><div><h1>会员日志</h1></div></div><div class="inner-tabs member-log-tabs annotated" data-component-id="N01">${componentBadge("N01")}${page.tabs.map(tab=>`<button type="button" class="${tab===active?"active":""}" data-member-log-tab="${tab}">${tab}</button>`).join("")}</div><div class="member-log-body">${member488LogBody(active)}</div>`;
+  }
+
+  function member488Content(page) {
+    if (page.key === "member-list-488") return member488ListContent();
+    if (page.key === "member-basic-488") return member488BasicContent(page);
+    if (page.key === "member-overview-488") return member488OverviewContent(page);
+    if (page.key === "member-wallet-488") return member488WalletContent(page);
+    if (page.key === "member-statistics-488") return member488StatisticsContent(page);
+    if (page.key === "bet-records-488") return member488BetContent(page);
+    if (page.key === "deposit-info-488") return member488MoneyRecordContent(page, false);
+    if (page.key === "withdrawal-info-488") return member488MoneyRecordContent(page, true);
+    if (page.key === "bonus-info-488") return member488BonusContent(page);
+    if (page.key === "rebate-info-488") return member488RebateContent(page);
+    if (page.key === "manual-adjustments-488") return member488ManualContent(page);
+    if (page.key === "account-adjustment-488") return member488AdjustmentContent(page);
+    if (page.key === "balance-change-488") return member488BalanceContent(page);
+    if (page.key === "risk-record-488") return member488RiskContent(page);
+    if (page.key === "member-logs-488") return member488LogsContent(page);
+    return "";
+  }
+
   function tabPlaceholderContent(page) {
     return `<div class="risk-page-heading"><div><p>风控管理</p><h1>${page.name}</h1></div></div><div class="inner-tabs annotated" data-component-id="N01">${componentBadge("N01")}${page.tabs.map((tab,index)=>`<button class="${index===0?"active":""}">${tab}</button>`).join("")}</div><section class="reserved-area"><div><strong>保持原功能布局不变即可，本原型只做合并形式展示。</strong></div></section>`;
   }
@@ -636,7 +844,13 @@
     return `<div class="risk-page-heading"><div><p>风控管理</p><h1>${page.name}</h1></div></div><section class="reserved-area annotated" data-component-id="P01">${componentBadge("P01")}<div><strong>页面暂时留白</strong><span>已保留菜单入口，不在需求未明确前虚构字段和交互。</span></div></section>`;
   }
 
+  function mergedRequirementContent(page) {
+    return `<div class="risk-page-heading"><div><h1>${page.name}</h1></div></div><section class="merged-requirement-notice"><span>需求合并</span><strong>此需求已合并到${page.mergedInto}中一起实现。</strong><a href="#requirement/${encodeURIComponent(page.mergedInto)}/page/exception-agent">查看${page.mergedInto}异常代理原型</a></section>`;
+  }
+
   function pageContent(page) {
+    if (page.mergedInto) return mergedRequirementContent(page);
+    if (page.key.endsWith("-488")) return member488Content(page);
     if (page.unchanged) return unchangedFinanceContent(page);
     if (["deposit-withdraw-settings", "member-transactions", "agent-transactions", "site-transactions"].includes(page.key)) return financeGroupedContent(page);
     if (page.key === "deposit-audit") return financeStandaloneContent(page, depositAuditContent());
@@ -646,7 +860,7 @@
     if (page.key === "review-history") return historyContent();
     if (page.key === "withdraw-monitor") return monitorContent();
     if (page.key === "member-login-log") return memberLoginContent();
-    if (page.key === "transaction-query") return backupTransactionContent();
+    if (page.key === "transaction-query") return transactionQueryContent();
     if (page.key === "risk-list-library") return riskListLibraryContent(page);
     if (page.key === "exception-agent") return exceptionAgentContent(page);
     if (page.tabs) return tabPlaceholderContent(page);
@@ -701,7 +915,9 @@
     const currentAnnotations = visibleAnnotations(page);
     const moduleName = requirement.moduleName || "风控管理";
     const adjustmentNotice = requirement.id === "#427" ? '<section class="adjustment-note"><span>调整说明</span><p>未标注的地方均为未修改，保持原页面内容和逻辑即可。</p></section>' : "";
-    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav aria-label="当前原型页面"><span class="current-page-label">${page.name}</span></nav></header><div class="prototype-canvas"><div class="risk-app">${sidebar(requirement,page)}<section class="risk-main"><header class="risk-topbar"><div><span>${moduleName} /</span><strong>${page.name}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header><div class="risk-content">${pageContent(page)}</div></section></div></div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><div><h2>${page.name}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll"><div class="questions-slot">${questionsBlock(page)}</div><section class="page-note"><span>页面目标</span><p>${page.purpose || ""}</p>${page.flow ? `<span>主流程</span><p>${page.flow}</p>` : ""}</section>${pageLogic}${extraNotice}${adjustmentNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${currentAnnotations.length} 项</span></div><div class="annotation-list">${currentAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"></div>`;
+    const memberModuleMode = requirement.id === "#488";
+    const memberDetailMode = requirement.id === "#488" && member488DetailPages.some(([key]) => key === page.key);
+    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav aria-label="当前原型页面"><span class="current-page-label">${page.name}</span></nav></header><div class="prototype-canvas"><div class="risk-app${memberModuleMode ? " member-module-mode" : ""}${memberDetailMode ? " member-detail-mode" : ""}">${sidebar(requirement,page)}<section class="risk-main"><header class="risk-topbar"><div><span>${moduleName} /</span><strong>${page.name}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header><div class="risk-content">${pageContent(page)}</div></section></div></div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><div><h2>${page.name}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll"><div class="questions-slot">${questionsBlock(page)}</div><section class="page-note"><span>页面目标</span><p>${page.purpose || ""}</p>${page.flow ? `<span>主流程</span><p>${page.flow}</p>` : ""}</section>${pageLogic}${extraNotice}${adjustmentNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${currentAnnotations.length} 项</span></div><div class="annotation-list">${currentAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"></div>`;
     if (page.key === "withdraw-monitor") renderMonitorView(false);
     if (page.hidePageNote) app.querySelector(".page-note")?.remove();
     addTopPaginators();
@@ -772,12 +988,73 @@
     });
     document.querySelectorAll(".date-close").forEach((button) => { if (button.dataset.dateBound) return; button.dataset.dateBound = "true"; button.addEventListener("click", () => { button.closest(".date-picker-popover").hidden = true; }); });
     document.querySelectorAll(".calendar-panel").forEach((panel) => panel.querySelectorAll(".calendar-day").forEach((day) => { if (day.dataset.dateBound) return; day.dataset.dateBound = "true"; day.addEventListener("click", () => { panel.querySelectorAll(".calendar-day").forEach((item) => item.classList.remove("selected")); day.classList.add("selected"); }); }));
-    document.querySelectorAll(".date-apply").forEach((button) => { if (button.dataset.dateBound) return; button.dataset.dateBound = "true"; button.addEventListener("click", () => { const popover = button.closest(".date-picker-popover"); const panels = Array.from(popover.querySelectorAll(".calendar-panel")); const values = panels.map((panel) => { const day = String(panel.querySelector(".calendar-day.selected")?.textContent || "12").padStart(2, "0"); const time = panel.querySelector("input[type='time']").value; return `2026-07-${day} ${time}`; }); const range = popover.parentElement.querySelector(".risk-range"); range.innerHTML = `<span>${values[0]}</span><b>至</b><span>${values[1]}</span>`; popover.hidden = true; }); });
+    document.querySelectorAll(".date-apply").forEach((button) => { if (button.dataset.dateBound) return; button.dataset.dateBound = "true"; button.addEventListener("click", () => { const popover = button.closest(".date-picker-popover"); const panels = Array.from(popover.querySelectorAll(".calendar-panel")); const values = panels.length ? panels.map((panel) => { const day = String(panel.querySelector(".calendar-day.selected")?.textContent || "12").padStart(2, "0"); const time = panel.querySelector("input[type='time']").value; return `2026-07-${day} ${time}`; }) : Array.from(popover.querySelectorAll("input[type='datetime-local']")).map((input) => { const value = input.value.replace("T", " "); return /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(value) ? `${value}:00` : value; }); const range = popover.parentElement.querySelector(".risk-range"); if (values.length >= 2) range.innerHTML = `<span>${values[0]}</span><b>至</b><span>${values[1]}</span>`; popover.hidden = true; }); });
     document.querySelectorAll(".quick-ranges button").forEach((button) => { if (button.dataset.dateBound) return; button.dataset.dateBound = "true"; button.addEventListener("click", () => { const range = button.closest(".date-range-field").querySelector(".risk-range"); range.classList.add("range-selected"); }); });
   }
 
+  function normalizeGlobalFilterFields(root = document) {
+    root.querySelectorAll(".risk-filter-panel").forEach((panel) => {
+      Array.from(panel.querySelectorAll(".risk-field")).forEach((field) => {
+        const label = field.querySelector(":scope > label")?.textContent.trim();
+        if (!["所属站点", "站点", "站点名称"].includes(label) || field.classList.contains("site-multi-field")) return;
+        const classNames = Array.from(field.classList).filter((name) => !["risk-field", "site-field", "unchanged-production"].includes(name));
+        classNames.push("global-filter-changed");
+        field.insertAdjacentHTML("beforebegin", siteMultiSelect("所属站点", classNames.join(" ")));
+        field.remove();
+      });
+      const fields = Array.from(panel.querySelectorAll(".risk-field"));
+      const findField = (labels) => fields.find((field) => labels.includes(field.querySelector(":scope > label")?.textContent.trim()));
+      const accountField = findField(["代理账号", "上级代理"]);
+      const numberField = findField(["代理编号", "上级代理编号"]);
+      if (!accountField && !numberField) return;
+      const anchor = accountField || numberField;
+      const upperAgent = [accountField, numberField].some((field) => field?.querySelector(":scope > label")?.textContent.includes("上级"));
+      const classNames = Array.from(anchor.classList).filter((name) => !["risk-field", "unchanged-production"].includes(name));
+      classNames.push("global-filter-changed");
+      anchor.insertAdjacentHTML("beforebegin", agentSmartField(classNames.join(" "), upperAgent ? "上级代理账号/编号" : "代理账号/编号"));
+      accountField?.remove();
+      if (numberField !== accountField) numberField?.remove();
+    });
+  }
+
   function bindSiteAutocomplete() {
+    normalizeGlobalFilterFields();
     document.querySelectorAll(".site-field").forEach((field) => { const input = field.querySelector("input"); const options = field.querySelector(".site-options"); const items = Array.from(options.querySelectorAll("button")); const show = () => { const query = input.value.trim(); items.forEach((item) => { item.hidden = Boolean(query) && !item.textContent.includes(query); }); options.hidden = false; }; input.addEventListener("focus", show); input.addEventListener("input", show); items.forEach((item) => item.addEventListener("click", () => { input.value = item.textContent; options.hidden = true; })); input.addEventListener("blur", () => window.setTimeout(() => { options.hidden = true; input.value = input.value.trim(); }, 150)); });
+    document.querySelectorAll(".site-multi-field").forEach((field) => {
+      if (field.dataset.siteMultiBound) return;
+      field.dataset.siteMultiBound = "true";
+      const trigger = field.querySelector(".site-multi-trigger");
+      const options = field.querySelector(".site-multi-options");
+      const all = field.querySelector("[data-site-all]");
+      const choices = Array.from(options.querySelectorAll('input[type="checkbox"]:not([data-site-all])'));
+      const sync = () => {
+        const selected = choices.filter((choice) => choice.checked);
+        all.checked = selected.length === choices.length;
+        all.indeterminate = selected.length > 0 && selected.length < choices.length;
+        field.querySelector(".site-multi-value").textContent = selected.length === choices.length ? "全部站点" : selected.length ? selected.map((choice) => choice.value).join("、") : "请选择站点";
+      };
+      trigger.addEventListener("click", () => { const opening = options.hidden; document.querySelectorAll(".site-multi-options").forEach((panel) => { panel.hidden = true; }); options.hidden = !opening; trigger.setAttribute("aria-expanded", String(opening)); });
+      all.addEventListener("change", () => { choices.forEach((choice) => { choice.checked = all.checked; }); sync(); });
+      choices.forEach((choice) => choice.addEventListener("change", sync));
+      field.closest(".risk-filter-panel")?.querySelectorAll(".reset-action,.exception-agent-reset,.backup-flow-reset").forEach((button) => button.addEventListener("click", () => { choices.forEach((choice) => { choice.checked = true; }); sync(); options.hidden = true; }));
+      sync();
+    });
+    document.querySelectorAll(".agent-smart-field").forEach((field) => {
+      if (field.dataset.agentSmartBound) return;
+      field.dataset.agentSmartBound = "true";
+      const input = field.querySelector("input");
+      const options = field.querySelector(".agent-smart-options");
+      const items = Array.from(options.querySelectorAll("button"));
+      const show = () => { const query = input.value.trim().toLowerCase(); items.forEach((item) => { item.hidden = Boolean(query) && !`${item.dataset.agentAccount} ${item.dataset.agentNumber}`.toLowerCase().includes(query); }); options.hidden = false; };
+      input.addEventListener("focus", show);
+      input.addEventListener("input", () => { delete input.dataset.agentAccount; delete input.dataset.agentNumber; show(); });
+      items.forEach((item) => item.addEventListener("click", () => { input.value = `${item.dataset.agentAccount} / ${item.dataset.agentNumber}`; input.dataset.agentAccount = item.dataset.agentAccount; input.dataset.agentNumber = item.dataset.agentNumber; options.hidden = true; }));
+      input.addEventListener("blur", () => window.setTimeout(() => { options.hidden = true; input.value = input.value.trim(); }, 150));
+    });
+    if (!document.body.dataset.siteMultiOutsideBound) {
+      document.body.dataset.siteMultiOutsideBound = "true";
+      document.addEventListener("click", (event) => { if (!event.target.closest(".site-multi-field")) document.querySelectorAll(".site-multi-options").forEach((panel) => { panel.hidden = true; }); });
+    }
   }
 
   function relatedMembersBody(kind, value) {
@@ -874,6 +1151,7 @@
   }
 
   function bindFinanceBodyActions(page) {
+    bindSiteAutocomplete();
     document.querySelectorAll(".finance-tab-body .reset-action").forEach((button) => button.addEventListener("click", () => { const panel = button.closest(".risk-filter-panel"); panel?.querySelectorAll("input[type='text']").forEach((input) => { input.value = ""; }); panel?.querySelectorAll("select").forEach((select) => { select.selectedIndex = 0; }); }));
     document.querySelector(".finance-limit-save")?.addEventListener("click", () => { const input = document.querySelector(".failure-limit-control input"); const value = Number(input?.value); if (!Number.isInteger(value) || value < 0) { modal("配置错误", "<p>连续笔数仅允许输入大于或等于0的整数。</p>", "关闭"); return; } modal("配置已更新", `<p>连续未成功充值订单限制已设置为 <strong>${value}</strong> 笔。${value === 0 ? "当前不启用限制。" : ""}</p>`, "关闭"); });
     document.querySelector(".auto-unlock-save")?.addEventListener("click", () => { const input = document.querySelector(".auto-unlock-hours"); const value = Number(input?.value); if (!Number.isInteger(value) || value < 0) { modal("配置错误", "<p>自动解锁时长仅允许输入大于或等于0的整数。</p>", "关闭"); return; } autoUnlockHours = value; modal("设置已保存", `<p>${value === 0 ? "自动解锁已关闭。" : `会员进入禁止存款状态 <strong>${value}</strong> 小时后自动解锁。`}</p>`, "关闭"); });
@@ -952,16 +1230,6 @@
     bindFinanceBodyActions(page);
   }
 
-  function syncExceptionAgentSpec(page, tabName) {
-    const annotations = visibleAnnotations(page, tabName);
-    const annotationList = document.querySelector(".annotation-list");
-    if (annotationList) annotationList.innerHTML = annotations.map(annotationCard).join("");
-    const annotationCount = document.querySelector(".spec-section-heading span");
-    if (annotationCount) annotationCount.textContent = `${annotations.length} 项`;
-    const questionsSlot = document.querySelector(".questions-slot");
-    if (questionsSlot) questionsSlot.innerHTML = questionsBlock(page, tabName);
-  }
-
   function bindExceptionAgentBodyActions(page) {
     const panel = document.querySelector(".exception-agent-filter");
     panel?.querySelector(".exception-agent-search")?.addEventListener("click", () => {
@@ -972,8 +1240,7 @@
       panel.querySelectorAll("select").forEach((select) => { select.selectedIndex = 0; });
     });
     panel?.querySelector(".exception-agent-export")?.addEventListener("click", () => {
-      const history = (financeTabState[page.key] || page.tabs[0]) === "历史记录";
-      modal(history ? "导出异常代理历史记录" : "导出异常代理", `<p>将导出当前筛选条件命中的全部${history ? "历史快照" : "异常代理"}，不限制当前页。</p>`, "确认导出");
+      modal("导出异常代理", "<p>将导出当前筛选条件命中的全部异常代理，不限制当前页。</p>", "确认导出");
     });
     document.querySelector(".exception-rule-config-action")?.addEventListener("click", () => {
       modal("异常规则配置", exceptionAgentRuleConfigBody(), "保存配置");
@@ -1010,20 +1277,8 @@
     applyTableRowLimits(document.querySelector(".exception-agent-tab-body") || document);
   }
 
-  function renderExceptionAgentTab(page, tabName) {
-    financeTabState[page.key] = tabName;
-    document.querySelectorAll(".exception-agent-tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.exceptionTab === tabName));
-    const body = document.querySelector(".exception-agent-tab-body");
-    if (!body) return;
-    body.innerHTML = exceptionAgentTabBody(tabName);
-    syncExceptionAgentSpec(page, tabName);
-    bindExceptionAgentBodyActions(page);
-  }
-
   function bindExceptionAgentBehavior(page) {
     if (page.key !== "exception-agent") return;
-    financeTabState[page.key] ||= page.tabs[0];
-    document.querySelectorAll(".exception-agent-tab").forEach((tab) => tab.addEventListener("click", () => renderExceptionAgentTab(page, tab.dataset.exceptionTab)));
     bindExceptionAgentBodyActions(page);
   }
 
@@ -1080,6 +1335,63 @@
     renderLoginResultsView();
   }
 
+  function syncMember488LogSpec(page, tab) {
+    const annotations = visibleAnnotations(page, tab);
+    const list = document.querySelector(".annotation-list");
+    const count = document.querySelector(".spec-section-heading span");
+    if (list) list.innerHTML = annotations.map(annotationCard).join("");
+    if (count) count.textContent = `${annotations.length} 项`;
+    bindComponentLinks();
+  }
+
+  function member488EditModal(member) {
+    modal(`编辑会员信息 - ${member}`, `<div class="member-edit-form"><label class="member-region-edit">国家/地区<div><select><option>中国</option><option>日本</option></select><select><option>上海市</option><option>广东省</option></select><select><option>浦东新区</option><option>黄浦区</option></select></div></label><label>手机号<input type="text" value="13800138899" /></label><label>邮箱<input type="email" value="member10086@mail.test" /></label><label>会员生日<input type="date" value="1992-08-18" /></label><label>真实姓名<input type="text" value="陈小明" /></label><label>性别<div class="radio-row"><span><input type="radio" name="member-gender" checked /> 男</span><span><input type="radio" name="member-gender" /> 女</span></div></label><label class="member-edit-note">修改备注<textarea placeholder="请输入修改原因，必填"></textarea></label><button type="button" class="secondary-action member-edit-history">查看修改历史</button></div>`, "保存修改");
+    document.querySelector(".member-edit-history")?.addEventListener("click", () => modal(`修改历史 - ${member}`, `<div class="risk-table-wrap"><table class="risk-table member-history-table"><thead><tr><th>修改字段</th><th>修改前</th><th>修改后</th><th>修改时间</th><th>修改备注</th><th>修改人</th></tr></thead><tbody><tr><td>手机号</td><td>13800136621</td><td>13800138899</td><td>2026-07-16 10:28:16</td><td>会员提交客服修改</td><td>mike.cs</td></tr><tr><td>会员生日</td><td>1992-08-08</td><td>1992-08-18</td><td>2026-07-10 11:09:22</td><td>资料校正</td><td>amy.cs</td></tr></tbody></table></div>${pagination(20,2)}`, "关闭"));
+  }
+
+  function member488BetModal(order) {
+    modal(`下注详情 - ${order}`, `<div class="bet-detail-grid"><div><span>会员账号</span><strong>member_10086</strong></div><div><span>场馆</span><strong>DW体育</strong></div><div><span>赛事</span><strong>英格兰超级联赛</strong></div><div><span>对阵</span><strong>阿森纳 vs 切尔西</strong></div><div><span>玩法</span><strong>亚洲让球</strong></div><div><span>盘口</span><strong>主队 -0.5</strong></div><div><span>赔率</span><strong>1.86</strong></div><div><span>下注内容</span><strong>阿森纳</strong></div><div><span>下注金额</span><strong>1,000 CNY</strong></div><div><span>有效下注</span><strong>980 CNY</strong></div><div><span>输赢情况</span><strong>全赢 +860 CNY</strong></div><div><span>状态</span><strong>已结算</strong></div></div>`, "关闭");
+  }
+
+  function bindMember488Behavior(page) {
+    if (!page.key.endsWith("-488")) return;
+    document.querySelectorAll(".risk-filter-actions [data-component-id='B01']").forEach((button) => { button.removeAttribute("data-component-id"); button.classList.remove("annotated"); button.querySelector(".component-badge")?.remove(); });
+    document.querySelectorAll(".member-488-detail").forEach((button) => button.addEventListener("click", () => { window.location.hash = `requirement/${encodeURIComponent("#488")}/page/member-basic-488`; }));
+    document.querySelectorAll(".member-488-edit").forEach((button) => button.addEventListener("click", () => member488EditModal(button.dataset.member)));
+    document.querySelectorAll(".member-status-switch").forEach((button) => button.addEventListener("click", () => modal(`${button.dataset.status}会员`, `<p class="danger-confirm">您现在操作的是<strong>【${button.dataset.status}】</strong></p><label class="modal-field">操作原因<textarea placeholder="请输入原因，必填"></textarea></label><p class="member-pending-note">该操作的业务影响范围沿用生产现有逻辑。</p>`, `确认${button.dataset.status}`)));
+    document.querySelectorAll(".member-account-action").forEach((button) => button.addEventListener("click", () => modal(`${button.dataset.action} - ${button.dataset.member}`, `<p>确认对会员 <strong>${button.dataset.member}</strong> 执行【${button.dataset.action}】？</p>${button.dataset.action === "重置取款密码" ? '<p class="member-pending-note">重置后由前端用户自行重新设置取款密码。</p>' : ""}`, "确认执行")));
+    document.querySelectorAll(".member-login-log").forEach((button) => button.addEventListener("click", () => { window.location.hash = `requirement/${encodeURIComponent("#406")}/page/member-login-log`; }));
+    document.querySelector(".member-search-action")?.addEventListener("click", () => modal("切换会员", "<p>已按输入的会员账号加载对应会员详情；未找到时保留当前会员并提示无匹配结果。</p>", "关闭"));
+    document.querySelector(".member-wallet-recycle")?.addEventListener("click", () => modal("一键回收场馆余额", "<p>确认将当前会员可回收的场馆余额统一转回中心钱包？维护中或回收失败的场馆需返回具体结果。</p>", "确认回收"));
+    document.querySelectorAll(".member-wallet-refresh").forEach((button) => button.addEventListener("click", () => { const originalText = button.textContent; button.textContent = "刷新中…"; window.setTimeout(() => { button.textContent = originalText; }, 600); }));
+    document.querySelectorAll(".segmented-control button").forEach((button) => button.addEventListener("click", () => {
+      const group = button.parentElement;
+      group.querySelectorAll("button").forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+      if (button.dataset.flow) document.querySelector(".member-flow-multiple")?.toggleAttribute("hidden", button.dataset.flow !== "需要流水");
+      if (button.dataset.direction) {
+        const wallet = document.getElementById("member-adjust-wallet");
+        if (button.dataset.direction === "下分") { wallet.value = "中心钱包"; Array.from(wallet.options).forEach((option) => { option.disabled = option.value !== "中心钱包"; }); }
+        else Array.from(wallet.options).forEach((option) => { option.disabled = false; });
+      }
+    }));
+    document.querySelector(".member-adjust-submit")?.addEventListener("click", () => modal("账户调整确认", `<p class="danger-confirm">确认给会员 <strong>member_10086</strong> 上分 <strong>680 CNY</strong>？</p><p>调整钱包：DW体育；流水倍数：3倍；原因：补发活动彩金。</p>`, "确认提交"));
+    document.querySelector(".member-adjust-note")?.addEventListener("input", (event) => { const count = document.querySelector(".member-adjust-count"); if (count) count.textContent = `${event.target.value.length}/200`; });
+    document.querySelectorAll("[data-member-log-tab]").forEach((button) => button.addEventListener("click", () => {
+      const tab = button.dataset.memberLogTab;
+      financeTabState[page.key] = tab;
+      document.querySelectorAll("[data-member-log-tab]").forEach((item) => item.classList.toggle("active", item === button));
+      const body = document.querySelector(".member-log-body");
+      if (body) body.innerHTML = member488LogBody(tab);
+      body?.querySelectorAll(".risk-filter-actions [data-component-id='B01']").forEach((filterButton) => { filterButton.removeAttribute("data-component-id"); filterButton.classList.remove("annotated"); filterButton.querySelector(".component-badge")?.remove(); });
+      syncMember488LogSpec(page, tab);
+      bindDatePickers();
+      bindSiteAutocomplete();
+      bindComponentLinks();
+      applyTableRowLimits(body || document);
+    }));
+  }
+
   function bindPageBehavior(page) {
     document.querySelectorAll("input[type='text']").forEach((input)=>input.addEventListener("blur",()=>{input.value=input.value.trim();}));
     const toggle = document.getElementById("spec-claim-toggle");
@@ -1103,6 +1415,7 @@
     bindBlacklistBehavior();
     bindFinanceBehavior(page);
     bindExceptionAgentBehavior(page);
+    bindMember488Behavior(page);
     document.querySelectorAll(".member-detail-link").forEach((link) => link.addEventListener("click", (event) => {
       event.preventDefault();
       const targetId = { "withdraw-review": "B04", "hold-review": "B03", "review-history": "B01" }[page.key];
@@ -1111,7 +1424,7 @@
     document.querySelector(".transaction-search")?.addEventListener("click", () => {
       setTransactionState(true);
     });
-    document.querySelectorAll(".balance-detail").forEach((button) => button.addEventListener("click", () => selectComponent("B01", "component")));
+    document.querySelectorAll(".balance-detail").forEach((button) => button.addEventListener("click", () => modal("充值提现流水明细", transactionRechargeFlowModalBody(button), "关闭")));
     document.querySelectorAll(".venue-flow-detail").forEach((button) => button.addEventListener("click", () => modal("场馆提现流水明细", venueFlowModalBody(button.dataset.member, button.dataset.site), "关闭")));
     document.querySelectorAll(".recharge-flow-detail").forEach((button) => button.addEventListener("click", () => modal("充值提现流水明细", rechargeFlowModalBody(button.dataset.member, button.dataset.site), "关闭")));
     document.querySelectorAll(".unified-venue-flow-detail").forEach((button) => button.addEventListener("click", () => modal("场馆剩余流水明细", venueFlowModalBody(button.dataset.member, button.dataset.site, true), "关闭")));
@@ -1121,7 +1434,6 @@
     document.querySelector(".backup-flow-export")?.addEventListener("click", () => modal("导出流水统计", "<p>将按当前筛选条件导出会员打码流水统计数据。</p>", "确认导出"));
     document.querySelector(".unified-flow-search")?.addEventListener("click", () => document.querySelectorAll(".unified-flow-filters input[type='text']").forEach((input) => { input.value = input.value.trim(); }));
     document.querySelector(".unified-flow-export")?.addEventListener("click", () => modal("导出会员流水总览", "<p>按当前筛选条件导出会员流水总览；导出范围与当前账号可查询的数据权限一致。</p>", "确认导出"));
-    document.querySelector(".transaction-overlay-view")?.addEventListener("click", (event) => event.currentTarget.closest(".transaction-confirm-overlay")?.remove());
     document.querySelectorAll(".reset-action").forEach((button) => button.addEventListener("click", () => { const panel = button.closest(".risk-filter-panel"); panel?.querySelectorAll("input[type='text']").forEach((input) => { input.value = ""; input.classList.remove("is-invalid"); }); panel?.querySelectorAll("select").forEach((select) => { select.selectedIndex = 0; }); panel?.querySelectorAll(".field-error").forEach((error) => { error.hidden = true; }); }));
   }
 
@@ -1158,7 +1470,7 @@
   function render() {
     const match = window.location.hash.match(/^#requirement\/([^/]+)(?:\/page\/([^/]+))?$/);
     if (!match) { listView(); document.title = "产品需求原型库"; return; }
-    const requirement = requirements.find((item) => item.id === decodeURIComponent(match[1]));
+    const requirement = visibleRequirements().find((item) => item.id === decodeURIComponent(match[1]));
     if (!requirement) { window.location.hash = ""; return; }
     detailView(requirement, match[2] || visiblePages(requirement)[0].key);
     document.title = `${requirement.title} · 产品需求原型库`;
