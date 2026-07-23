@@ -126,14 +126,37 @@
     const moduleName = requirement.moduleName || "风控管理";
     const workspaceName = requirement.workspaceName || "风控工作台";
     const roleName = requirement.roleName || "风控审核员";
-    const memberDetailActive = member && member488DetailPages.some(([key]) => key === page.key);
+    const memberDetailActive = member && requirement.id === "#488" && member488DetailPages.some(([key]) => key === page.key);
     const navigationPages = member ? visiblePages(requirement).filter((item) => ["member-list-488", "member-logs-488"].includes(item.key)) : visiblePages(requirement);
     let links = navigationPages.map((item) => {
       const active = item.key === page.key || (item.key === "member-list-488" && memberDetailActive);
       const newBadge = item.key === "member-logs-488" ? '<em class="menu-change-badge is-new">新增</em>' : "";
       return `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${item.key}" class="${active ? "active" : ""}"><span class="menu-symbol">${active ? "■" : "□"}</span><span class="menu-name">${item.name}</span>${newBadge || (item.changeLabel ? `<em class="menu-change-badge ${item.changeType === "纯新增" ? "is-new" : "is-merged"}">${item.changeLabel}</em>` : "")}</a>`;
     }).join("");
-    if (member) {
+    if (member && requirement.id === "#493") {
+      const pagesByKey = new Map(visiblePages(requirement).map((item) => [item.key, item]));
+      const memberLink = (key) => {
+        const item = pagesByKey.get(key);
+        if (!item) return "";
+        const active = item.key === page.key;
+        const annotateMenu = active && ["account-adjustment-record-493", "bet-records-493"].includes(key);
+        const badge = item.changeLabel ? `<em class="menu-change-badge is-merged">${item.changeLabel}</em>` : "";
+        return `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${item.key}" class="${active ? "active" : ""}${annotateMenu ? " annotated" : ""}"${annotateMenu ? ' data-component-id="N01"' : ""}>${annotateMenu ? componentBadge("N01") : ""}<span class="menu-symbol">${active ? "■" : "□"}</span><span class="menu-name">${item.name}</span>${badge}</a>`;
+      };
+      const basics = ["member-list-493", "same-ip-members-493", "vip-settings-493", "invite-reward-settings-493", "identity-list-493", "member-logs-493"].map((key) => memberLink(key)).join("");
+      const recordActive = page.key === "account-adjustment-record-493";
+      const recordMenu = `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/account-adjustment-record-493" class="${recordActive ? "active" : ""} annotated" data-component-id="N01">${componentBadge("N01")}<span class="menu-symbol">${recordActive ? "■" : "□"}</span><span class="menu-name">记录管理</span><em class="menu-change-badge is-new">新增二级</em></a>`;
+      links = `${basics}${recordMenu}${memberLink("bet-records-493")}`;
+    } else if (requirement.id === "#406") {
+      const reviewKeys = ["withdraw-review", "hold-review", "review-history"];
+      const reviewActive = reviewKeys.includes(page.key);
+      const reviewLink = `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/withdraw-review" class="${reviewActive ? "active" : ""}"><span class="menu-symbol">${reviewActive ? "■" : "□"}</span><span class="menu-name">风控提款审核</span></a>`;
+      const remainingLinks = navigationPages.filter((item) => !reviewKeys.includes(item.key)).map((item) => {
+        const active = item.key === page.key;
+        return `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${item.key}" class="${active ? "active" : ""}"><span class="menu-symbol">${active ? "■" : "□"}</span><span class="menu-name">${item.name}</span>${item.changeLabel ? `<em class="menu-change-badge ${item.changeType === "纯新增" ? "is-new" : "is-merged"}">${item.changeLabel}</em>` : ""}</a>`;
+      }).join("");
+      links = `${reviewLink}${remainingLinks}`;
+    } else if (member) {
       const listLink = links.match(/<a[^>]*member-list-488[\s\S]*?<\/a>/)?.[0] || "";
       const logLink = links.match(/<a[^>]*member-logs-488[\s\S]*?<\/a>/)?.[0] || "";
       const unchanged = ["同IP会员列表", "VIP会员设置", "会员推广邀请奖励设置", "会员实名认证列表"].map((name) => `<div class="member-menu-static"><span class="menu-symbol">□</span><span>${name}</span></div>`).join("");
@@ -220,8 +243,13 @@
     return `<th class="sticky-order">订单号</th><th class="sticky-member">会员账号</th><th>会员等级</th><th>所属站点</th><th>上级代理</th><th>上级代理编号</th><th>真实姓名</th><th>提款账户</th><th>提款金额</th><th>申请时间</th><th>上笔存款金额</th><th>系统标签</th>${mode !== "claim" ? "<th>领取人</th>" : ""}${mode === "hold" ? `<th>系统审核结果</th><th>挂起信息</th>` : ""}<th class="sticky-action">操作</th>`;
   }
 
+  function withdrawReviewTabs(activeKey) {
+    const tabs = [["withdraw-review", "提款审核"], ["hold-review", "挂起审核"], ["review-history", "审核记录"]];
+    return `<nav class="inner-tabs withdraw-review-tabs" aria-label="风控提款审核三级菜单">${tabs.map(([key, name]) => `<a href="#requirement/${encodeURIComponent("#406")}/page/${key}" class="${key === activeKey ? "active" : ""}">${name}</a>`).join("")}</nav>`;
+  }
+
   function withdrawReviewContent() {
-    return `<div class="risk-page-heading"><div><h1>风控提款审核</h1></div><span class="page-status">公共池实时更新</span></div>
+    return `<div class="risk-page-heading"><div><h1>提款审核</h1></div><span class="page-status">公共池实时更新</span></div>${withdrawReviewTabs("withdraw-review")}
       <section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid"><div class="risk-field"><label>筛选表</label><select><option>待领取</option><option selected>待审核</option></select></div>${baseFilters()}${timeRange("F02")}${filterActions()}</div></section>
       <section class="risk-list-card annotated" data-component-id="T01"><div class="risk-list-heading"><div><h2>待领取</h2><span>公共池 · 3 条待处理</span></div><button type="button" class="collapse-button">收起列表</button></div>${componentBadge("T01")}<div id="claim-list-content"><div class="risk-table-wrap"><table class="risk-table"><thead><tr>${commonReviewHeaders("claim")}</tr></thead><tbody>${reviewRows("claim")}</tbody></table></div>${pagination()}</div><div class="empty-state" id="claim-empty" hidden><strong>无待领取申请</strong><span>当前公共池暂无需要领取的提款申请</span></div></section>
       <section class="risk-list-card annotated" data-component-id="T02"><div class="risk-list-heading"><div><h2>待审核</h2><span>当前账号已领取 · 3 条</span></div></div>${componentBadge("T02")}<div id="review-list-content"><div class="risk-table-wrap"><table class="risk-table"><thead><tr>${commonReviewHeaders("review")}</tr></thead><tbody>${reviewRows("review")}</tbody></table></div>${pagination()}</div><div class="empty-state" id="review-empty" hidden><strong>无待审核申请</strong><span>当前账号暂无已领取的待审核提款申请</span><a href="#requirement/${encodeURIComponent(requirements[0].id)}/page/review-history" class="secondary-action empty-history-link">查看审核历史</a></div></section>`;
@@ -229,13 +257,13 @@
 
   function holdReviewContent() {
     const extras = `<div class="risk-field"><label>挂起原因</label><select><option>全部原因</option>${riskTags.map((tag) => `<option>${tag}</option>`).join("")}</select></div><div class="risk-field"><label>挂起人</label><select><option>全部操作人</option><option>mike.risk</option><option>risk_amy</option></select></div>`;
-    return `<div class="risk-page-heading"><div><h1>风控提款挂起审核</h1></div></div><section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid">${baseFilters(extras)}${timeRange("F02")}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>挂起审核列表</h2><span>共 128 条</span></div></div><div class="risk-table-wrap"><table class="risk-table"><thead><tr>${commonReviewHeaders("hold")}</tr></thead><tbody>${reviewRows("hold")}</tbody></table></div>${pagination()}</section>`;
+    return `<div class="risk-page-heading"><div><h1>挂起审核</h1></div></div>${withdrawReviewTabs("hold-review")}<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid">${baseFilters(extras)}${timeRange("F02")}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>挂起审核列表</h2><span>共 128 条</span></div></div><div class="risk-table-wrap"><table class="risk-table"><thead><tr>${commonReviewHeaders("hold")}</tr></thead><tbody>${reviewRows("hold")}</tbody></table></div>${pagination()}</section>`;
   }
 
   function historyContent() {
     const extras = `<div class="risk-field"><label>审核状态</label><select><option>全部</option><option>通过</option><option>拒绝</option></select></div><div class="risk-field"><label>出款状态</label><select><option>全部</option><option>已出款</option><option>待财务审核</option></select></div><div class="risk-field"><label>挂起</label><select><option>全部</option><option>无</option><option>有挂起</option></select></div><div class="risk-field"><label>审核人</label><select><option>全部审核员</option><option>mike.risk</option></select></div>`;
     const rows = [1,2,3].map((i)=>`<tr><td class="sticky-order"><strong class="mono">WD2026071100${i}</strong></td><td class="sticky-member${i === 1 ? ' annotated" data-component-id="B01' : ""}">${i === 1 ? componentBadge("B01") : ""}<a class="member-detail-link" href="javascript:void(0)">dengji000</a></td><td>VIP6</td><td>旺财体育</td><td>agent_087</td><td>A10386</td><td>陈小明</td><td>6222123456783890</td><td><strong class="amount">¥ ${money(i*1200)}</strong></td><td><span class="plain-datetime">2026-07-11 10:2${i}:30</span></td><td class="pending-system-cell${i === 1 ? ' annotated" data-component-id="S02' : ""}">${i === 1 ? componentBadge("S02") : ""}${questionMark("后续将提供完整标签和风控识别体系，此版本暂时留空")}</td><td class="pending-system-cell${i === 1 ? ' annotated" data-component-id="S03' : ""}">${i === 1 ? componentBadge("S03") : ""}${questionMark("后续将提供完整标签和风控识别体系，此版本暂时留空")}</td><td>${i===2 ? `<span class="plain-datetime">2026-07-11 10:30:00</span><div class="stack-cell"><span><i>挂起人：</i><b>mike.risk</b></span><span><em class="data-tag">对冲套利风险</em></span></div>` : "—"}</td><td>mike.risk</td><td><span class="plain-datetime">2026-07-11 10:4${i}:18</span></td><td>${12+i} 分钟</td><td><span class="data-tag ${i===1?"tag-green":"tag-amber"}">${i===1?"已出款":"待财务审核"}</span></td><td><span class="result-tag ${i===3?"rejected":"approved"}">${i===3?"拒绝：账户异常":"通过"}</span></td><td>${i===2 ? "会员要求延后处理，已核验近期提款记录。" : "—"}</td></tr>`).join("");
-    return `<div class="risk-page-heading"><div><h1>风控提款审核记录</h1></div></div><section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid">${baseFilters(extras)}${timeRange("F02")}<div class="risk-filter-actions"><button class="main-action primary-filter">筛选</button><button class="secondary-action reset-action">重置</button></div></div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>审核记录</h2><span>共 128 条</span></div></div><div class="risk-table-wrap"><table class="risk-table history-table"><thead><tr><th class="sticky-order">订单号</th><th class="sticky-member">会员账号</th><th>会员等级</th><th>所属站点</th><th>上级代理</th><th>上级代理编号</th><th>真实姓名</th><th>提款账户</th><th>提款金额</th><th>申请时间</th><th>系统标签</th><th>系统审核结果</th><th>挂起信息</th><th>审核人</th><th>审核时间</th><th>处理用时</th><th>出款状态</th><th>审核结果</th><th>风控备注</th></tr></thead><tbody>${rows}</tbody></table></div>${pagination(50)}</section>`;
+    return `<div class="risk-page-heading"><div><h1>审核记录</h1></div></div>${withdrawReviewTabs("review-history")}<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid">${baseFilters(extras)}${timeRange("F02")}<div class="risk-filter-actions"><button class="main-action primary-filter">筛选</button><button class="secondary-action reset-action">重置</button></div></div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>审核记录</h2><span>共 128 条</span></div></div><div class="risk-table-wrap"><table class="risk-table history-table"><thead><tr><th class="sticky-order">订单号</th><th class="sticky-member">会员账号</th><th>会员等级</th><th>所属站点</th><th>上级代理</th><th>上级代理编号</th><th>真实姓名</th><th>提款账户</th><th>提款金额</th><th>申请时间</th><th>系统标签</th><th>系统审核结果</th><th>挂起信息</th><th>审核人</th><th>审核时间</th><th>处理用时</th><th>出款状态</th><th>审核结果</th><th>风控备注</th></tr></thead><tbody>${rows}</tbody></table></div>${pagination(50)}</section>`;
   }
 
   function monitorRows(history = false) {
@@ -659,7 +687,7 @@
 
   function unchangedFinanceContent(page) {
     const componentId = page.annotations?.some((annotation) => annotation.id === "P01") ? "P01" : "";
-    return `<div class="risk-page-heading"><div><h1>${page.name}</h1></div></div><section class="reserved-area unchanged-page${componentId ? " annotated" : ""}"${componentId ? ` data-component-id="${componentId}"` : ""}>${componentId ? componentBadge(componentId) : ""}<div><strong>此页面无任何修改</strong><span>页面内容、字段、权限、数据和交互全部沿用#406。</span></div></section>`;
+    return `<div class="risk-page-heading"><div><h1>${page.name}</h1></div></div><section class="reserved-area unchanged-page${componentId ? " annotated" : ""}"${componentId ? ` data-component-id="${componentId}"` : ""}>${componentId ? componentBadge(componentId) : ""}<div><strong>此页面无任何修改</strong><span>页面内容、字段、权限、数据和交互全部沿用生产现状。</span></div></section>`;
   }
 
   function financeTabBody(page, activeTab) {
@@ -791,7 +819,12 @@
   }
 
   function member488ManualContent(page) {
-    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid"><div class="risk-field"><label>类型</label><select><option>全部</option><option>上分</option><option>下分</option></select></div><div class="risk-field"><label>来源</label><select><option>全部来源</option><option>账户调整</option><option>手动上下分</option></select></div><div class="risk-field"><label>状态</label><select><option>全部状态</option><option>成功</option><option>失败</option></select></div>${member488DateRange("F01", "完成时间", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>人工上下分记录</h2><span>共 19 条</span></div></div><div class="risk-table-wrap"><table class="risk-table"><thead><tr><th>序号</th><th>订单号</th><th>来源</th><th>类型</th><th>操作金额</th><th>调整钱包</th><th>流水倍数</th><th>原因备注</th><th>完成时间</th><th>操作人</th><th>状态</th></tr></thead><tbody>${[["AD2607190081","账户调整","上分","680","DW体育","3","补发活动彩金","mike.finance","成功"],["MN2607180062","手动上下分","下分","120","中心钱包","0","订单冲正","amy.finance","成功"]].map((r,i)=>`<tr><td>${i+1}</td><td><strong class="mono">${r[0]}</strong></td><td>${r[1]}</td><td>${r[2]}</td><td><strong class="amount">${r[3]} CNY</strong></td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td><td>2026-07-${19-i} 11:28:16</td><td>${r[7]}</td><td><span class="result-tag">${r[8]}</span></td></tr>`).join("")}</tbody></table></div>${pagination(20,19)}</section>`);
+    const rows = [
+      ["QA-M20260723112816", "额度增减", "上分", "680", "15,200", "15,880", "中心钱包", "3", "补发活动彩金", "mike.finance", "2026-07-23 11:28:16", "—", "—", "—", "2026-07-23 11:28:16", "成功"],
+      ["ADJ202607220062", "财务订单上下分", "下分", "120", "16,000", "15,880", "中心钱包", "0", "订单冲正", "amy.finance", "2026-07-22 10:18:03", "leo.finance", "2026-07-22 10:26:40", "核对订单后同意下分", "2026-07-22 10:26:40", "成功"]
+    ];
+    const body = rows.map((row, index) => `<tr><td>${index + 1}</td><td><strong class="mono">${row[0]}</strong></td><td>${row[1]}</td><td>${row[2]}</td><td><strong class="amount">${row[3]} CNY</strong></td><td>${row[4]} CNY</td><td>${row[5]} CNY</td><td>${row[6]}</td><td>${row[7]}</td><td>${row[8]}</td><td>${row[9]}</td><td>${row[10]}</td><td>${row[11]}</td><td>${row[12]}</td><td>${row[13]}</td><td>${row[14]}</td><td><span class="result-tag">${row[15]}</span></td></tr>`).join("");
+    return member488DetailPage(page, `<section class="prototype-scope-note annotated" data-component-id="P01">${componentBadge("P01")}<strong>本页记录纳入范围</strong><span>财务管理-额度增减（仅会员）</span><i>+</i><span>财务管理-账户调整记录（人工加分 / 人工减分订单）</span></section><section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid"><div class="risk-field"><label>类型</label><select><option>全部</option><option>上分</option><option>下分</option></select></div><div class="risk-field"><label>来源</label><select><option>全部来源</option><option>额度增减</option><option>财务订单上下分</option></select></div><div class="risk-field"><label>状态</label><select><option>全部状态</option><option>审核中</option><option>成功</option><option>失败</option></select></div>${member488DateRange("F01", "申请 / 操作时间", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>人工上下分记录</h2><span>共 19 条</span></div></div><div class="risk-table-wrap"><table class="risk-table member-manual-record-table"><thead><tr><th>序号</th><th>业务单号</th><th>来源</th><th>类型</th><th>操作金额</th><th>变动前余额</th><th>变动后余额</th><th>调整钱包</th><th>流水倍数</th><th>调整原因</th><th>申请人</th><th>申请时间</th><th>审核人</th><th>审核时间</th><th>审核备注</th><th>完成时间</th><th>状态</th></tr></thead><tbody>${body}</tbody></table></div>${pagination(20,19)}</section>`);
   }
 
   function member488AdjustmentContent(page) {
@@ -799,8 +832,8 @@
   }
 
   function member488BalanceContent(page) {
-    const rows = [["BC2607190088","存款","收入","2,000","13,880","15,880","成功","支付宝存款到账"],["BC2607190072","代理后台代客充值","收入","1,000","14,880","15,880","成功","代理 agent_087 为会员代客充值 1,000元"],["BC2607190069","场馆转入失败","—","0","15,880","15,880","失败","中心钱包转入AG真人失败：网络波动"]];
-    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid"><div class="risk-field"><label>账变类型</label><select><option>全部类型</option><option>存款</option><option>提款</option><option>红利</option><option>返水</option><option>账户调整</option><option>手动上下分</option><option>代理后台代客充值</option><option>场馆转入</option><option>场馆转出</option><option>场馆转入失败</option><option>场馆转出失败</option></select></div>${member488DateRange("F01", "账变时间", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>账变记录</h2><span>共 286 条</span></div></div><div class="risk-table-wrap"><table class="risk-table"><thead><tr><th>订单号</th><th>账变类型</th><th>收支方向</th><th>账变金额</th><th>账变前金额</th><th>账变后金额</th><th>账变时间</th><th>执行结果</th><th>备注</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td><strong class="mono">${r[0]}</strong></td><td>${r[1]}</td><td>${r[2]}</td><td><strong class="amount">${r[3]} CNY</strong></td><td><strong class="amount">${r[4]} CNY</strong></td><td><strong class="amount">${r[5]} CNY</strong></td><td>2026-07-19 ${12-i}:20:18</td><td><span class="result-tag ${r[6]==="失败"?"failed":""}">${r[6]}</span></td><td>${r[7]}</td></tr>`).join("")}</tbody></table></div>${pagination(20,286)}</section>`);
+    const rows = [["BC2607190088","存款","收入","2,000","13,880","15,880","成功","通过支付宝存款2,000 CNY"],["BC2607190072","代理后台代客充值","收入","1,000","14,880","15,880","成功","代理agent_087代客充值1,000元"],["BC2607190069","场馆转入失败","—","0","15,880","15,880","失败","转入AG真人500 CNY失败"]];
+    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid"><div class="risk-field"><label>账变类型</label><select><option>全部类型</option><option>存款</option><option>提款</option><option>红利</option><option>返水</option><option>账户调整</option><option>手动上下分</option><option>代理后台代客充值</option><option>场馆转入</option><option>场馆转出</option><option>场馆转入失败</option><option>场馆转出失败</option></select></div>${member488DateRange("F01", "账变时间", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>账变记录</h2><span>共 286 条</span></div></div><div class="risk-table-wrap"><table class="risk-table"><thead><tr><th>订单号</th><th>账变类型</th><th>收支方向</th><th>账变金额</th><th>账变前金额</th><th>账变后金额</th><th>账变时间</th><th>执行结果</th><th class="annotated member-balance-note-header" data-component-id="C01">${componentBadge("C01")}备注</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td><strong class="mono">${r[0]}</strong></td><td>${r[1]}</td><td>${r[2]}</td><td><strong class="amount">${r[3]} CNY</strong></td><td><strong class="amount">${r[4]} CNY</strong></td><td><strong class="amount">${r[5]} CNY</strong></td><td>2026-07-19 ${12-i}:20:18</td><td><span class="result-tag ${r[6]==="失败"?"failed":""}">${r[6]}</span></td><td>${r[7]}</td></tr>`).join("")}</tbody></table></div>${pagination(20,286)}</section>`);
   }
 
   function member488RiskContent(page) {
@@ -814,7 +847,8 @@
 
   function member488LogsContent(page) {
     const active = financeTabState[page.key] || page.tabs[0];
-    return `<div class="risk-page-heading"><div><h1>会员日志</h1></div></div><div class="inner-tabs member-log-tabs annotated" data-component-id="N01">${componentBadge("N01")}${page.tabs.map(tab=>`<button type="button" class="${tab===active?"active":""}" data-member-log-tab="${tab}">${tab}</button>`).join("")}</div><div class="member-log-body">${member488LogBody(active)}</div>`;
+    const scopeNote = active === "会员日志" ? `<section class="prototype-scope-note member-log-scope annotated" data-component-id="P01">${componentBadge("P01")}<strong>会员日志记录范围</strong><span>个人资料</span><span>账号安全</span><span>代理归属</span><span>会员状态</span><span>VIP等级</span></section>` : "";
+    return `<div class="risk-page-heading"><div><h1>会员日志</h1></div></div><div class="inner-tabs member-log-tabs annotated" data-component-id="N01">${componentBadge("N01")}${page.tabs.map(tab=>`<button type="button" class="${tab===active?"active":""}" data-member-log-tab="${tab}">${tab}</button>`).join("")}</div>${scopeNote}<div class="member-log-body">${member488LogBody(active)}</div>`;
   }
 
   function member488Content(page) {
@@ -836,6 +870,36 @@
     return "";
   }
 
+  function member493AccountAdjustmentContent() {
+    const rows = [
+      ["QA-M2026072022281535", "testsc002", "旺财体育", "人工加分", "CNY", "+100.00", "人工分审核成功", "—", "admin", "2026-07-20 22:28:15", "admin", "额度增减-会员人工上分", "额度增加-会员人工上分", "2026-07-20 22:28:15"],
+      ["12T3F59283EC11F1AC9E42F", "testhd000", "旺财体育", "人工减分", "CNY", "-100,000.00", "人工减分审核成功", "TEST_BALANCE", "codex", "2026-07-20 11:35:37", "codex", "按用户指令调整测试额度", "中心钱包及可提现金额各扣减100000", "2026-07-20 11:35:37"]
+    ];
+    return `<div class="risk-page-heading"><div><h1>账户调整记录</h1></div><span class="prototype-only-label">本次仅调整菜单位置</span></div><nav class="inner-tabs member-493-record-tabs" aria-label="记录管理三级菜单"><a class="active" href="#requirement/${encodeURIComponent("#493")}/page/account-adjustment-record-493">账户调整记录</a></nav><section class="production-unchanged-block annotated" data-component-id="P01">${componentBadge("P01")}<div class="unchanged-scope-banner compact"><strong>生产原页面</strong><span>筛选、数据、权限、导出和交互全部沿用，本次不修改</span></div><div class="production-unchanged-content"><section class="risk-filter-panel"><div class="risk-filter-grid member-493-adjust-filters"><div class="risk-field"><label>单号</label><input type="text" placeholder="请输入单号" /></div><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号名称" /></div>${siteMultiSelect()}<div class="risk-field"><label>交易类型</label><select><option>全部交易类型</option><option>人工加分</option><option>人工减分</option></select></div><div class="risk-field"><label>状态</label><select><option>全部状态</option><option>审核成功</option><option>审核失败</option></select></div><div class="risk-field"><label>申请人</label><input type="text" placeholder="请输入申请人" /></div><div class="risk-field"><label>审核人</label><input type="text" placeholder="请输入审核人" /></div><div class="risk-field"><label>调整原因</label><select><option>全部调整原因</option></select></div>${member488DateRange("P01", "创建时间", false)}<div class="risk-filter-actions"><button type="button" class="main-action primary-filter">筛选</button><button type="button" class="secondary-action reset-action">重置</button><button type="button" class="secondary-action">导出</button><button type="button" class="secondary-action" disabled>下载文件</button></div></div></section><section class="risk-list-card"><div class="risk-table-wrap"><table class="risk-table member-493-adjust-table"><thead><tr><th>单号</th><th>会员账号</th><th>所属站点</th><th>交易类型</th><th>币种</th><th>金额</th><th>状态</th><th>调整原因</th><th>申请人</th><th>申请时间</th><th>审核人</th><th>审核备注</th><th>备注</th><th>创建时间</th></tr></thead><tbody>${rows.map((row) => `<tr>${row.map((cell, index) => `<td>${index === 0 ? `<strong class="mono">${cell}</strong>` : index === 5 ? `<strong class="amount">${cell}</strong>` : index === 6 ? `<span class="result-tag approved">${cell}</span>` : cell}</td>`).join("")}</tr>`).join("")}</tbody><tfoot><tr><td><strong>总计</strong></td><td colspan="4">—</td><td><strong class="amount">-99,900.00</strong></td><td colspan="8">—</td></tr></tfoot></table></div>${pagination(20, 2)}</section></div></section>`;
+  }
+
+  function member493BetDetail(detail, gameName, annotate = false) {
+    const lines = detail?.length ? detail : [`游戏名称：${gameName}`];
+    return `<div class="bet-detail-preview member-493-bet-detail${annotate ? ' annotated" data-component-id="C01' : ""}" tabindex="0">${annotate ? componentBadge("C01") : ""}${lines.slice(0, 3).map((line) => `<span>${escapeHtml(line)}</span>`).join("")}<div class="bet-record-tooltip"><b>完整下注详情</b>${lines.map((line) => `<span>${escapeHtml(line)}</span>`).join("")}</div></div>`;
+  }
+
+  function member493BetContent() {
+    const rows = [
+      { member: "testhd000", vip: "VIP6", site: "旺财体育", agent: "agent_087 / AG10386", venue: "DB真人", venueType: "真人", game: "经典百家乐", gameType: "百家乐", gameId: "GB08267193", activity: "荷官打赏 20 CNY", detail: ["厅别：国际厅", "下注：闲", "牌型：庄 ♥7♠J；闲 ♥Q♣Q♦Q", "结果：庄7；闲0"], bet: "20.00", valid: "20.00", result: "赢 20.00 CNY", early: "否", second: "否", fee: "—", status: "已结算", order: "1286689241258828160", venueOrder: "DB260719130341", gameNo: "GB08267193F", times: ["2026-07-19 13:03:41", "—", "2026-07-19 13:04:12", "2026-07-19 13:06:22"] },
+      { member: "sports_886", vip: "VIP4", site: "新旺体育", agent: "north_star / AG20318", venue: "DW体育", venueType: "体育", game: "足球", gameType: "串关", gameId: "MATCH-20260720", activity: "—", detail: ["足球（2026-07-20 03:00:00）", "世界杯2026：西班牙 v 阿根廷", "2-0 @10（欧洲盘）", "早盘；玩法：全场波胆", "下注时比分：暂无比分", "足球（2026-07-19 05:00:00）", "世界杯2026：法国 v 英格兰", "3-1 @13.5（欧洲盘）", "早盘；玩法：全场波胆", "下注时比分：暂无比分"], bet: "200.00", valid: "200.00", result: "输 -200.00 CNY", early: "否", second: "是", fee: "—", status: "已结算", order: "1286688941858090880", venueOrder: "DW260719130223", gameNo: "MATCH-88931", times: ["2026-07-19 13:02:23", "2026-07-20 03:00:00", "2026-07-20 05:18:43", "2026-07-20 05:20:10"] },
+      { member: "chess_102", vip: "VIP3", site: "彩虹站", agent: "agent_205 / AG12051", venue: "开元棋牌", venueType: "棋牌", game: "炸金花", gameType: "桌台游戏", gameId: "ROOM-6158", activity: "—", detail: null, bet: "500.00", valid: "480.00", result: "赢 1,240.00 CNY", early: "否", second: "否", fee: "3.50 CNY", status: "已结算", order: "BMKR4N3KX000010", venueOrder: "KY260719095451", gameNo: "ROOM-6158", times: ["2026-07-19 09:54:51", "—", "2026-07-19 09:55:21", "2026-07-19 09:57:02"] },
+      { member: "lottery_21", vip: "VIP2", site: "旺财体育", agent: "agent_102 / AG10822", venue: "彩票三方", venueType: "彩票", game: "分分彩", gameType: "定位胆", gameId: "ISSUE-11557215", activity: "—", detail: ["玩法：第一球定位胆", "下注：6", "开奖结果：3,9,1,1,6"], bet: "80.00", valid: "80.00", result: "输 -80.00 CNY", early: "否", second: "否", fee: "—", status: "已结算", order: "BMRR4M5DL00001N", venueOrder: "LH260719093836", gameNo: "ISSUE-11557215", times: ["2026-07-19 09:38:36", "—", "2026-07-19 09:39:01", "2026-07-19 09:39:01"] }
+    ];
+    const body = rows.map((row, index) => `<tr><td class="sticky-member-493-account"><strong>${row.member}</strong></td><td>${row.vip}</td><td>${row.site}</td><td>${row.agent}</td><td>${row.venue}</td><td>${row.venueType}</td><td>${row.game}</td><td>${row.gameType}</td><td><strong class="mono">${row.gameNo}</strong></td><td>${row.activity}</td><td>${member493BetDetail(row.detail, row.game, index === 0)}</td><td><strong class="amount">${row.bet} CNY</strong></td><td><strong class="amount">${row.valid} CNY</strong></td><td>${row.result}</td><td>${row.early}</td><td>${row.second}</td><td>${row.fee}</td><td><span class="result-tag approved">${row.status}</span></td><td>${row.times[0]}</td><td>${row.times[1]}</td><td>${row.times[2]}</td><td>${row.times[3]}</td><td><strong class="mono">${row.order}</strong></td><td><strong class="mono">${row.venueOrder}</strong></td></tr>`).join("");
+    return `<div class="risk-page-heading"><div><h1>投注记录</h1></div><span class="prototype-only-label">变更标记仅用于原型评审</span></div><section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid member-493-bet-filters">${siteMultiSelect()}<div class="risk-field"><label>场馆名称</label><select><option>全部场馆</option><option>DB真人</option><option>DW体育</option><option>开元棋牌</option></select></div><div class="risk-field"><label>场馆类型</label><select><option>全部类型</option><option>真人</option><option>体育</option><option>电子</option><option>棋牌</option><option>捕鱼</option><option>彩票</option></select></div><div class="risk-field"><label>游戏名称</label><input type="text" placeholder="请输入游戏名称" /></div><div class="risk-field"><label>游戏类型</label><select><option>全部游戏类型</option><option>百家乐</option><option>串关</option><option>桌台游戏</option></select></div><div class="risk-field"><label>游戏编号</label><input type="text" placeholder="赛事ID / 局号 / 期号" /></div><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号" /></div><div class="risk-field"><label>会员类型</label><select><option>全部类型</option><option>官代</option><option>普代</option></select></div><div class="risk-field"><label>会员等级</label><select><option>全部等级</option><option>VIP1</option><option>VIP2</option><option>VIP3</option></select></div>${agentSmartField("", "上级代理账号/编号")}<div class="risk-field"><label>注单状态</label><select><option>全部状态</option><option>未结算</option><option>已结算</option><option>已取消</option><option>已作废</option></select></div><div class="risk-field"><label>联赛/赛事名称</label><input type="text" placeholder="请输入联赛或赛事名称" /></div><div class="risk-field"><label>提前结算</label><select><option>全部</option><option>是</option><option>否</option></select></div><div class="risk-field"><label>二次结算</label><select><option>全部</option><option>是</option><option>否</option></select></div><div class="risk-field"><label>注单号</label><input type="text" placeholder="请输入注单号" /></div>${member488DateRange("F02", "下注时间")}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>投注记录</h2><span>共 52,950 条</span></div></div><div class="risk-table-wrap"><table class="risk-table member-493-bet-table"><thead><tr><th class="sticky-member-493-account">会员账号</th><th>会员等级</th><th>所属站点</th><th>上级代理账号/编号</th><th>场馆名称</th><th>场馆类型</th><th>游戏名称</th><th>游戏类型</th><th>游戏编号</th><th>场馆活动</th><th>下注详情</th><th>下注金额</th><th>有效投注</th><th>输赢情况</th><th>提前结算</th><th>二次结算</th><th>服务费</th><th>注单状态</th><th>下注时间</th><th>开赛时间</th><th>结算时间</th><th>同步时间</th><th>投注单号</th><th>场馆单号</th></tr></thead><tbody>${body}</tbody></table></div>${pagination(20, 52950)}</section>`;
+  }
+
+  function member493Content(page) {
+    if (page.key === "account-adjustment-record-493") return member493AccountAdjustmentContent();
+    if (page.key === "bet-records-493") return member493BetContent();
+    return unchangedFinanceContent(page);
+  }
+
   function tabPlaceholderContent(page) {
     return `<div class="risk-page-heading"><div><p>风控管理</p><h1>${page.name}</h1></div></div><div class="inner-tabs annotated" data-component-id="N01">${componentBadge("N01")}${page.tabs.map((tab,index)=>`<button class="${index===0?"active":""}">${tab}</button>`).join("")}</div><section class="reserved-area"><div><strong>保持原功能布局不变即可，本原型只做合并形式展示。</strong></div></section>`;
   }
@@ -851,6 +915,7 @@
   function pageContent(page) {
     if (page.mergedInto) return mergedRequirementContent(page);
     if (page.key.endsWith("-488")) return member488Content(page);
+    if (page.key.endsWith("-493")) return member493Content(page);
     if (page.unchanged) return unchangedFinanceContent(page);
     if (["deposit-withdraw-settings", "member-transactions", "agent-transactions", "site-transactions"].includes(page.key)) return financeGroupedContent(page);
     if (page.key === "deposit-audit") return financeStandaloneContent(page, depositAuditContent());
@@ -916,8 +981,9 @@
     const moduleName = requirement.moduleName || "风控管理";
     const adjustmentNotice = requirement.id === "#427" ? '<section class="adjustment-note"><span>调整说明</span><p>未标注的地方均为未修改，保持原页面内容和逻辑即可。</p></section>' : "";
     const memberModuleMode = requirement.id === "#488";
+    const member493Mode = requirement.id === "#493";
     const memberDetailMode = requirement.id === "#488" && member488DetailPages.some(([key]) => key === page.key);
-    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav aria-label="当前原型页面"><span class="current-page-label">${page.name}</span></nav></header><div class="prototype-canvas"><div class="risk-app${memberModuleMode ? " member-module-mode" : ""}${memberDetailMode ? " member-detail-mode" : ""}">${sidebar(requirement,page)}<section class="risk-main"><header class="risk-topbar"><div><span>${moduleName} /</span><strong>${page.name}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header><div class="risk-content">${pageContent(page)}</div></section></div></div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><div><h2>${page.name}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll"><div class="questions-slot">${questionsBlock(page)}</div><section class="page-note"><span>页面目标</span><p>${page.purpose || ""}</p>${page.flow ? `<span>主流程</span><p>${page.flow}</p>` : ""}</section>${pageLogic}${extraNotice}${adjustmentNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${currentAnnotations.length} 项</span></div><div class="annotation-list">${currentAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"></div>`;
+    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav aria-label="当前原型页面"><span class="current-page-label">${page.name}</span></nav></header><div class="prototype-canvas"><div class="risk-app${memberModuleMode ? " member-module-mode" : ""}${member493Mode ? " member-493-mode" : ""}${memberDetailMode ? " member-detail-mode" : ""}">${sidebar(requirement,page)}<section class="risk-main"><header class="risk-topbar"><div><span>${moduleName} /</span><strong>${page.name}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header><div class="risk-content">${pageContent(page)}</div></section></div></div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><div><h2>${page.name}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll"><div class="questions-slot">${questionsBlock(page)}</div><section class="page-note"><span>页面目标</span><p>${page.purpose || ""}</p>${page.flow ? `<span>主流程</span><p>${page.flow}</p>` : ""}</section>${pageLogic}${extraNotice}${adjustmentNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${currentAnnotations.length} 项</span></div><div class="annotation-list">${currentAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"></div>`;
     if (page.key === "withdraw-monitor") renderMonitorView(false);
     if (page.hidePageNote) app.querySelector(".page-note")?.remove();
     addTopPaginators();
@@ -1392,6 +1458,29 @@
     }));
   }
 
+  function bindMember493Behavior(page) {
+    if (page.key !== "bet-records-493") return;
+    document.querySelectorAll(".member-493-bet-detail").forEach((preview) => {
+      const tooltip = preview.querySelector(".bet-record-tooltip");
+      const positionTooltip = () => {
+        const rect = preview.getBoundingClientRect();
+        const pane = preview.closest(".prototype-pane")?.getBoundingClientRect();
+        const width = Math.min(390, Math.max(280, (pane?.width || window.innerWidth) - 24));
+        const rightBoundary = Math.min(window.innerWidth - 12, (pane?.right || window.innerWidth) - 12);
+        const leftBoundary = Math.max(12, (pane?.left || 0) + 12);
+        const left = Math.max(leftBoundary, Math.min(rect.left, rightBoundary - width));
+        tooltip.style.position = "fixed";
+        tooltip.style.width = `${width}px`;
+        tooltip.style.left = `${Math.round(left)}px`;
+        tooltip.style.right = "auto";
+        tooltip.style.top = `${Math.round(Math.min(rect.bottom + 6, window.innerHeight - Math.min(tooltip.scrollHeight || 360, 520) - 12))}px`;
+      };
+      preview.addEventListener("mouseenter", positionTooltip);
+      preview.addEventListener("focus", positionTooltip);
+    });
+    document.querySelector(".member-493-bet-filters [data-component-id='B01']")?.addEventListener("click", () => modal("导出投注记录", '<p>按当前筛选条件导出全部命中记录，不受当前页限制。</p><p>导出文件中的下注详情位于同一个单元格，每个详情字段换行展示。</p>', "确认导出"));
+  }
+
   function bindPageBehavior(page) {
     document.querySelectorAll("input[type='text']").forEach((input)=>input.addEventListener("blur",()=>{input.value=input.value.trim();}));
     const toggle = document.getElementById("spec-claim-toggle");
@@ -1416,6 +1505,7 @@
     bindFinanceBehavior(page);
     bindExceptionAgentBehavior(page);
     bindMember488Behavior(page);
+    bindMember493Behavior(page);
     document.querySelectorAll(".member-detail-link").forEach((link) => link.addEventListener("click", (event) => {
       event.preventDefault();
       const targetId = { "withdraw-review": "B04", "hold-review": "B03", "review-history": "B01" }[page.key];
