@@ -78,7 +78,7 @@
     const rows = [...listRequirements].sort((a, b) => Number(String(b.id).replace(/\D/g, "")) - Number(String(a.id).replace(/\D/g, ""))).map((item) => `
       <tr class="requirement-row" tabindex="0" data-requirement-id="${escapeHtml(item.id)}" aria-label="查看 ${escapeHtml(item.title)}">
         <td><span class="requirement-id">${escapeHtml(item.id)}</span></td>
-        <td><strong class="requirement-title">${escapeHtml(item.title)}</strong><span class="requirement-summary">${escapeHtml(item.summary)}</span></td>
+        <td><div class="requirement-title-line">${item.mergedInto ? `<span class="merge-target-badge">合并至 ${escapeHtml(item.mergedInto)}</span>` : ""}<strong class="requirement-title">${escapeHtml(item.title)}</strong></div><span class="requirement-summary">${escapeHtml(item.summary)}</span></td>
         <td><span class="priority">${escapeHtml(item.priority)}</span></td>
         <td><span class="status ${statusClass(item.status)}"><i></i>${escapeHtml(item.status)}</span></td>
         <td>${escapeHtml(item.owner)}</td><td class="date-cell">${escapeHtml(item.startDate)}</td><td class="date-cell">${escapeHtml(item.completionDate)}</td>

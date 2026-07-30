@@ -534,7 +534,7 @@
         priority: "P0",
         startDate: "2026-07-23",
         completionDate: "—",
-        updatedAt: "2026-07-30 13:00",
+        updatedAt: "2026-07-30 13:56",
         summary: "将VIP返水从会员等级配置中拆分，形成全局统一的返水配置、返水记录和不返水游戏查询模块。",
         moduleName: "运营管理",
         workspaceName: "运营工作台",
@@ -778,7 +778,7 @@
         priority: "P0",
         startDate: "2026-07-19",
         completionDate: "—",
-        updatedAt: "2026-07-26 14:33",
+        updatedAt: "2026-07-30 13:56",
         summary: "在406风控基础上新增了单独的异常代理页",
         pages: [
           unchangedRiskPage("P01", "withdraw-review-489", "风控提款审核"),
@@ -850,9 +850,10 @@
   requirement406.updatedAt = "2026-07-26 15:40";
 
   Object.assign(requirement489, {
+    mergedInto: "#406",
     status: "已合并",
     completionDate: "2026-07-20",
-    updatedAt: "2026-07-26 14:33",
+    updatedAt: "2026-07-30 13:56",
     summary: "此需求已合并到#406中一起实现。",
     pages: [{
       id: "P01",
@@ -892,9 +893,10 @@
     requirement509.updatedAt = "2026-07-30 13:00";
 
     Object.assign(requirement512, {
+      mergedInto: "#509",
       status: "已合并",
       completionDate: "2026-07-30",
-      updatedAt: "2026-07-30 13:00",
+      updatedAt: "2026-07-30 13:56",
       summary: "此需求已合并到#509中一起实现。",
       pages: [{
         id: "P01",
