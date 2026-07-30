@@ -29,6 +29,11 @@
   let autoUnlockHours = 24;
   let currentRequirementId = "";
   let currentPageKey = "";
+  let memberVipSelectedLevel = 0;
+  let memberVipDetailTab = "VIP福利";
+  let memberVipRebateView = "cards";
+  let memberVipConfigSite = "总控默认配置";
+  const memberVipIndependentSites = new Set(["旺财体育", "新旺体育"]);
 
   function visibleRequirements() {
     return requirements.filter((requirement) => !requirement.localOnly || isLocalPrototype);
@@ -103,6 +108,7 @@
     if (annotation.name === "列表状态切换") demoControls = `<div class="spec-demo-controls"><label><input type="checkbox" checked id="spec-claim-toggle" /><span>展示待领取数据</span></label><label><input type="checkbox" checked id="spec-review-toggle" /><span>展示待审核数据</span></label></div>`;
     if (annotation.name === "登录日志列表状态") demoControls = `<div class="spec-demo-controls"><label><input type="checkbox" ${loginState.searched ? "checked" : ""} id="spec-login-data-toggle" /><span>展示有数据状态</span></label></div>`;
     if (annotation.name === "流水列表状态") demoControls = `<div class="spec-demo-controls"><label><input type="checkbox" ${transactionState.searched ? "checked" : ""} id="spec-transaction-data-toggle" /><span>展示有数据状态</span></label></div>`;
+    if (annotation.name === "游戏返水比例") demoControls = `<div class="spec-view-switch" aria-label="返水比例展示方案"><span>原型展示方案</span><div><button type="button" class="${memberVipRebateView === "cards" ? "active" : ""}" data-rebate-view="cards">方案A 分组卡片</button><button type="button" class="${memberVipRebateView === "table" ? "active" : ""}" data-rebate-view="table">方案B 合并表格</button></div><small>仅用于方案评审，不属于会员端生产功能</small></div>`;
     let summaryText = escapeHtml(annotation.summary);
     annotation.summaryHighlights?.forEach((term) => { summaryText = summaryText.replaceAll(escapeHtml(term), `<strong class="summary-danger">${escapeHtml(term)}</strong>`); });
     const summary = annotation.summary ? `<p class="annotation-summary${annotation.summaryTone === "danger" ? " annotation-summary-danger" : ""}">${summaryText}</p>` : "";
@@ -127,13 +133,14 @@
   }
 
   function sidebar(requirement, page) {
-    const finance = requirement.moduleName === "财务管理";
-    const member = requirement.moduleName === "会员管理";
-    const operation = requirement.moduleName === "运营管理";
+    const pageModuleName = requirement.id === "#509" ? page.moduleName || requirement.moduleName : requirement.moduleName;
+    const finance = pageModuleName === "财务管理";
+    const member = pageModuleName === "会员管理";
+    const operation = pageModuleName === "运营管理";
     const brand = finance ? "Finance" : member ? "MemberCenter" : operation ? "Operations" : "RiskControl";
     const brandMark = finance ? "F" : member ? "M" : operation ? "O" : "R";
-    const moduleName = requirement.moduleName || "风控管理";
-    const workspaceName = requirement.workspaceName || "风控工作台";
+    const moduleName = pageModuleName || "风控管理";
+    const workspaceName = requirement.id === "#509" ? page.workspaceName || requirement.workspaceName || "风控工作台" : requirement.workspaceName || "风控工作台";
     const roleName = requirement.roleName || "风控审核员";
     const memberDetailActive = member && requirement.id === "#488" && member488DetailPages.some(([key]) => key === page.key);
     const navigationPages = member ? visiblePages(requirement).filter((item) => ["member-list-488", "member-logs-488"].includes(item.key)) : visiblePages(requirement);
@@ -155,12 +162,11 @@
         memberLink("member-list-509"),
         memberLink("same-ip-members-509"),
         memberLink("member-level-config-509", "会员配置", "新增"),
+        `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/rebate-level-config-512" class="${page.key.endsWith("-512") ? "active" : ""}"><span class="menu-symbol">${page.key.endsWith("-512") ? "■" : "□"}</span><span class="menu-name">VIP返水配置</span><em class="menu-change-badge is-merged">#512需求</em></a>`,
         memberLink("invite-reward-settings-509"),
         memberLink("identity-list-509"),
         memberLink("member-logs-509")
       ].join("");
-    } else if (requirement.id === "#512") {
-      links = `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/rebate-level-config-512" class="active"><span class="menu-symbol">■</span><span class="menu-name">VIP返水</span></a>`;
     } else if (member && requirement.id === "#493") {
       const pagesByKey = new Map(visiblePages(requirement).map((item) => [item.key, item]));
       const memberLink = (key) => {
@@ -984,7 +990,9 @@
   }
 
   function mergedRequirementContent(page) {
-    return `<div class="risk-page-heading"><div><h1>${page.name}</h1></div></div><section class="merged-requirement-notice"><span>需求合并</span><strong>此需求已合并到${page.mergedInto}中一起实现。</strong><a href="#requirement/${encodeURIComponent(page.mergedInto)}/page/exception-agent">查看${page.mergedInto}异常代理原型</a></section>`;
+    const targetPage = page.mergedTargetPage || "exception-agent";
+    const linkText = page.mergedLinkText || `查看${page.mergedInto}异常代理原型`;
+    return `<div class="risk-page-heading"><div><h1>${page.name}</h1></div></div><section class="merged-requirement-notice"><span>需求合并</span><strong>此需求已合并到${page.mergedInto}中一起实现。</strong><a href="#requirement/${encodeURIComponent(page.mergedInto)}/page/${targetPage}">${linkText}</a></section>`;
   }
 
   function requirementPageTabs(requirementId, page, items, componentId = "N01") {
@@ -994,19 +1002,58 @@
   const member509Tabs = [["member-level-config-509", "会员等级"], ["member-tag-config-509", "标签管理"]];
   const rebate512Tabs = [["rebate-level-config-512", "返水等级"], ["rebate-records-512", "返水记录"], ["no-rebate-games-512", "不返水游戏列表"]];
 
+  const memberVipConfigSites = ["总控默认配置", "旺财体育", "新旺体育", "彩虹站"];
+
+  function memberVipSiteMeta(site = memberVipConfigSite) {
+    const isDefault = site === "总控默认配置";
+    const inherited = !isDefault && !memberVipIndependentSites.has(site);
+    return { isDefault, inherited, editable: isDefault || !inherited, status: isDefault ? "总控默认配置" : inherited ? "使用总控默认配置" : "本站点单独配置" };
+  }
+
+  function memberVipSiteSelector() {
+    const selectedMeta = memberVipSiteMeta();
+    const selectedLabel = selectedMeta.isDefault || selectedMeta.inherited ? "默认总控" : "单独配置";
+    const options = memberVipConfigSites.map((site) => {
+      const meta = memberVipSiteMeta(site);
+      const label = meta.isDefault || meta.inherited ? "默认总控" : "单独配置";
+      return `<button type="button" role="option" aria-selected="${site === memberVipConfigSite}" class="vip-site-option${site === memberVipConfigSite ? " selected" : ""}" data-vip-site="${site}"><span>${site}</span><em class="${label === "单独配置" ? "independent" : ""}">${label}</em></button>`;
+    }).join("");
+    return `<div class="vip-site-selector"><button type="button" class="vip-site-select-trigger" aria-haspopup="listbox" aria-expanded="false"><span>${memberVipConfigSite}</span><em class="${selectedLabel === "单独配置" ? "independent" : ""}">${selectedLabel}</em><i aria-hidden="true">⌄</i></button><div class="vip-site-options" role="listbox" hidden>${options}</div></div>`;
+  }
+
+  function vipSiteConfigPanel({ enableId, restoreId, independentScope }) {
+    const meta = memberVipSiteMeta();
+    const statusHint = meta.isDefault ? "修改后，所有使用总控默认配置的站点同步生效" : meta.inherited ? "当前只读；如需修改，请先启用本站点单独配置" : "当前站点使用独立配置，不受总控默认配置后续修改影响";
+    const siteAction = meta.inherited
+      ? `<button type="button" class="main-action vip-site-enable annotated" data-component-id="${enableId}" data-independent-scope="${independentScope}">${componentBadge(enableId)}为本站点单独配置</button>`
+      : !meta.isDefault ? `<button type="button" class="secondary-action vip-site-restore annotated" data-component-id="${restoreId}" data-independent-scope="${independentScope}">${componentBadge(restoreId)}恢复使用总控默认</button>` : "";
+    return `<section class="vip-site-config-panel${meta.inherited ? " is-inherited" : ""} annotated" data-component-id="P01">${componentBadge("P01")}<div class="vip-site-config-main"><div class="vip-site-field annotated" data-component-id="F01">${componentBadge("F01")}<span class="vip-site-field-label">当前配置站点</span>${memberVipSiteSelector()}</div><div><span>当前使用</span><strong class="config-status ${meta.inherited ? "inherited" : ""}">${meta.status}</strong><small>${statusHint}</small></div></div>${siteAction ? `<div class="vip-site-config-actions">${siteAction}</div>` : ""}</section>`;
+  }
+
   function member509LevelRows() {
-    const rows = [
-      ["VIP0", "0", "0", "0", "0", "0", "0", "0", "5", "200,000", "68,421", "mike.ops", "2026-07-23 18:20:16"],
-      ["VIP1", "500", "3,000", "2,000", "8", "0", "8", "18", "5", "200,000", "21,386", "mike.ops", "2026-07-23 18:22:40"],
-      ["VIP2", "2,000", "12,000", "8,000", "18", "18", "18", "38", "5", "200,000", "9,642", "amy.ops", "2026-07-23 18:25:08"],
-      ["VIP3", "5,000", "35,000", "20,000", "38", "38", "38", "68", "5", "200,000", "4,185", "amy.ops", "2026-07-23 18:29:31"],
-      ["VIP4", "15,000", "100,000", "60,000", "88", "88", "88", "128", "10", "250,000", "1,976", "mike.ops", "2026-07-23 18:34:12"]
-    ];
-    return rows.map((row, index) => `<tr><td class="sticky-vip-level"><strong>${row[0]}</strong></td><td><strong class="amount">${row[1]} CNY</strong></td><td><strong class="amount">${row[2]} CNY</strong></td><td><strong class="amount">${row[3]} CNY</strong></td><td>${row[4]} CNY</td><td>${row[5]} CNY</td><td>${row[6]} CNY</td><td>${row[7]} CNY</td><td>${row[8]} 次</td><td>${row[9]} CNY</td><td><button type="button" class="link-action vip-member-count${index === 1 ? ' annotated" data-component-id="C01' : ""}" data-level="${row[0]}">${index === 1 ? componentBadge("C01") : ""}${row[10]}</button></td><td>${row[11]}</td><td>${row[12]}</td><td class="row-actions sticky-vip-action"><button type="button" class="link-action vip-level-config${index === 1 ? ' annotated" data-component-id="M01' : ""}" data-level="${row[0]}">${index === 1 ? componentBadge("M01") : ""}等级配置</button><button type="button" class="link-action vip-bonus-config${index === 1 ? ' annotated" data-component-id="M02' : ""}" data-level="${row[0]}">${index === 1 ? componentBadge("M02") : ""}红利配置</button></td></tr>`).join("");
+    const editable = memberVipSiteMeta().editable;
+    const editDisabled = editable ? "" : ' disabled title="当前站点使用总控默认配置，如需编辑请先启用本站点单独配置"';
+    const siteFactor = { "总控默认配置": 1, "旺财体育": 1, "新旺体育": 1.12, "彩虹站": 1 }[memberVipConfigSite] || 1;
+    const format = (value) => Math.round(value * siteFactor).toLocaleString("en-US");
+    return Array.from({ length: 13 }, (_, index) => {
+      const deposit = index === 0 ? 0 : index * index * 500;
+      const turnover = index === 0 ? 0 : index * index * 3000;
+      const retention = index === 0 ? 0 : index * index * 2000;
+      const promotion = index === 0 ? 0 : 8 + (index - 1) * 10;
+      const birthday = index < 2 ? 0 : 18 + (index - 2) * 18;
+      const weekly = index === 0 ? 0 : 8 + (index - 1) * 10;
+      const monthly = index === 0 ? 0 : 18 + (index - 1) * 20;
+      const memberCount = Math.max(86, Math.round(68421 / Math.pow(index + 1, 1.65)));
+      const annotated = index === 1;
+      return `<tr><td class="sticky-vip-level"><strong>VIP${index}</strong></td><td><strong class="amount">${format(deposit)}</strong></td><td><strong class="amount">${format(turnover)}</strong></td><td><strong class="amount">${format(retention)}</strong></td><td>${format(promotion)}</td><td>${format(birthday)}</td><td>${format(weekly)}</td><td>${format(monthly)}</td><td>${index < 4 ? 5 : 10}</td><td>${format(index < 4 ? 200000 : 250000)}</td><td><button type="button" class="link-action vip-member-count${annotated ? ' annotated" data-component-id="C01' : ""}" data-level="VIP${index}">${annotated ? componentBadge("C01") : ""}${memberCount.toLocaleString("en-US")}</button></td><td>${index % 2 ? "mike.ops" : "amy.ops"}</td><td>2026-07-26 23:${String(10 + index).padStart(2, "0")}:16</td><td class="row-actions sticky-vip-action"><button type="button" class="link-action vip-level-config${annotated ? ' annotated" data-component-id="M01' : ""}" data-level="VIP${index}"${editDisabled}>${annotated ? componentBadge("M01") : ""}等级配置</button><button type="button" class="link-action vip-bonus-config${annotated ? ' annotated" data-component-id="M02' : ""}" data-level="VIP${index}"${editDisabled}>${annotated ? componentBadge("M02") : ""}红利配置</button></td></tr>`;
+    }).join("");
   }
 
   function member509LevelContent(page) {
-    return `<div class="risk-page-heading vip-page-heading"><div><h1>会员等级</h1><span>全平台统一配置</span></div><button type="button" class="secondary-action vip-copy-config annotated" data-component-id="M03">${componentBadge("M03")}VIP文案配置</button></div>${requirementPageTabs("#509", page, member509Tabs)}<section class="scope-banner annotated" data-component-id="P01">${componentBadge("P01")}<div><strong>总控全局VIP体系</strong><span>站点不再单独设置；返水比例与返水流水倍数已迁移至 #512【运营管理 → VIP返水】。</span></div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>会员等级配置</h2><span>共 5 个等级</span></div></div><div class="risk-table-wrap"><table class="risk-table vip-level-table"><thead><tr><th class="sticky-vip-level">VIP等级</th><th>晋升存款</th><th>晋升流水</th><th>保级流水</th><th>VIP晋升礼金</th><th>VIP生日礼金</th><th>VIP周礼金</th><th>VIP月礼金</th><th>单日提款限次</th><th>单日提款限额</th><th>会员数量</th><th>最后操作人</th><th>最后操作时间</th><th class="sticky-vip-action">操作</th></tr></thead><tbody>${member509LevelRows()}</tbody></table></div>${pagination(20, 5)}</section>`;
+    const meta = memberVipSiteMeta();
+    const siteContext = vipSiteConfigPanel({ enableId: "M04", restoreId: "M06", independentScope: "会员等级、红利与VIP返水" });
+    const table = `<section class="risk-list-card${meta.inherited ? " vip-config-readonly" : ""} annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>${memberVipConfigSite} · VIP等级配置</h2><span>共 13 个等级${meta.inherited ? " · 当前完整使用总控默认配置" : ""}</span></div></div><div class="risk-table-wrap"><table class="risk-table vip-level-table"><thead><tr><th class="sticky-vip-level">VIP等级</th><th>晋升存款（CNY）</th><th>晋升流水（CNY）</th><th>保级流水（CNY）</th><th>VIP晋升礼金（CNY）</th><th>VIP生日礼金（CNY）</th><th>VIP周礼金（CNY）</th><th>VIP月礼金（CNY）</th><th>日提款次数</th><th>每日提款额度（CNY）</th><th>会员数量</th><th>最后操作人</th><th>最后操作时间</th><th class="sticky-vip-action">操作</th></tr></thead><tbody>${member509LevelRows()}</tbody></table></div>${pagination(20, 13)}</section>`;
+    return `<div class="risk-page-heading vip-page-heading"><div><h1>会员等级</h1><span>总控默认配置与例外站点单独配置</span></div><button type="button" class="secondary-action vip-copy-config annotated" data-component-id="M03">${componentBadge("M03")}VIP文案配置</button></div>${requirementPageTabs("#509", page, member509Tabs)}${siteContext}${table}`;
   }
 
   function member509TagRows(system = false) {
@@ -1024,10 +1071,12 @@
   }
 
   function member509TagContent(page) {
-    return `<div class="risk-page-heading vip-page-heading"><div><h1>标签管理</h1><span>自定义标签与系统标签统一入口</span></div><button type="button" class="main-action tag-add annotated" data-component-id="B01">${componentBadge("B01")}新增自定义标签</button></div>${requirementPageTabs("#509", page, member509Tabs)}<div class="segmented-control tag-type-tabs annotated" data-component-id="N01"><button type="button" class="active" data-tag-view="custom">自定义标签</button><button type="button" data-tag-view="system">系统标签</button></div><section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid vip-tag-filters"><div class="risk-field"><label>标签名称</label><input type="text" placeholder="请输入标签名称" /></div><div class="risk-field"><label>业务类型</label><select><option>全部类型</option><option>运营标签</option><option>风控标签</option><option>财务标签</option></select></div><div class="risk-field"><label>最后编辑人</label><input type="text" placeholder="请输入管理员账号" /></div>${member488DateRange("F01", "最后编辑时间", false)}${filterActions(false)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2 class="tag-list-title">自定义标签</h2><span class="tag-list-count">共 3 条</span></div></div><div class="risk-table-wrap"><table class="risk-table tag-config-table"><thead><tr><th>序号</th><th>标签名称</th><th>业务类型</th><th>备注</th><th>用户数量</th><th>最后编辑人</th><th>最后编辑时间</th><th>操作</th></tr></thead><tbody class="tag-custom-body">${member509TagRows(false)}</tbody><tbody class="tag-system-body" hidden>${member509TagRows(true)}</tbody></table></div>${pagination(20, 3)}</section><section class="functional-tag-note annotated" data-component-id="S01">${componentBadge("S01")}<strong>功能性系统标签</strong><span>【不返水】影响 #512 返水生成；【提款挂起】影响风控提款路由。标签名称与作用不可编辑。</span></section>`;
+    return `<div class="risk-page-heading vip-page-heading"><div><h1>标签管理</h1><span>自定义标签与系统标签统一入口</span></div><button type="button" class="main-action tag-add annotated" data-component-id="B01">${componentBadge("B01")}新增自定义标签</button></div>${requirementPageTabs("#509", page, member509Tabs)}<div class="segmented-control tag-type-tabs annotated" data-component-id="N01"><button type="button" class="active" data-tag-view="custom">自定义标签</button><button type="button" data-tag-view="system">系统标签</button></div><section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid vip-tag-filters"><div class="risk-field"><label>标签名称</label><input type="text" placeholder="请输入标签名称" /></div><div class="risk-field"><label>业务类型</label><select><option>全部类型</option><option>运营标签</option><option>风控标签</option><option>财务标签</option></select></div><div class="risk-field"><label>最后编辑人</label><input type="text" placeholder="请输入管理员账号" /></div>${member488DateRange("F01", "最后编辑时间", false)}${filterActions(false)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2 class="tag-list-title">自定义标签</h2><span class="tag-list-count">共 3 条</span></div></div><div class="risk-table-wrap"><table class="risk-table tag-config-table"><thead><tr><th>序号</th><th>标签名称</th><th>业务类型</th><th>备注</th><th>用户数量</th><th>最后编辑人</th><th>最后编辑时间</th><th>操作</th></tr></thead><tbody class="tag-custom-body">${member509TagRows(false)}</tbody><tbody class="tag-system-body" hidden>${member509TagRows(true)}</tbody></table></div>${pagination(20, 3)}</section><section class="functional-tag-note annotated" data-component-id="S01">${componentBadge("S01")}<strong>功能性系统标签</strong><span>【不返水】影响本需求VIP返水生成；【提款挂起】影响风控提款路由。标签名称与作用不可编辑。</span></section>`;
   }
 
   function rebate512LevelRows() {
+    const editable = memberVipSiteMeta().editable;
+    const editDisabled = editable ? "" : ' disabled title="当前站点使用总控默认配置，如需编辑请先启用本站点单独配置"';
     const rows = [
       ["VIP0", "100", "5,000", "24小时", "1", "7", "156", "mike.ops", "2026-07-23 19:06:12"],
       ["VIP1", "200", "10,000", "24小时", "1", "7", "156", "mike.ops", "2026-07-23 19:08:30"],
@@ -1035,11 +1084,13 @@
       ["VIP3", "1,000", "50,000", "2天", "1.5", "7", "156", "amy.ops", "2026-07-23 19:18:03"],
       ["VIP4", "2,000", "100,000", "3天", "2", "7", "156", "mike.ops", "2026-07-23 19:22:51"]
     ];
-    return rows.map((row, index) => `<tr><td class="sticky-rebate-level"><strong>${row[0]}</strong></td><td><strong class="amount">${row[1]} CNY</strong></td><td><strong class="amount">${row[2]} CNY</strong></td><td>${row[3]}</td><td>${row[4]} 倍</td><td>${row[5]} 类</td><td>${row[6]} 个</td><td>${row[7]}</td><td>${row[8]}</td><td class="row-actions sticky-rebate-action"><button type="button" class="link-action rebate-setting${index === 1 ? ' annotated" data-component-id="M01' : ""}" data-level="${row[0]}">${index === 1 ? componentBadge("M01") : ""}设置</button><button type="button" class="link-action rebate-view${index === 1 ? ' annotated" data-component-id="B01' : ""}" data-level="${row[0]}">${index === 1 ? componentBadge("B01") : ""}详情</button></td></tr>`).join("");
+    return rows.map((row, index) => `<tr><td class="sticky-rebate-level"><strong>${row[0]}</strong></td><td><strong class="amount">${row[1]} CNY</strong></td><td><strong class="amount">${row[2]} CNY</strong></td><td>${row[3]}</td><td>${row[4]} 倍</td><td>${row[5]} 类</td><td>${row[6]} 个</td><td>${row[7]}</td><td>${row[8]}</td><td class="row-actions sticky-rebate-action"><button type="button" class="link-action rebate-setting${index === 1 ? ' annotated" data-component-id="M01' : ""}" data-level="${row[0]}"${editDisabled}>${index === 1 ? componentBadge("M01") : ""}设置</button><button type="button" class="link-action rebate-view${index === 1 ? ' annotated" data-component-id="B01' : ""}" data-level="${row[0]}">${index === 1 ? componentBadge("B01") : ""}详情</button></td></tr>`).join("");
   }
 
   function rebate512LevelContent(page) {
-    return `<div class="risk-page-heading vip-page-heading"><div><h1>返水等级</h1><span>全平台统一配置</span></div></div>${requirementPageTabs("#512", page, rebate512Tabs)}<section class="scope-banner annotated" data-component-id="P01">${componentBadge("P01")}<div><strong>VIP返水独立模块</strong><span>会员等级基础门槛由 #509 维护；本页面统一维护返水门槛、有效期、流水倍数和游戏比例。</span></div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>返水等级配置</h2><span>共 5 个等级</span></div></div><div class="risk-table-wrap"><table class="risk-table rebate-level-table"><thead><tr><th class="sticky-rebate-level">会员等级</th><th>每日最高返水</th><th>最低流水要求</th><th>领取有效期</th><th>返水流水倍数</th><th>已配置场馆类型</th><th>已配置游戏</th><th>最后操作人</th><th>最后操作时间</th><th class="sticky-rebate-action">操作</th></tr></thead><tbody>${rebate512LevelRows()}</tbody></table></div>${pagination(20, 5)}</section>`;
+    const meta = memberVipSiteMeta();
+    const siteContext = vipSiteConfigPanel({ enableId: "M02", restoreId: "M03", independentScope: "会员等级、红利与VIP返水" });
+    return `<div class="risk-page-heading vip-page-heading"><div><h1>返水等级</h1><span>总控默认配置与例外站点单独配置</span></div></div>${requirementPageTabs("#509", page, rebate512Tabs)}${siteContext}<section class="risk-list-card${meta.inherited ? " vip-config-readonly" : ""} annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>${memberVipConfigSite} · 返水等级配置</h2><span>共 5 个等级${meta.inherited ? " · 当前完整使用总控默认配置" : ""}</span></div></div><div class="risk-table-wrap"><table class="risk-table rebate-level-table"><thead><tr><th class="sticky-rebate-level">会员等级</th><th>每日最高返水</th><th>最低流水要求</th><th>领取有效期</th><th>返水流水倍数</th><th>已配置场馆类型</th><th>已配置游戏</th><th>最后操作人</th><th>最后操作时间</th><th class="sticky-rebate-action">操作</th></tr></thead><tbody>${rebate512LevelRows()}</tbody></table></div>${pagination(20, 5)}</section>`;
   }
 
   function rebate512RecordContent(page) {
@@ -1049,21 +1100,208 @@
       ["RB202607220312", "彩虹站", "mike_test", "agent_205 / AG12051", "VIP1", "26.80", "1", "2026-07-22 01:10:18", "—", "2026-07-23 01:10:18", "已过期"]
     ];
     const body = rows.map((row, index) => `<tr><td class="sticky-rebate-order"><strong class="mono">${row[0]}</strong></td><td>${row[1]}</td><td class="sticky-rebate-member"><a class="member-detail-link" href="javascript:void(0)">${row[2]}</a></td><td>${row[3]}</td><td>${row[4]}</td><td><button type="button" class="link-action rebate-detail${index === 0 ? ' annotated" data-component-id="M01' : ""}" data-order="${row[0]}" data-member="${row[2]}" data-amount="${row[5]}">${index === 0 ? componentBadge("M01") : ""}${row[5]} CNY</button></td><td>${row[6]} 倍</td><td>${row[7]}</td><td>${row[8]}</td><td>${row[9]}</td><td class="sticky-rebate-status"><span class="result-tag ${row[10] === "已领取" ? "approved" : row[10] === "已过期" ? "rejected" : ""}">${row[10]}</span></td></tr>`).join("");
-    return `<div class="risk-page-heading vip-page-heading"><div><h1>返水记录</h1><span>生成、领取与过期全链路</span></div></div>${requirementPageTabs("#512", page, rebate512Tabs)}<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid rebate-record-filters">${siteMultiSelect()}<div class="risk-field"><label>返水订单号</label><input type="text" placeholder="请输入返水订单号" /></div><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号" /></div>${agentSmartField("", "上级代理账号/编号")}<div class="risk-field"><label>返水状态</label><select><option>全部状态</option><option>待领取</option><option>已领取</option><option>已过期</option></select></div>${member488DateRange("F02", "返水生成时间")}${member488DateRange("F03", "返水领取时间")}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>返水记录</h2><span>共 628 条</span></div></div><div class="risk-table-wrap"><table class="risk-table rebate-record-table"><thead><tr><th class="sticky-rebate-order">订单号</th><th>所属站点</th><th class="sticky-rebate-member">会员账号</th><th>上级代理</th><th>返水等级</th><th>返水金额</th><th>流水倍数</th><th>返水生成时间</th><th>领取时间</th><th>过期时间</th><th class="sticky-rebate-status">返水状态</th></tr></thead><tbody>${body}</tbody></table></div>${pagination(20, 628)}</section>`;
+    return `<div class="risk-page-heading vip-page-heading"><div><h1>返水记录</h1><span>生成、领取与过期全链路</span></div></div>${requirementPageTabs("#509", page, rebate512Tabs)}<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid rebate-record-filters">${siteMultiSelect()}<div class="risk-field"><label>返水订单号</label><input type="text" placeholder="请输入返水订单号" /></div><div class="risk-field"><label>会员账号</label><input type="text" placeholder="请输入会员账号" /></div>${agentSmartField("", "上级代理账号/编号")}<div class="risk-field"><label>返水状态</label><select><option>全部状态</option><option>待领取</option><option>已领取</option><option>已过期</option></select></div>${member488DateRange("F02", "返水生成时间")}${member488DateRange("F03", "返水领取时间")}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>返水记录</h2><span>共 628 条</span></div></div><div class="risk-table-wrap"><table class="risk-table rebate-record-table"><thead><tr><th class="sticky-rebate-order">订单号</th><th>所属站点</th><th class="sticky-rebate-member">会员账号</th><th>上级代理</th><th>返水等级</th><th>返水金额</th><th>流水倍数</th><th>返水生成时间</th><th>领取时间</th><th>过期时间</th><th class="sticky-rebate-status">返水状态</th></tr></thead><tbody>${body}</tbody></table></div>${pagination(20, 628)}</section>`;
   }
 
   function rebate512ExcludedContent(page) {
     const rows = [
-      ["真人", "开元棋牌", "21点（底注/加倍/保险）", "游戏规则排除"],
-      ["真人", "OG真人", "免佣百家乐", "游戏规则排除"],
-      ["捕鱼", "PA捕鱼", "PA捕鱼", "场馆规则排除"],
-      ["棋牌", "双赢棋牌", "拼庄百人斗神堂", "游戏规则排除"],
-      ["电子", "PP电子", "轮盘", "游戏规则排除"]
+      ["真人", "开元棋牌", "21点（底注/加倍/保险）", "返水比例配置为0"],
+      ["真人", "OG真人", "免佣百家乐", "返水比例配置为0"],
+      ["捕鱼", "PA捕鱼", "PA捕鱼", "返水比例配置为0"],
+      ["棋牌", "双赢棋牌", "拼庄百人斗神堂", "返水比例配置为0"],
+      ["电子", "PP电子", "轮盘", "返水比例配置为0"]
     ];
-    return `<div class="risk-page-heading vip-page-heading"><div><h1>不返水游戏列表</h1><span>只读查询</span></div></div>${requirementPageTabs("#512", page, rebate512Tabs)}<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid excluded-game-filters">${siteMultiSelect()}<div class="risk-field"><label>场馆类型</label><select><option>全部类型</option><option>真人</option><option>电子</option><option>棋牌</option><option>捕鱼</option></select></div><div class="risk-field"><label>场馆名称</label><select><option>全部场馆</option><option>开元棋牌</option><option>PP电子</option></select></div><div class="risk-field"><label>游戏名称</label><input type="text" placeholder="请输入游戏名称" /></div>${filterActions(true)}</div></section><section class="readonly-banner"><strong>查询说明</strong><span>列表来源于返水配置中明确标记为“不返水”的游戏，本页面不提供维护操作。</span></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>不返水游戏</h2><span>共 28 条</span></div></div><div class="risk-table-wrap"><table class="risk-table excluded-game-table"><thead><tr><th>序号</th><th>场馆类型</th><th>场馆名称</th><th>游戏名称</th><th>排除来源</th><th>最后更新时间</th></tr></thead><tbody>${rows.map((row, index) => `<tr><td>${index + 1}</td><td><span class="data-tag">${row[0]}</span></td><td>${row[1]}</td><td><strong>${row[2]}</strong></td><td>${row[3]}</td><td>2026-07-23 ${String(12 + index).padStart(2, "0")}:20:16</td></tr>`).join("")}</tbody></table></div>${pagination(20, 28)}</section>`;
+    return `<div class="risk-page-heading vip-page-heading"><div><h1>不返水游戏列表</h1><span>只读查询</span></div></div>${requirementPageTabs("#509", page, rebate512Tabs)}<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid excluded-game-filters">${siteMultiSelect()}<div class="risk-field"><label>场馆类型</label><select><option>全部类型</option><option>真人</option><option>电子</option><option>棋牌</option><option>捕鱼</option></select></div><div class="risk-field"><label>场馆名称</label><select><option>全部场馆</option><option>开元棋牌</option><option>PP电子</option></select></div><div class="risk-field"><label>游戏名称</label><input type="text" placeholder="请输入游戏名称" /></div>${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>不返水游戏</h2><span>共 28 条</span></div></div><div class="risk-table-wrap"><table class="risk-table excluded-game-table"><thead><tr><th>序号</th><th>场馆类型</th><th>场馆名称</th><th>游戏名称</th><th>排除来源</th><th>最后更新时间</th></tr></thead><tbody>${rows.map((row, index) => `<tr><td>${index + 1}</td><td><span class="data-tag">${row[0]}</span></td><td>${row[1]}</td><td><strong>${row[2]}</strong></td><td>${row[3]}</td><td>2026-07-23 ${String(12 + index).padStart(2, "0")}:20:16</td></tr>`).join("")}</tbody></table></div>${pagination(20, 28)}</section>`;
+  }
+
+  const memberVipMobileKeys = ["member-vip-center-509", "member-vip-detail-509", "member-vip-rules-509"];
+
+  function mobileVipFrame(content, extraClass = "") {
+    return `<div class="member-mobile-frame ${extraClass}"><div class="mobile-status-bar"><strong>18:30</strong><span>● ● ●　87%</span></div>${content}</div>`;
+  }
+
+  function memberVipMobileHeader(title, backKey = "", rightAction = "") {
+    const back = backKey ? `<a class="mobile-back" href="#requirement/${encodeURIComponent("#509")}/page/${backKey}" aria-label="返回">‹</a>` : '<button type="button" class="mobile-back" aria-label="返回">‹</button>';
+    return `<header class="member-mobile-header">${back}<h1>${title}</h1>${rightAction || '<span class="mobile-header-placeholder"></span>'}</header>`;
+  }
+
+  function memberVipPerks(level) {
+    const next = level === 0;
+    const values = next
+      ? [["5", "日提款次数", "次"], ["200,000", "每日提款额度", "¥"], ["1,000,000", "每日提款总额", "¥"], ["0", "VIP晋升礼金", "¥"], ["0", "VIP周礼金", "¥"], ["0", "VIP月礼金", "¥"]]
+      : [["5", "日提款次数", "次"], ["200,000", "每日提款额度", "¥"], ["1,000,000", "每日提款总额", "¥"], ["8", "VIP晋升礼金", "¥"], ["8", "VIP周礼金", "¥"], ["18", "VIP月礼金", "¥"]];
+    const symbols = ["#", "¥", "Σ", "↑", "7", "30"];
+    return values.map((item, index) => `<div class="member-vip-perk"><span class="perk-symbol" aria-hidden="true">${symbols[index]}</span><div><strong>${item[2]}${item[0]}</strong><small>${item[1]}</small></div></div>`).join("");
+  }
+
+  function memberVipCenter509Content() {
+    const detailHref = `#requirement/${encodeURIComponent("#509")}/page/member-vip-detail-509`;
+    return mobileVipFrame(`${memberVipMobileHeader("VIP尊享中心")}
+      <section class="member-vip-profile"><span class="member-vip-avatar">MK</span><div><strong>Mike966 <em>VIP0</em></strong><small>加入平台第12天</small></div></section>
+      <section class="member-benefit-strip"><div><span class="benefit-mark">礼</span><p>待领取福利礼金<strong>¥0</strong></p></div><button type="button">福利领取</button></section>
+      <section class="member-vip-carousel annotated" data-component-id="P01">${componentBadge("P01")}<div class="member-vip-card-track" tabindex="0">
+        <button type="button" class="member-vip-card current" data-vip-level="0"><span class="vip-card-watermark">VIP</span><header><div><strong>VIP0</strong><small>当前等级</small></div><span class="vip-emblem">0</span></header><div class="vip-progress-group"><div><span>晋升存款</span><b>1,000 / 1,000</b><i><em style="width:100%"></em></i></div><div><span>晋升流水</span><b>4,200 / 6,000</b><i><em style="width:70%"></em></i></div><small>两项同时达标后，次日14:00最多晋升一级</small></div></button>
+        <button type="button" class="member-vip-card next" data-vip-level="1"><span class="vip-card-watermark">VIP</span><header><div><strong>VIP1</strong><small>尚未达成</small></div><span class="vip-emblem muted">1</span></header><dl><div><dt>晋升存款要求</dt><dd>1,000</dd></div><div><dt>晋升流水要求</dt><dd>6,000</dd></div><div><dt>90天保级流水要求</dt><dd>4,000</dd></div></dl></button>
+      </div><div class="member-vip-card-dots" aria-hidden="true"><i class="active"></i><i></i></div></section>
+      <section class="member-vip-privileges annotated" data-component-id="P02">${componentBadge("P02")}<h2><span></span><b class="member-vip-perk-title">VIP0尊享特权</b><span></span></h2><div class="member-vip-perk-grid" data-vip-perks="0">${memberVipPerks(0)}</div><div class="member-vip-perk-grid" data-vip-perks="1" hidden>${memberVipPerks(1)}</div>
+        <a class="member-vip-detail-link annotated" data-component-id="B01" href="${detailHref}">${componentBadge("B01")}<div><strong>查看VIP详情</strong><small>完整等级福利、返水比例与提款额度</small></div><span>›</span></a>
+      </section>`, "member-vip-center");
+  }
+
+  function memberVipBenefitRows() {
+    return Array.from({ length: 13 }, (_, level) => {
+      const weeklyRequirement = level === 0 ? 0 : level * level * 3000;
+      const monthlyRequirement = level === 0 ? 0 : level * level * 12000;
+      const upgrade = level === 0 ? 0 : 8 + level * 10;
+      const birthday = level === 0 ? 0 : level * 18;
+      const weekly = level === 0 ? 0 : 8 + level * 10;
+      const monthly = level === 0 ? 0 : 18 + level * 20;
+      return `<tr><th>VIP${level}</th><td>${weeklyRequirement.toLocaleString("en-US")}</td><td>${monthlyRequirement.toLocaleString("en-US")}</td><td>${upgrade}</td><td>${birthday}</td><td>${weekly}</td><td>${monthly}</td></tr>`;
+    }).join("");
+  }
+
+  function memberVipBenefitTab() {
+    return `<section class="mobile-vip-benefit-note"><strong>VIP福利说明</strong><p>VIP福利根据会员当前VIP等级计算。周礼金和月礼金需满足对应周期的有效投注要求，达到领取条件后可在福利中心领取。</p><p>各项福利的领取时间和有效期以实际规则为准。</p></section><section class="mobile-vip-table-block annotated" data-component-id="T01">${componentBadge("T01")}<div class="mobile-vip-table-scroll"><table><thead><tr><th>VIP等级</th><th>周礼金有效投注要求</th><th>月礼金有效投注要求</th><th>VIP晋升礼金</th><th>VIP生日礼金</th><th>VIP周礼金</th><th>VIP月礼金</th></tr></thead><tbody>${memberVipBenefitRows()}</tbody></table></div></section>`;
+  }
+
+  function memberVipVenueGroups(level) {
+    const venues = [
+      { type: "电子", name: "PG电子", games: ["马上赢", "地狱狂想", "美食夏日祭"] },
+      { type: "真人", name: "DB真人", games: ["经典百家乐", "极速轮盘", "龙虎"] },
+      { type: "体育", name: "DW体育", games: ["足球", "篮球", "网球"] },
+      { type: "棋牌", name: "开元棋牌", games: ["炸金花", "德州扑克", "抢庄牛牛"] }
+    ];
+    return venues.map((venue, venueIndex) => `<section class="mobile-venue-group"><header><span>${venue.type}</span><strong>${venue.name}</strong></header>${venue.games.map((game, gameIndex) => { const raw = level === 0 && venueIndex === 3 && gameIndex === 2 ? 0 : Math.min(1.8, 0.1 + level * 0.06 + venueIndex * 0.05 + gameIndex * 0.03); const rate = raw === 0 ? "0%" : `${raw.toFixed(2)}%`; return `<div><span>${game}</span><strong class="${raw === 0 ? "no-rebate" : ""}">${rate}${raw === 0 ? " · 不返水" : ""}</strong></div>`; }).join("")}</section>`).join("");
+  }
+
+  function memberVipRebateTab() {
+    const rows = Array.from({ length: 13 }, (_, level) => `<section class="mobile-vip-rebate-row"><header><strong>VIP${level}</strong><span>左右滑动查看场馆与游戏</span></header><div class="mobile-venue-scroll">${memberVipVenueGroups(level)}</div></section>`).join("");
+    return `<section class="mobile-vip-rebate-list annotated" data-component-id="T02">${componentBadge("T02")}${rows}</section>`;
+  }
+
+  function memberVipRebateTableRows() {
+    const venues = [
+      ["电子", "PG电子", ["马上赢", "地狱狂想", "美食夏日祭"]],
+      ["真人", "DB真人", ["经典百家乐", "极速轮盘", "龙虎"]],
+      ["体育", "DW体育", ["足球", "篮球", "网球"]],
+      ["棋牌", "开元棋牌", ["炸金花", "德州扑克", "抢庄牛牛"]]
+    ];
+    return Array.from({ length: 13 }, (_, level) => venues.map(([type, venue, games], venueIndex) => games.map((game, gameIndex) => {
+      const rate = level === 0 && venueIndex === 3 && gameIndex === 2 ? "0% · 不返水" : `${(0.1 + level * 0.06 + venueIndex * 0.05 + gameIndex * 0.03).toFixed(2)}%`;
+      const vipCell = venueIndex === 0 && gameIndex === 0 ? `<th rowspan="${venues.reduce((total, item) => total + item[2].length, 0)}" scope="rowgroup">VIP${level}</th>` : "";
+      const venueCell = gameIndex === 0 ? `<td rowspan="${games.length}" class="rebate-venue-merged"><span>${type}</span><strong>${venue}</strong></td>` : "";
+      return `<tr>${vipCell}${venueCell}<td>${game}</td><td><strong class="${rate.includes("不返水") ? "no-rebate" : ""}">${rate}</strong></td></tr>`;
+    }).join("")).join("")).join("");
+  }
+
+  function memberVipRebateTable() {
+    return `<section class="mobile-vip-rebate-table annotated" data-component-id="T02">${componentBadge("T02")}<div class="mobile-vip-table-scroll"><table><thead><tr><th>VIP等级</th><th>场馆</th><th>游戏</th><th>返水比例</th></tr></thead><tbody>${memberVipRebateTableRows()}</tbody></table></div></section>`;
+  }
+
+  function memberVipWithdrawalTab() {
+    const rows = Array.from({ length: 13 }, (_, level) => { const count = level < 4 ? 5 : level < 8 ? 10 : 15; const daily = 200000 + level * 50000; const total = 1000000 + level * 250000; return `<tr><th>VIP${level}</th><td>${count}</td><td>${daily.toLocaleString("en-US")}</td><td>${total.toLocaleString("en-US")}</td></tr>`; }).join("");
+    return `<section class="mobile-vip-table-block annotated" data-component-id="T03">${componentBadge("T03")}<div class="mobile-vip-table-scroll"><table class="mobile-withdrawal-table"><thead><tr><th>VIP等级</th><th>日提款次数</th><th>每日提款额度</th><th>每日提款总额</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+  }
+
+  function memberVipDetailTabContent(tab) {
+    if (tab === "返水比例") return memberVipRebateView === "table" ? memberVipRebateTable() : memberVipRebateTab();
+    if (tab === "提款额度") return memberVipWithdrawalTab();
+    return memberVipBenefitTab();
+  }
+
+  function memberVipDetail509Content(page) {
+    const rulesHref = `#requirement/${encodeURIComponent("#509")}/page/member-vip-rules-509`;
+    const tabs = ["VIP福利", "返水比例", "提款额度"];
+    const rebateTableView = memberVipDetailTab === "返水比例" && memberVipRebateView === "table";
+    return mobileVipFrame(`${memberVipMobileHeader("VIP详情", "member-vip-center-509", `<a class="mobile-rule-link annotated" data-component-id="B01" href="${rulesHref}">${componentBadge("B01")}VIP规则</a>`)}<nav class="mobile-vip-detail-tabs annotated" data-component-id="N02">${componentBadge("N02")}${tabs.map((tab) => `<button type="button" class="${memberVipDetailTab === tab ? "active" : ""}" data-vip-detail-tab="${tab}">${tab}</button>`).join("")}</nav><main class="mobile-vip-detail-body${rebateTableView ? " rebate-table-view" : ""}">${memberVipDetailTabContent(memberVipDetailTab)}</main>`, "member-vip-detail");
+  }
+
+  function memberVipRules509Content() {
+    const rules = [
+      ["晋升标准", "晋升存款和晋升流水同时达到下一等级要求后，平台将在次日14:00统一完成VIP升级。"],
+      ["晋升顺序", "每次结算最多提升一个VIP等级，不支持越级晋升。升级后超出当前门槛的存款和流水不结转。"],
+      ["保级要求", "升级成功后开始计算90天保级周期。周期内达到当前等级保级流水要求，等级保持不变并重新开始下一周期。"],
+      ["降级标准", "保级期满未达到要求时，VIP等级固定降低一级，并按降级后的等级重新计算升级进度和保级周期。"],
+      ["VIP晋升礼金", "会员实际升级成功后生成对应等级的晋升礼金，每个等级每位会员仅可获得一次。"],
+      ["VIP生日礼金", "注册满90天的会员可在生日当天按当前VIP等级领取生日礼金，每年限领一次。"],
+      ["VIP周礼金", "达到上一周期对应的有效投注要求后，可在规定时间内领取当前VIP等级的周礼金。"],
+      ["VIP月礼金", "达到上一周期对应的有效投注要求后，可在规定时间内领取当前VIP等级的月礼金。"],
+      ["晋级优惠", "领取晋级优惠后开始计算活动有效流水，具体适用场馆和领取条件以页面展示为准。"],
+      ["VIP晋级", "晋级优惠只可申请当前VIP等级对应的指定场馆优惠。"],
+      ["VIP返水", "返水按照有效投注、会员VIP等级及具体游戏返水比例计算，生成后可在福利中心查看和领取。"]
+    ];
+    return mobileVipFrame(`${memberVipMobileHeader("VIP规则说明", "member-vip-detail-509")}<main class="mobile-vip-rules annotated" data-component-id="P01">${componentBadge("P01")}<p class="mobile-rules-intro">以下规则由总控后台统一维护，实际门槛、金额和有效期以页面最新展示为准。</p>${rules.map(([title, content], index) => `<section><span>${String(index + 1).padStart(2, "0")}</span><div><h2>${title}</h2><p>${content}</p></div></section>`).join("")}</main>`, "member-vip-rules");
+  }
+
+  function vipAlgorithm509Content() {
+    const sections = [
+      ["一", "改造结论", [
+        "VIP升级由“终身累计有效流水直接匹配等级”改为“按当前等级独立累计晋升存款和晋升流水”。两个条件同时达到下一级门槛后次日升级，每次最多升一级，升级后超出门槛的存款和流水均不结转。",
+        "保级失败由“扣减终身累计流水后重新计算等级”改为“固定降低一级”，避免一次保级失败连续降低多个等级。"
+      ]],
+      ["二", "保持不变", [
+        "VIP升级任务仍为每天14:00执行，只统计注单完成时间早于当天00:00的已结算有效流水。",
+        "VIP保级任务仍为每天15:00执行，保级周期仍从升级成功时间开始计算90天。",
+        "历史累计存款和历史累计有效流水继续保留作为统计数据，但不再用于直接计算当前VIP等级和升级进度。",
+        "VIP晋升礼金仍在会员实际升级成功时生成。",
+        "返水仍于每天01:10计算前一天数据，周礼金仍于每周一01:15执行，月礼金仍于每月1日01:20执行。以上任务均早于当天VIP升级任务，因此当天读取升级前的VIP等级，升级后的等级从后续福利任务生效。",
+        "礼金产生的有效投注继续计入VIP有效流水；已结算注单后续发生回滚时，仍不追溯调整VIP等级和已生成福利。"
+      ]],
+      ["三", "需要修改", [
+        "新增会员VIP升级账本，分别记录会员在当前等级下可用于升至下一级的晋升存款和晋升流水。",
+        "升级判定必须同时读取VIP升级账本中的晋升存款和晋升流水，两个条件均达到下一级门槛才允许升级；不得再按历史累计值直接匹配最高等级。",
+        "每次14:00任务最多将会员提升一级。即使账本中的存款和流水同时达到多个等级门槛，也只能升到下一级，并且只生成该等级对应的一份VIP晋升礼金。",
+        "任一晋升条件未达到下一级门槛时，晋升存款和晋升流水均继续累计；升级成功后，清空本次统计截止时间内的两项进度，超过本次晋升门槛的部分一并失效，不结转到下一级。",
+        "当天00:00后产生的成功存款和有效流水未参加本次14:00升级判定，升级清零时不得删除，必须保留到次日任务中计算。",
+        "升级成功后重新开始90天保级周期；VIP晋升存款、VIP晋升流水与保级流水必须分开记录、分开计算，不得共用同一个进度。",
+        "保级达标时等级不变，清空本周期保级进度并重新开始90天周期；保级失败时固定降低一级，不得再扣减终身累计流水后重新匹配等级。",
+        "降级后清空原晋升存款、晋升流水和保级进度，按降级后的等级重新开始升级累计和90天保级周期；降至VIP0后不再开启保级周期。",
+        "会员端VIP进度、相关接口及后台会员VIP信息统一改为新账本口径，分别展示当前晋升存款、当前晋升流水、下一级对应门槛及各自还差多少。",
+        "现有会员上线后不重新起算。新升级账本按会员当前等级原有的历史统计时间区间回算晋升存款和晋升流水并完成初始化；现有保级周期开始时间和已累计保级进度继续沿用，不得因新功能上线清零或重置。"
+      ]],
+      ["四", "场景举例", [
+        "未达标：会员当前为VIP1，升VIP2需要累计存款1万元且有效流水10万元。会员已完成存款1万元，但有效流水只有8万元，因此不升级，两项进度继续保留。",
+        "正常升级：会员当前为VIP1，晋升存款和晋升流水均达到VIP2要求。次日14:00升级为VIP2，两项升级进度清零，并从升级成功时间重新开始VIP2的90天保级周期。",
+        "超额不结转：会员升VIP2需要存款1万元、流水10万元，实际累计存款1.5万元、流水18万元。次日只升级到VIP2，多出的0.5万元存款和8万元流水均不计入VIP2升VIP3的进度。",
+        "禁止跨级：会员当前为VIP1，即使晋升存款和晋升流水同时达到VIP2和VIP3门槛，本次任务也只能升级到VIP2，只生成VIP2晋升礼金。",
+        "清零边界：会员在昨日结束前已达到升级门槛，并在今天00:00至14:00又产生一笔成功存款和2万元有效流水。14:00升级时只清除本次已参与判定的进度，今天新增的存款和流水保留到次日计算。",
+        "保级失败：会员当前为VIP3，90天保级期满仍未达标，则固定降为VIP2；VIP3的升级进度和保级进度清零，并按VIP2重新开始计算，不得因历史累计流水再次升回VIP3。"
+      ], true],
+      ["五", "会员端VIP规则说明文案", [
+        "VIP等级根据会员在当前等级累计的成功存款和有效流水进行升级，晋升存款和晋升流水必须同时达到要求；具体门槛以VIP页面展示的规则为准。",
+        "成功到账的存款计入晋升存款；有效流水在注单结算并同步成功后计入晋升流水。失败或取消的存款，以及无效、取消或未结算的注单不计入升级进度。数据同步可能存在短暂延迟，请以页面最终更新结果为准。",
+        "晋升存款和晋升流水进度实时更新，但VIP等级不会立即变化。平台每天14:00统一结算前一天的VIP升级结果，两项条件均达到下一级要求后完成升级。",
+        "每次结算最多提升一个VIP等级。即使晋升存款和晋升流水同时达到多个等级要求，当天也只提升一级。",
+        "升级成功后，当前等级的晋升存款和晋升流水均重新从0开始；超过本次晋升要求的存款和有效流水不会累计到下一个VIP等级。",
+        "升级成功后开始计算90天保级周期。保级期内达到当前等级的保级流水要求，VIP等级保持不变，并重新开始下一个90天保级周期。",
+        "保级期满仍未达到要求时，VIP等级降低一级；降级后按新等级重新计算升级进度和保级周期。",
+        "VIP晋升礼金在实际升级成功后生成。返水、周礼金、月礼金按各自结算时间读取当时的VIP等级，升级后的新等级从后续结算周期生效。"
+      ]],
+      ["六", "关联需求", [
+        "本次VIP升级算法必须与#509【总控后台-会员管理 会员配置优化】、#512【总控后台 VIP返水优化】同时上线，三项需求不可拆分发布。",
+        "VIP等级、晋升存款、晋升流水、保级流水及会员端VIP规则文案由#509统一配置。",
+        "VIP返水比例、返水流水倍数及返水计算规则由#512统一配置。"
+      ]]
+    ];
+    const sectionHtml = sections.map(([number, title, items, emphasizeLead]) => `<section class="vip-copy-section${title === "关联需求" ? " is-related" : ""}"><header><span>${number}</span><h2>${title}</h2></header><ol>${items.map((item, index) => {
+      let content = escapeHtml(item);
+      if (emphasizeLead) {
+        const separator = content.indexOf("：");
+        if (separator > 0) content = `<strong>${content.slice(0, separator)}</strong>：${content.slice(separator + 1)}`;
+      }
+      return `<li><span>${index + 1}</span><p>${content}</p></li>`;
+    }).join("")}</ol></section>`).join("");
+    return `<article class="vip-algorithm-document">
+      <header class="vip-algorithm-header"><div><span>TECHNICAL RULE VIEW · 非生产页面</span><h1>新VIP算法说明</h1><p>负责产品：Mike　　版本：20260726</p></div></header>
+      <main class="vip-algorithm-body">${sectionHtml}</main>
+    </article>`;
   }
 
   function vipOptimizationContent(page) {
+    if (page.key === "member-vip-center-509") return memberVipCenter509Content();
+    if (page.key === "member-vip-detail-509") return memberVipDetail509Content(page);
+    if (page.key === "member-vip-rules-509") return memberVipRules509Content();
+    if (page.key === "vip-algorithm-509") return vipAlgorithm509Content();
     if (page.key === "member-level-config-509") return member509LevelContent(page);
     if (page.key === "member-tag-config-509") return member509TagContent(page);
     if (page.key === "rebate-level-config-512") return rebate512LevelContent(page);
@@ -1094,7 +1332,7 @@
   }
 
   function questionsBlock(page, activeTab = financeTabState[page.key] || page.tabs?.[0]) {
-    if (!["#509", "#512"].includes(currentRequirementId)) return "";
+    if (currentRequirementId !== "#509") return "";
     const questions = page.tabQuestions?.[activeTab] || page.questions || [];
     if (!questions.length) return "";
     return `<section class="questions-block"><div class="questions-title"><span>?</span><div><strong>待确认事项</strong><small>${questions.length} 项</small></div></div><ol>${questions.map((question)=>`<li>${escapeHtml(question)}</li>`).join("")}</ol></section>`;
@@ -1238,7 +1476,7 @@
         .replace(/^每周红利$/, "VIP周礼金")
         .replace(/^每月红利$/, "VIP月礼金");
 
-      if (requirementId === "#512" && pageKey === "rebate-records-512" && next === "订单号") next = "返水订单号";
+      if (pageKey === "rebate-records-512" && next === "订单号") next = "返水订单号";
       else if (!pageKey.includes("bet-records") && next === "订单号") next = "单号";
 
       const siteSpecific = requirementId === "#427" && pageKey === "site-transactions";
@@ -1314,6 +1552,15 @@
     return `<section class="export-standard-note"><span>${escapeHtml(annotation?.name || "导出规范")}</span><p>${summary}${rules.map(escapeHtml).join("；")}。</p></section>`;
   }
 
+  function prototypeEndpointSwitch(requirement, page) {
+    if (requirement.id !== "#509") return `<span class="current-page-label">${page.name}</span>`;
+    const memberActive = memberVipMobileKeys.includes(page.key);
+    const algorithmActive = page.key === "vip-algorithm-509";
+    const annotated = page.annotations?.some((annotation) => annotation.id === "N09");
+    const currentPageLabel = algorithmActive ? "" : `<span class="current-page-label">${page.name}</span>`;
+    return `<div class="prototype-endpoint-switch${annotated ? " annotated" : ""}"${annotated ? ' data-component-id="N09"' : ""}>${annotated ? componentBadge("N09") : ""}<a href="#requirement/${encodeURIComponent("#509")}/page/member-level-config-509" class="${!memberActive && !algorithmActive ? "active" : ""}">总控后台</a><a href="#requirement/${encodeURIComponent("#509")}/page/member-vip-center-509" class="${memberActive ? "active" : ""}">会员端</a><a href="#requirement/${encodeURIComponent("#509")}/page/vip-algorithm-509" class="${algorithmActive ? "active" : ""}">新VIP算法</a></div>${currentPageLabel}`;
+  }
+
   function detailView(requirement, requestedPageKey) {
     const pages = visiblePages(requirement);
     const page = pages.find((item) => item.key === requestedPageKey) || pages[0];
@@ -1325,11 +1572,13 @@
     const pageLogic = page.logic ? `<section class="logic-note"><span>逻辑说明</span><p>${escapeHtml(page.logic)}</p></section>` : "";
     const extraNotice = page.extraNotice ? `<section class="critical-note"><span>额外功能</span><p>${escapeHtml(page.extraNotice)}</p></section>` : "";
     const currentAnnotations = visibleAnnotations(page);
-    const moduleName = requirement.moduleName || "风控管理";
+    const moduleName = requirement.id === "#509" ? page.moduleName || requirement.moduleName || "风控管理" : requirement.moduleName || "风控管理";
     const adjustmentNotice = requirement.id === "#427" ? '<section class="adjustment-note"><span>调整说明</span><p>未标注的地方均为未修改，保持原页面内容和逻辑即可。</p></section>' : "";
     const memberModuleMode = requirement.id === "#488";
     const member493Mode = requirement.id === "#493";
     const memberDetailMode = requirement.id === "#488" && member488DetailPages.some(([key]) => key === page.key);
+    const member509MobileMode = requirement.id === "#509" && memberVipMobileKeys.includes(page.key);
+    const vipAlgorithmMode = requirement.id === "#509" && page.key === "vip-algorithm-509";
     const renderedPageContent = pageContent(page);
     const exportAnnotation = currentAnnotations.find((annotation) => annotation.name.includes("导出") || annotation.type.includes("导出")) || null;
     const scopeAnnotation = page.key === "member-logs-488" ? currentAnnotations.find((annotation) => annotation.id === "P01" && annotation.tab === "会员日志") : null;
@@ -1337,7 +1586,12 @@
     const cardAnnotations = currentAnnotations.filter((annotation) => annotation !== exportAnnotation && annotation !== scopeAnnotation);
     const exportNotice = renderedPageContent.includes("导出") ? exportStandardNotice(exportAnnotation) : "";
     const topSpecNotices = `${productionComparisonNotice(requirement, page)}${scopeSpecNotice(scopeAnnotation)}`;
-    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav aria-label="当前原型页面"><span class="current-page-label">${page.name}</span></nav></header><div class="prototype-canvas"><div class="risk-app${memberModuleMode ? " member-module-mode" : ""}${member493Mode ? " member-493-mode" : ""}${memberDetailMode ? " member-detail-mode" : ""}">${sidebar(requirement,page)}<section class="risk-main"><header class="risk-topbar"><div><span>${moduleName} /</span><strong>${page.name}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header><div class="risk-content">${renderedPageContent}</div></section></div></div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><div><h2>${page.name}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll"><div class="spec-top-notices">${topSpecNotices}</div><div class="questions-slot">${questionsBlock(page)}</div>${pageNoteBlock(page)}${pageLogic}${extraNotice}${adjustmentNotice}${exportNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${cardAnnotations.length} 项</span></div><div class="annotation-list">${cardAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"></div>`;
+    const prototypeBody = member509MobileMode
+      ? `<div class="member-mobile-stage">${renderedPageContent}</div>`
+      : vipAlgorithmMode
+        ? `<div class="vip-algorithm-stage">${renderedPageContent}</div>`
+      : `<div class="risk-app${memberModuleMode ? " member-module-mode" : ""}${member493Mode ? " member-493-mode" : ""}${memberDetailMode ? " member-detail-mode" : ""}">${sidebar(requirement,page)}<section class="risk-main"><header class="risk-topbar"><div><span>${moduleName} /</span><strong>${page.name}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header><div class="risk-content">${renderedPageContent}</div></section></div>`;
+    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav${requirement.id === "#509" ? ' class="prototype-endpoint-nav"' : ""} aria-label="当前原型页面">${prototypeEndpointSwitch(requirement, page)}</nav></header><div class="prototype-canvas${member509MobileMode ? " member-mobile-canvas" : ""}${vipAlgorithmMode ? " vip-algorithm-canvas" : ""}">${prototypeBody}</div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><div><h2>${page.name}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll"><div class="spec-top-notices">${topSpecNotices}</div><div class="questions-slot">${questionsBlock(page)}</div>${pageNoteBlock(page)}${pageLogic}${extraNotice}${adjustmentNotice}${exportNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${cardAnnotations.length} 项</span></div><div class="annotation-list">${cardAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"></div>`;
     if (exportNotice) bindExportStandardLink(app, exportLinkId);
     if (page.key === "withdraw-monitor") renderMonitorView(false);
     addTopPaginators();
@@ -1847,13 +2101,13 @@
   }
 
   function vipLevelConfigModal(level) {
-    modal(`${level} 等级配置`, `<div class="vip-modal-toolbar"><button type="button" class="secondary-action">← 上一等级</button><label>快速跳转<select><option>${level}</option><option>VIP0</option><option>VIP1</option><option>VIP2</option><option>VIP3</option><option>VIP4</option></select></label><button type="button" class="secondary-action">下一等级 →</button></div><div class="vip-config-sections"><section><h3>晋升规则</h3><div class="config-grid"><label>晋升存款<div><input type="number" value="2000" min="0" /><span>CNY</span></div></label><label>晋升流水<div><input type="number" value="12000" min="0" /><span>CNY</span></div></label></div><p>两项同时满足后，次日最多晋升一级；超出部分不结转到下一等级。</p></section><section><h3>保级规则</h3><div class="config-grid"><label>保级流水<div><input type="number" value="8000" min="0" /><span>CNY</span></div></label><label>保级周期<div><input type="number" value="90" min="1" /><span>天</span></div></label></div></section><section><h3>提款福利</h3><div class="config-grid"><label>单日提款限次<div><input type="number" value="5" min="0" /><span>次</span></div></label><label>单日提款限额<div><input type="number" value="200000" min="0" /><span>CNY</span></div></label></div></section><section><h3>用户端说明</h3><label class="wide-config-field">WEB保级流水说明<textarea>90天内完成对应保级流水，可继续享受当前VIP等级福利。</textarea></label><label class="wide-config-field">移动端保级流水说明<textarea>保级周期内完成流水即可维持当前等级。</textarea></label></section></div>`, "保存配置");
+    modal(`${memberVipConfigSite} · ${level} 等级配置`, `<div class="modal-context-line"><span>所属站点</span><strong>${memberVipConfigSite}</strong><span>VIP等级</span><strong>${level}</strong></div><div class="vip-modal-toolbar"><button type="button" class="secondary-action">← 上一等级</button><label>快速跳转<select><option>${level}</option>${Array.from({ length: 13 }, (_, index) => `<option>VIP${index}</option>`).join("")}</select></label><button type="button" class="secondary-action">下一等级 →</button></div><div class="vip-config-sections"><section><h3>晋升规则</h3><div class="config-grid"><label>晋升存款<div><input type="number" value="2000" min="0" /><span>CNY</span></div></label><label>晋升流水<div><input type="number" value="12000" min="0" /><span>CNY</span></div></label></div><p>两项同时满足后，次日最多晋升一级；超出部分不结转到下一等级。</p></section><section><h3>保级规则</h3><div class="config-grid"><label>保级流水<div><input type="number" value="8000" min="0" /><span>CNY</span></div></label><label>保级周期<div><input type="number" value="90" min="1" /><span>天</span></div></label></div></section><section><h3>提款福利</h3><div class="config-grid"><label>日提款次数<div><input type="number" value="5" min="0" /><span>次</span></div></label><label>每日提款额度<div><input type="number" value="200000" min="0" /><span>CNY</span></div></label></div></section><section><h3>用户端说明</h3><label class="wide-config-field">WEB保级流水说明<textarea>90天内完成对应保级流水，可继续享受当前VIP等级福利。</textarea></label><label class="wide-config-field">移动端保级流水说明<textarea>保级周期内完成流水即可维持当前等级。</textarea></label></section></div>`, "保存配置");
     document.querySelector(".risk-modal")?.classList.add("vip-config-modal");
   }
 
   function vipBonusConfigModal(level) {
     const reward = (name, amount, condition, unit = "天") => `<section><h3>${name}</h3><div class="reward-config-row"><label>红利金额<div><input type="number" value="${amount}" min="0" /><span>CNY</span></div></label>${condition ? `<label>${condition}<div><input type="number" value="3000" min="0" /><span>CNY</span></div></label>` : ""}<label>领取有效期<div><input type="number" value="7" min="0" /><span>${unit}</span></div></label><label>流水倍数<div><input type="number" value="1" min="0" step="0.1" /><span>倍</span></div></label></div></section>`;
-    modal(`${level} 红利配置`, `<div class="vip-modal-toolbar"><button type="button" class="secondary-action">← 上一等级</button><label>快速跳转<select><option>${level}</option><option>VIP1</option><option>VIP2</option><option>VIP3</option></select></label><button type="button" class="secondary-action">下一等级 →</button></div><div class="reward-config-list">${reward("VIP晋升礼金", "18", "")}${reward("VIP生日礼金", "18", "")}${reward("VIP周礼金", "18", "上周流水要求")}${reward("VIP月礼金", "68", "上月流水要求")}</div>`, "保存配置");
+    modal(`${memberVipConfigSite} · ${level} 红利配置`, `<div class="modal-context-line"><span>所属站点</span><strong>${memberVipConfigSite}</strong><span>VIP等级</span><strong>${level}</strong></div><div class="vip-modal-toolbar"><button type="button" class="secondary-action">← 上一等级</button><label>快速跳转<select><option>${level}</option>${Array.from({ length: 13 }, (_, index) => `<option>VIP${index}</option>`).join("")}</select></label><button type="button" class="secondary-action">下一等级 →</button></div><div class="reward-config-list">${reward("VIP晋升礼金", "18", "")}${reward("VIP生日礼金", "18", "")}${reward("VIP周礼金", "18", "上周流水要求")}${reward("VIP月礼金", "68", "上月流水要求")}</div>`, "保存配置");
     document.querySelector(".risk-modal")?.classList.add("vip-config-modal");
   }
 
@@ -1862,6 +2116,29 @@
     modal("VIP文案配置", `<div class="copy-config-layout"><nav>${labels.map((label, index) => `<button type="button" class="${index === 0 ? "active" : ""}">${label}</button>`).join("")}</nav><section><label>晋升标准<textarea>累计存款和有效流水同时达到相应级别要求后，可在次日24点前晋级相应VIP等级。</textarea></label><div class="copy-preview"><span>用户端预览</span><p>累计存款和有效流水同时达到相应级别要求后，可在次日24点前晋级相应VIP等级。</p></div></section></div>`, "保存文案");
     document.querySelector(".risk-modal")?.classList.add("vip-copy-modal");
     document.querySelectorAll(".copy-config-layout nav button").forEach((button) => button.addEventListener("click", () => { button.parentElement.querySelectorAll("button").forEach((item) => item.classList.remove("active")); button.classList.add("active"); }));
+  }
+
+  function vipSiteEnableModal() {
+    const scope = document.querySelector(".vip-site-enable")?.dataset.independentScope || "会员等级、红利与VIP返水";
+    modal(`为 ${memberVipConfigSite} 单独配置`, `<div class="site-config-modal"><div class="modal-context-line"><span>当前使用</span><strong>总控默认配置</strong></div><p>确认后将完整复制当前总控默认配置，并切换为<strong>【${memberVipConfigSite}单独配置】</strong>。</p><p class="form-warning">${scope}将作为一套完整配置复制，包括全部VIP等级规则、返水流水倍数以及场馆与游戏返水比例，不支持选择部分范围。此后总控默认配置的修改不再影响该站点。</p><label class="confirm-check"><input type="checkbox" /> 我已确认启用本站点单独配置</label></div>`, "确认启用");
+    const confirm = document.querySelector(".risk-modal .modal-confirm");
+    const acknowledgement = document.querySelector(".risk-modal .confirm-check input");
+    if (confirm) confirm.disabled = true;
+    acknowledgement?.addEventListener("change", () => { if (confirm) confirm.disabled = !acknowledgement.checked; });
+    confirm?.addEventListener("click", () => {
+      if (!acknowledgement?.checked) return;
+      memberVipIndependentSites.add(memberVipConfigSite);
+      render();
+    }, { capture: true });
+  }
+
+  function vipSiteRestoreModal() {
+    const scope = document.querySelector(".vip-site-restore")?.dataset.independentScope || "会员等级、红利与VIP返水";
+    modal("恢复使用总控默认配置", `<p class="danger-confirm">确认将 <strong>【${memberVipConfigSite}】</strong> 恢复为使用总控默认配置？</p><p>该站点独立的${scope}将整套停止生效，并立即读取最新总控默认配置；不支持只恢复部分配置。已生成记录继续保留原配置快照。</p>`, "确认恢复");
+    document.querySelector(".risk-modal .modal-confirm")?.addEventListener("click", () => {
+      memberVipIndependentSites.delete(memberVipConfigSite);
+      render();
+    }, { capture: true });
   }
 
   function tagFormModal(name = "", system = false) {
@@ -1886,6 +2163,7 @@
     const footer = readonly ? `<footer><button class="main-action modal-confirm">关闭</button></footer>` : "";
     modal(`${level} 返水${readonly ? "详情" : "设置"}`, `<div class="rebate-base-config"><label>每日最高返水<div><input type="number" value="200" ${readonly ? "disabled" : ""} /><span>CNY</span></div></label><label>最低流水要求<div><input type="number" value="10000" ${readonly ? "disabled" : ""} /><span>CNY</span></div></label><label>领取有效期<div><input type="number" value="24" ${readonly ? "disabled" : ""} /><select ${readonly ? "disabled" : ""}><option>小时</option><option>天</option></select></div></label><label>返水流水倍数<div><input type="number" value="1" step="0.1" ${readonly ? "disabled" : ""} /><span>倍</span></div></label></div><nav class="venue-config-tabs"><button type="button" class="active">PG电子</button><button type="button">DB真人</button><button type="button">DW体育</button><button type="button">DB捕鱼</button></nav>${readonly ? "" : '<div class="rebate-batch-toolbar"><label><input type="checkbox" class="rebate-check-all" />全选当前页</label><span class="rebate-selected-count">已选 0 项</span><button type="button" class="secondary-action rebate-batch-action" data-batch-action="设置" disabled>批量设置</button><button type="button" class="secondary-action rebate-batch-action" data-batch-action="插入" disabled>批量插入</button><button type="button" class="secondary-action rebate-batch-action" data-batch-action="上调" disabled>批量上调</button><button type="button" class="secondary-action rebate-batch-action" data-batch-action="下调" disabled>批量下调</button></div><div class="rebate-batch-editor" hidden><div><strong class="rebate-batch-title">批量设置</strong><label><input type="number" class="rebate-batch-value" min="0" step="0.0001" placeholder="请输入比例" /><span>%</span></label><button type="button" class="main-action rebate-batch-confirm">确认</button><button type="button" class="secondary-action rebate-batch-cancel">取消</button></div><p class="rebate-batch-help"></p></div>'}<div class="risk-table-wrap"><table class="risk-table rebate-game-table"><thead><tr>${readonly ? "" : "<th>选择</th>"}<th>游戏名称</th><th>场馆类型</th><th>返水比例</th><th>是否返水</th><th>最后更新时间</th></tr></thead><tbody>${games.map((game) => `<tr>${readonly ? "" : '<td><input type="checkbox" class="rebate-game-check" /></td>'}<td><strong>${game[0]}</strong></td><td>电子</td><td><div class="inline-rate-input"><input type="number" value="${game[1]}" placeholder="未配置" step="0.0001" ${readonly || game[2] ? "disabled" : ""} /><span>%</span></div></td><td><span class="result-tag ${game[2] ? "rejected" : "approved"}">${game[2] ? "不返水" : "返水"}</span></td><td>2026-07-23 19:08:30</td></tr>`).join("")}</tbody></table></div>${pagination(20, 156)}`, readonly ? "关闭" : "保存配置", footer);
     document.querySelector(".risk-modal")?.classList.add("rebate-setting-modal");
+    document.querySelector(".risk-modal.rebate-setting-modal .modal-body")?.insertAdjacentHTML("afterbegin", `<div class="modal-context-line"><span>所属站点</span><strong>${memberVipConfigSite}</strong><span>VIP等级</span><strong>${level}</strong></div>`);
     document.querySelectorAll(".venue-config-tabs button").forEach((button) => button.addEventListener("click", () => { button.parentElement.querySelectorAll("button").forEach((item) => item.classList.remove("active")); button.classList.add("active"); }));
     const modalElement = document.querySelector(".risk-modal.rebate-setting-modal");
     const rowChecks = Array.from(modalElement?.querySelectorAll(".rebate-game-check") || []);
@@ -1960,8 +2238,79 @@
     applyTableRowLimits(document.getElementById("modal-root"));
   }
 
+  function syncMemberVipDetailSpec(page, tab) {
+    financeTabState[page.key] = tab;
+    const annotations = visibleAnnotations(page, tab);
+    const list = document.querySelector(".annotation-list");
+    const count = document.querySelector(".spec-section-heading span");
+    if (list) list.innerHTML = annotations.map(annotationCard).join("");
+    if (count) count.textContent = `${annotations.length} 项`;
+    bindComponentLinks();
+    bindMemberVipRebateViewSwitch(page);
+  }
+
+  function bindMemberVipRebateViewSwitch(page) {
+    if (page.key !== "member-vip-detail-509" || memberVipDetailTab !== "返水比例") return;
+    document.querySelectorAll("[data-rebate-view]").forEach((button) => button.addEventListener("click", () => {
+      memberVipRebateView = button.dataset.rebateView;
+      const body = document.querySelector(".mobile-vip-detail-body");
+      if (body) {
+        body.innerHTML = memberVipDetailTabContent(memberVipDetailTab);
+        body.classList.toggle("rebate-table-view", memberVipRebateView === "table");
+      }
+      syncMemberVipDetailSpec(page, memberVipDetailTab);
+      applyTableRowLimits(body || document);
+    }));
+  }
+
+  function updateMemberVipCenterLevel(level) {
+    memberVipSelectedLevel = level;
+    document.querySelectorAll("[data-vip-perks]").forEach((panel) => { panel.hidden = Number(panel.dataset.vipPerks) !== level; });
+    const title = document.querySelector(".member-vip-perk-title");
+    if (title) title.textContent = `VIP${level}尊享特权`;
+    document.querySelectorAll(".member-vip-card-dots i").forEach((dot, index) => dot.classList.toggle("active", index === level));
+  }
+
+  function bindMember509MobileBehavior(page) {
+    if (page.key === "member-vip-center-509") {
+      const track = document.querySelector(".member-vip-card-track");
+      const cards = Array.from(document.querySelectorAll(".member-vip-card"));
+      const selectCard = (card) => {
+        if (!card) return;
+        const level = Number(card.dataset.vipLevel);
+        updateMemberVipCenterLevel(level);
+        card.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      };
+      cards.forEach((card) => card.addEventListener("click", () => selectCard(card)));
+      let scrollTimer = 0;
+      track?.addEventListener("scroll", () => {
+        window.clearTimeout(scrollTimer);
+        scrollTimer = window.setTimeout(() => {
+          const center = track.getBoundingClientRect().left + track.clientWidth / 2;
+          const nearest = cards.reduce((best, card) => Math.abs(card.getBoundingClientRect().left + card.clientWidth / 2 - center) < Math.abs(best.getBoundingClientRect().left + best.clientWidth / 2 - center) ? card : best, cards[0]);
+          updateMemberVipCenterLevel(Number(nearest?.dataset.vipLevel || 0));
+        }, 80);
+      });
+      if (memberVipSelectedLevel > 0) window.setTimeout(() => selectCard(cards[memberVipSelectedLevel]), 0);
+    }
+    if (page.key === "member-vip-detail-509") {
+      document.querySelectorAll("[data-vip-detail-tab]").forEach((button) => button.addEventListener("click", () => {
+        memberVipDetailTab = button.dataset.vipDetailTab;
+        document.querySelectorAll("[data-vip-detail-tab]").forEach((item) => item.classList.toggle("active", item === button));
+        const body = document.querySelector(".mobile-vip-detail-body");
+        if (body) {
+          body.innerHTML = memberVipDetailTabContent(memberVipDetailTab);
+          body.classList.toggle("rebate-table-view", memberVipDetailTab === "返水比例" && memberVipRebateView === "table");
+        }
+        syncMemberVipDetailSpec(page, memberVipDetailTab);
+      }));
+      syncMemberVipDetailSpec(page, memberVipDetailTab);
+    }
+  }
+
   function bindVipOptimizationBehavior(page) {
     if (!page.key.endsWith("-509") && !page.key.endsWith("-512")) return;
+    bindMember509MobileBehavior(page);
     if (page.key === "rebate-records-512") {
       const generatedRange = document.querySelector('[data-component-id="F02"] .risk-range');
       const claimedRange = document.querySelector('[data-component-id="F03"] .risk-range');
@@ -1991,6 +2340,25 @@
       });
       bindComponentLinks();
     }
+    const vipSiteSelector = document.querySelector(".vip-site-selector");
+    const vipSiteTrigger = vipSiteSelector?.querySelector(".vip-site-select-trigger");
+    const vipSiteOptions = vipSiteSelector?.querySelector(".vip-site-options");
+    vipSiteTrigger?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const opening = vipSiteOptions.hidden;
+      vipSiteOptions.hidden = !opening;
+      vipSiteTrigger.setAttribute("aria-expanded", String(opening));
+      if (opening) window.setTimeout(() => document.addEventListener("click", () => {
+        if (vipSiteOptions) vipSiteOptions.hidden = true;
+        vipSiteTrigger?.setAttribute("aria-expanded", "false");
+      }, { once: true }), 0);
+    });
+    vipSiteSelector?.querySelectorAll("[data-vip-site]").forEach((button) => button.addEventListener("click", () => {
+      memberVipConfigSite = button.dataset.vipSite;
+      render();
+    }));
+    document.querySelector(".vip-site-enable")?.addEventListener("click", vipSiteEnableModal);
+    document.querySelector(".vip-site-restore")?.addEventListener("click", vipSiteRestoreModal);
     document.querySelectorAll(".vip-level-config").forEach((button) => button.addEventListener("click", () => vipLevelConfigModal(button.dataset.level)));
     document.querySelectorAll(".vip-bonus-config").forEach((button) => button.addEventListener("click", () => vipBonusConfigModal(button.dataset.level)));
     document.querySelector(".vip-copy-config")?.addEventListener("click", vipCopyConfigModal);
@@ -2101,7 +2469,8 @@
   function render() {
     const match = window.location.hash.match(/^#requirement\/([^/]+)(?:\/page\/([^/]+))?$/);
     if (!match) { listView(); document.title = "产品需求原型库"; return; }
-    const requirement = visibleRequirements().find((item) => item.id === decodeURIComponent(match[1]));
+    const requestedRequirementId = decodeURIComponent(match[1]);
+    const requirement = visibleRequirements().find((item) => item.id === requestedRequirementId);
     if (!requirement) { window.location.hash = ""; return; }
     detailView(requirement, match[2] || visiblePages(requirement)[0].key);
     document.title = `${requirement.title} · 产品需求原型库`;
