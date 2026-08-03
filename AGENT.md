@@ -242,6 +242,7 @@
 ## GitHub 发布
 
 - 默认远程仓库：`https://github.com/Mike-oss-966/prototypes.git`，默认分支：`main`。
+- 本机浏览器通过 v2rayN 访问外网，Git 直连 `github.com:443` 会超时或被重置；GitHub 的 `fetch`、`pull`、`push` 统一使用单次代理参数 `git -c http.proxy=http://127.0.0.1:10808 <命令>`。推送前先用同一参数执行 `fetch origin main`，禁止在已知直连不可用时反复尝试直连。该参数只对当前命令生效，不写入全局 Git 配置。
 - 仅当用户明确说“推到 GitHub”“上传 GitHub”等时，才检查、提交并推送；普通修改不得自动发布。
 - 推送前检查工作区、`docs/` 忽略状态、语法、差异和远程最新提交；不得强推或覆盖未知提交。
 - 推送前必须检查 `docs/GitHub推送待确认事项.md`；其中未确认的已完成需求改动必须先取得用户对具体清单的明确上传确认。
