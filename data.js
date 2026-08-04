@@ -41,8 +41,7 @@
     pageType: "mixed",
     ...config,
     annotations: [
-      { id: "N09", name: "板块切换", type: "原型导航", summary: "切换代理后台改造、总控后台改造与分润模拟器。", rules: ["此切换器只用于原型评审"] },
-      { id: "N01", name: "代理后台菜单层级", type: "一级/二级菜单", summary: `【${config.menuGroup}】为一级菜单，【${config.name}】为其左侧二级菜单。`, rules: [`【${config.menuGroup}】下的二级菜单包括：${(agent498GroupMenus[config.menuGroup] || []).join("、")}`, "同一二级菜单内存在多个页面视图时，使用内容区三级Tab展示", "根据代理类型和权限动态隐藏无权访问的二级菜单"] },
+      { id: "N09", name: "板块切换", type: "原型导航", summary: "切换代理后台改造与总控后台改造。", rules: ["此切换器只用于原型评审"] },
       ...(config.annotations || [])
     ]
   });
@@ -75,6 +74,7 @@
               { id: "F01", name: "筛选输入处理", type: "输入规则", summary: "说明筛选区文本输入框和筛选表的处理。", rules: ["筛选表默认选中待审核，可切换待领取；选择后只筛选对应列表的数据", "单号、会员账号、真实姓名、所属站点提交或查询前去除首尾空格", "所属站点获取焦点且无输入时展示全部站点，输入内容后联想过滤并支持下拉选择", "VIP等级：读取VIP等级列表即可"] },
               { id: "F02", name: "申请时间", type: "日期时间范围", summary: "按提款申请时间筛选。", rules: timeRules },
               { id: "S01", name: "列表状态切换", type: "原型演示开关", summary: "切换待领取、待审核列表的有数据和空状态。", rules: ["仅用于原型评审，不属于生产业务功能", "待领取无数据时展示“无待领取申请”，不显示空表格", "待审核无数据时展示“无待审核申请”和“查看审核历史”按钮", "有数据时展示完整列表和分页器"] },
+              { id: "S03", name: "跳过风控审核", type: "全平台开关", summary: "控制新提款订单是否跳过风控审核并直接进入财务审核。", rules: ["全平台统一配置，不按站点分别设置", "默认关闭：切换后新进入审核流程的订单先进入风控审核，通过后再进入财务审核", "开启：切换后新进入审核流程的订单跳过风控审核，直接进入财务审核", "切换开关不迁移、不自动处理已经进入风控或财务处理范围的订单；已有订单继续由当前范围内的审核人员手动处理"] },
               { id: "T01", name: "待领取列表", type: "数据表格", summary: "所有风控人员可见的待领取提款申请公共池。", rules: ["默认按照申请时间倒序展示", "默认每页20条", "冻结单号、会员账号、操作三列", "页面未刷新时若订单已被其他审核员领取，再次点击领取提示“任务已被领取”，并单独刷新本数据表", "金额无小数时不显示小数，有小数时按实际精度显示"] },
               { id: "B02", name: "领取", type: "行内操作", summary: "领取提款申请并移入当前账号的待审核列表。", rules: ["领取时需校验订单仍处于可领取状态", "并发领取仅允许一个账号成功", "成功后刷新待领取和待审核列表"] },
               { id: "T02", name: "待审核列表", type: "数据表格", summary: "展示当前风控账号已领取并锁定的提款申请。", rules: ["默认按照申请时间倒序展示", "默认每页20条", "冻结单号、会员账号、操作三列", "金额无小数时不显示小数，有小数时按实际精度显示"] },
@@ -390,7 +390,7 @@
         priority: "P0",
         startDate: "2026-07-19",
         completionDate: "2026-07-30",
-        updatedAt: "2026-08-01 22:12",
+        updatedAt: "2026-08-04 11:30",
         summary: "重构会员列表与会员详情信息架构，补充统计、红利、返水、人工上下分、账户调整及会员日志能力。",
         moduleName: "会员管理",
         workspaceName: "会员工作台",
@@ -411,7 +411,8 @@
               { id: "B02", name: "启用或禁用", type: "危险操作", summary: "沿用生产现有会员状态切换能力。", rules: ["必须二次确认并填写原因", "权限、状态更新及影响范围沿用生产现状"] },
               { id: "B03", name: "账户安全操作", type: "行内操作", summary: "直接执行回收和密码操作。", rules: ["一键回收、修改登录密码、重置提款密码在操作列直接展示并沿用生产逻辑", "重置提款密码后由前端用户自行重新设置", "危险操作必须二次确认"] }
               ,{ id: "B04", name: "登录日志", type: "页面跳转", summary: "从注册登录信息直接查看当前会员登录日志。", rules: ["点击后跳转风控管理-会员登录日志", "自动带入当前会员账号作为查询条件"] }
-              ,{ id: "S01", name: "标签与备注", type: "预留字段", summary: "本期仅保留字段位置。", rules: ["标签和备注内容统一置空展示", "本期不提供查看、新增、编辑或删除功能"] }
+              ,{ id: "S01", name: "标签与备注", type: "标签展示", summary: "展示会员当前关联标签及备注。", rules: ["标签读取#509标签管理当前有效配置", "自定义标签与系统标签使用不同样式区分", "系统标签名称后保留用途问号，鼠标悬停或键盘聚焦后展示该系统标签的功能说明", "备注沿用会员当前备注内容"] }
+              ,{ id: "M02", name: "编辑会员标签", type: "多列表格弹窗", summary: "为当前会员增加或删除标签并查看历史。", rules: ["自定义标签和系统标签分别读取#509标签管理中当前有效的对应分类", "支持切换标签分类、勾选并增加标签，也支持删除当前已关联标签", "每次增加或删除均记录标签类型、标签名称、操作类型、操作人、操作时间和备注", "标签编辑历史默认每页20条", "支持最多200条/页的选项"] }
             ]
           },
           {
@@ -623,7 +624,7 @@
         priority: "P0",
         startDate: "2026-07-23",
         completionDate: "2026-08-01",
-        updatedAt: "2026-08-01 23:02",
+        updatedAt: "2026-08-04 11:30",
         summary: "按站点统一维护会员等级、红利和VIP文案配置，并重构会员标签管理与会员端VIP展示。",
         moduleName: "会员管理",
         workspaceName: "会员工作台",
@@ -665,9 +666,9 @@
             annotations: [
               { id: "N09", name: "端视图切换", type: "原型导航", summary: "在总控后台、会员端和新VIP算法之间切换。", rules: ["总控后台默认进入会员配置，会员端默认进入VIP尊享中心，新VIP算法进入技术实现规则视图", "此切换器只用于原型评审，不属于生产功能"] },
               { id: "N01", name: "会员配置导航", type: "页内横向Tab", summary: "切换会员配置页面。", rules: ["会员等级和标签管理使用一级页内Tab"] },
-              { id: "N02", name: "标签分类", type: "分段切换", summary: "切换自定义标签和系统标签。", rules: ["默认展示自定义标签", "自定义标签内容 = 生产当前的风控标签内容", "切换后同步更新列表、总数和操作权限"] },
+              { id: "N02", name: "标签分类", type: "分段切换", summary: "切换自定义标签和系统标签。", rules: ["默认展示自定义标签", "自定义标签内容 = 生产当前的风控标签内容", "切换后同步更新列表、总数和操作权限", "【新增标签】仅在自定义标签页展示，系统标签页不展示"] },
               { id: "F01", name: "标签筛选", type: "组合筛选", summary: "按标签属性和维护信息查询。", rules: ["标签名称、最后操作人提交前去除首尾空格", "业务类型：运营标签、风控标签、财务标签", "最后操作时间精确到秒"] },
-              { id: "B01", name: "新增自定义标签", type: "新增操作", summary: "创建可人工维护的自定义标签。", rules: ["标签名称在同一业务类型内不可重复", "必须选择业务类型并填写备注", "系统标签不能通过此入口创建"] },
+              { id: "B01", name: "新增自定义标签", type: "新增操作", summary: "创建可人工维护的自定义标签。", rules: ["入口位于自定义标签筛选区的【重置】旁", "标签名称在同一业务类型内不可重复", "必须选择业务类型并填写备注", "系统标签页隐藏该入口，系统标签不能通过此入口创建"] },
               { id: "T01", name: "标签列表", type: "数据表格", summary: "展示当前标签分类。", rules: ["系统标签默认仅包含不返水、提款挂起", "自定义标签即生产现有【风控标签】，支持新增、编辑和删除；系统标签只支持编辑备注", "系统标签名称后的问号用于向后台操作人员解释标签用途，鼠标悬停或键盘聚焦后显示说明气泡", "已关联会员的自定义标签删除前必须二次确认，删除后解除当前关联但保留历史操作记录", "会员数量为当前关联会员实时数量", "默认每页20条"] },
               { id: "M01", name: "标签会员列表", type: "关联列表弹窗", summary: "查看并调整标签关联会员。", rules: ["会员账号可跳转会员详情", "点击调整标签后可修改或删除当前会员的标签关联", "从自定义标签进入时只允许关联自定义标签，从系统标签进入时只允许关联系统标签", "调整标签必须记录操作人、操作时间和备注", "默认每页20条"] },
               { id: "S01", name: "功能性系统标签", type: "业务状态", summary: "标签命中后直接参与业务路由。", rules: ["不返水：跑返水脚本时，此用户不进行任何返水", "提款挂起：此用户提款时直接进入挂起审核，无需初审", "功能性标签名称和作用不可编辑，只允许维护说明备注"] }
@@ -811,15 +812,15 @@
       },
       {
         id: "#498",
-        title: "代理后台改造与分润模拟器",
+        title: "代理后台改造",
         owner: "Mike",
         localOnly: true,
         status: "进行中",
         priority: "P0",
         startDate: "2026-07-30",
         completionDate: "—",
-        updatedAt: "2026-08-03 13:34",
-        summary: "包含代理后台数据看板、下级管理、财务中心、个人中心改造，以及分润业务推演与综合计算模拟器。",
+        updatedAt: "2026-08-04 10:30",
+        summary: "包含代理后台数据看板、下级管理、财务中心、个人中心改造及对应总控后台能力。",
         moduleName: "代理业务",
         defaultPageKey: "agent-dashboard-498",
         pages: [
@@ -831,49 +832,43 @@
             pageType: "existing-change",
             purpose: "查看当前代理权限范围内的经营数据、佣金等级和晋级进度。",
             tabs: ["经营概览"],
-            questions: [
-              "团队汇总范围是否统一为主线本人、全部有效副线及其归属会员，并按业务主键去重？",
-              "总输赢、净输赢是否完全复用佣金报表口径，补单输赢计入发现月份？",
-              "新增活跃会员、活跃会员的完整判定规则及配置入口是什么？"
-            ],
+            questions: [],
             annotations: [
-              { id: "P01", name: "佣金身份展示", type: "经营面板", summary: "根据当前代理身份展示对应佣金信息。", rules: ["星级代理、多层级代理、传统代理、团队代理四类佣金身份互斥，同一账号同一时点只按一种身份展示", "星级代理展示当前星级、佣金比例、距离下一星级的达标进度和传统佣金预估净收益", "多层级代理、传统代理不展示星级与晋级进度，只展示当前传统佣金方案的预估净收益", "团队负责人【多线】和负责人【单线】展示【本期团队佣金预估净收益】，按整个团队的负盈利佣金规则实时试算，最终以生成的团队账单为准", "团队副线不展示佣金预估、星级与晋级进度，只展示本人经营贡献", "配置变更不重算已完成历史账单"] },
-              { id: "T01", name: "经营指标", type: "数据概览", summary: "按看板分组展示经营结果。", rules: ["低对比度模块与生产一致，无需修改；原模块仅改名时只突出新名称，其余内容继续使用低对比度", "资金流水只展示输赢、红利、返水和充提手续费等金额结果；会员人数类指标统一归入会员数据且不重复展示", "会员数据所有身份均显示：星级代理统计直属会员；多层级代理、传统代理统计其代理体系；团队负责人统计团队范围；团队副线仅统计本人直属会员", "相对生产看板删除【总充值、总提现、总投注、有效投注】", "生产原【会员VIP福利、活动福利、会员推广福利】不再独立展示，统一合并为【下级红利】", "月份按当前站点时区的自然月计算", "每个指标右上角问号均可点击，显示该指标的统计口径及是否受时间组件影响", "浅灰底表示累计或当前数据，仅在产生新数据时更新；白底表示随时间组件重新统计", "总输赢使用代理视角：正数表示公司盈利，负数表示公司亏损", "本月净输赢与佣金报表使用同一计算公式和费用口径"] }
+              { id: "P01", name: "佣金身份展示", type: "经营面板", summary: "根据当前代理身份展示对应佣金信息。", rules: ["具体展示项见【代理身份权限预览】的【查看看板完全权限显示】内容", "配置变更不重算已完成历史账单"] },
+              { id: "T01", name: "经营指标", type: "数据概览", summary: "按看板分组展示经营结果。", rules: ["低对比度模块与生产一致，无需修改；原模块仅改名时只突出新名称，其余内容继续使用低对比度", "资金流水只展示输赢、红利、返水和充提手续费等金额结果；会员人数类指标统一归入会员数据且不重复展示", "团队汇总范围包含主线本人、全部有效副线及其归属会员，并按业务主键去重", "新增活跃会员和活跃会员的判定标准读取【总控后台 → 代理管理 → 返佣方案 → 负盈利返佣方案】当前生效配置", "总输赢、净输赢与佣金报表使用相同公式和费用口径，补单输赢计入发现月份", "相对生产看板删除【总充值、总提现、总投注、有效投注】", "生产原【会员VIP福利、活动福利、会员推广福利】不再独立展示，统一合并为【下级红利】", "月份按当前站点时区的自然月计算", "每个指标右上角问号均可点击，显示该指标的统计口径及是否受时间组件影响", "总输赢使用代理视角：正数表示公司盈利，负数表示公司亏损"] }
             ]
           },
-          agent498Page({ id: "P02", key: "agent-members-498", name: "会员管理", menuGroup: "下级管理", role: "普通代理、团队主线、团队副线", tabs: ["会员管理", "团队会员"], tabComponentId: "N02", pageGoals: { "团队会员": "团队主线查看团队内各代理归属会员的经营数据。" }, tabQuestions: {
-            "会员管理": ["统计时间分别控制哪些金额和时间字段？建议存提按完成时间、输赢按结算时间。", "代理自定义标签是否允许多标签？会员转代理后旧标签由谁维护？", "更多操作跳转新页面还是当前弹窗？建议新开对应记录页并自动带入会员账号。"],
-            "团队会员": ["是否仅团队主线可见团队会员，团队副线仍只看自己的会员？", "团队范围是否包含主线本人、全部有效副线及其直属会员，并按会员去重？"]
-          }, annotations: [
-            { id: "N02", name: "会员管理页签", type: "三级Tab", summary: "在会员管理二级菜单内切换直属会员与团队会员。", rules: ["【会员管理】【团队会员】是【下级管理 → 会员管理】内的三级Tab", "团队会员仅向有团队数据权限的代理展示"] },
+          agent498Page({ id: "P02", key: "agent-members-498", name: "会员管理", menuGroup: "下级管理", role: "普通代理、团队主线、团队副线", tabs: ["会员管理", "团队会员"], tabComponentId: "N02", pageGoals: { "团队会员": "团队主线查看团队内各代理归属会员的经营数据。" }, tabQuestions: { "会员管理": [], "团队会员": [] }, annotations: [
             { id: "F01", tab: "会员管理", name: "会员筛选", type: "组合筛选", summary: "在当前代理数据范围内筛选直属会员。", rules: ["会员账号提交前去除首尾空格", "统计时间与注册时间相互独立"] },
-            { id: "T01", tab: "会员管理", name: "会员列表", type: "数据表格", summary: "展示直属会员经营数据和代理自定义标签。", rules: ["代理自定义标签与总控风控标签完全独立，不触发业务功能", "默认每页20条"] },
+            { id: "T01", tab: "会员管理", name: "会员列表", type: "数据表格", summary: "展示直属会员经营数据和代理自定义标签。", rules: ["代理自定义标签为代理纯手动填写的内容，无固定维护功能。", "同一会员只允许一个代理自定义标签；会员转代理后原标签随会员关系继承", "存款、提款按完成时间统计，输赢按结算时间统计；默认统计当天", "更多中的记录入口在后台框架内新tab打开对应页面并自动带入会员账号", "默认每页20条"] },
             { id: "F01", tab: "团队会员", name: "团队会员筛选", type: "组合筛选", summary: "按所属代理和会员条件筛选团队会员。", rules: ["所属代理展示会员当前直属代理"] },
-            { id: "T01", tab: "团队会员", name: "团队会员列表", type: "数据表格", summary: "展示团队范围内会员及直属代理。", rules: ["同一会员只归属一个直属代理桶，禁止团队汇总重复", "默认每页20条"] }
+            { id: "T01", tab: "团队会员", name: "团队会员列表", type: "数据表格", summary: "展示团队范围内会员及直属代理。", rules: ["仅团队负责人可查看；团队副线只查看本人直属会员", "团队范围包含负责人、全部有效副线及其直属会员，并按会员去重", "存款、提款按完成时间统计，输赢按结算时间统计；默认统计当天", "更多中的记录入口在后台框架内新tab打开对应页面并自动带入会员账号", "默认每页20条"] },
+            { id: "M01", name: "会员详情", type: "详情弹窗", summary: "查看会员当日经营概览与明细。", rules: ["场馆流水记录列出所有存在流水的场馆，流水为0的场馆不展示", "场馆流水记录按序号排列", "弹窗内所有受统计时间影响的数据默认统计当天", "场馆流水记录默认每页20条"] }
           ] }),
-          agent498Page({ id: "P03", key: "agent-deposits-498", name: "存款管理", menuGroup: "下级管理", role: "普通代理、团队主线、团队副线", questions: ["状态、支付方式和时间口径是否完全复用生产会员存款记录？", "代理代存成功后是否作为独立支付方式出现在本记录？"], annotations: [
-            { id: "F01", name: "存款筛选", type: "组合筛选", summary: "查询会员存款记录。", rules: ["单号、状态和时间口径复用生产存款记录"] },
-            { id: "T01", name: "存款记录表", type: "数据表格", summary: "展示当前代理权限范围内存款记录。", rules: ["金额统一折算CNY并使用业务发生时汇率快照", "默认每页20条"] },
+          agent498Page({ id: "P03", key: "agent-deposits-498", name: "存款管理", menuGroup: "下级管理", role: "普通代理、团队主线、团队副线", questions: [], annotations: [
+            { id: "F01", name: "存款筛选", type: "组合筛选", summary: "查询会员存款记录。", rules: ["订单时间按存款申请时间筛选", "状态包含用户取消；代理代存成功记录作为独立支付方式展示", "默认查询当天数据"] },
+            { id: "T01", name: "存款记录表", type: "数据表格", summary: "展示当前代理权限范围内存款记录。", rules: ["金额统一折算CNY并使用业务发生时汇率快照", "默认展示当天数据", "默认每页20条"] },
             { id: "B01", name: "导出存款记录", type: "导出操作", summary: "导出当前筛选结果。", rules: ["导出全部筛选结果，不限当前页"] }
           ] }),
-          agent498Page({ id: "P04", key: "agent-bonuses-498", name: "红利记录", menuGroup: "下级管理", role: "普通代理、团队主线、团队副线", pageType: "new", showPageGoal: true, purpose: "查询当前代理权限范围内会员获得的红利记录。", questions: ["红利类型引用平台统一枚举是否足够，钱包名称是否必须展示？", "自动到账红利的发放时间和领取时间是否记录为同一业务事件时间？"], annotations: [
+          agent498Page({ id: "P04", key: "agent-bonuses-498", name: "红利记录", menuGroup: "下级管理", role: "普通代理、团队主线、团队副线", pageType: "new", showPageGoal: true, purpose: "查询当前代理权限范围内会员获得的红利记录。", questions: ["现有红利类型是否都可以供代理查看？"], annotations: [
             { id: "F01", name: "红利筛选", type: "组合筛选", summary: "按会员、红利类型和领取时间查询。", rules: ["红利类型引用平台统一枚举"] },
-            { id: "T01", name: "红利记录表", type: "数据表格", summary: "展示红利发放和领取记录。", rules: ["未领取记录的领取时间为空", "默认每页20条"] },
+            { id: "T01", name: "红利记录表", type: "数据表格", summary: "展示红利发放和领取记录。", rules: ["自动到账红利的发放时间和领取时间允许记录为同一业务事件时间", "未领取记录的领取时间为空", "默认展示当天数据", "默认每页20条"] },
             { id: "B01", name: "导出红利记录", type: "导出操作", summary: "导出当前筛选结果。", rules: ["导出全部筛选结果，不限当前页"] }
           ] }),
-          agent498Page({ id: "P05", key: "agent-games-498", name: "游戏记录", menuGroup: "下级管理", role: "普通代理、团队主线、团队副线", questions: ["只展示已结算注单还是展示全部状态？", "投注时间、结算时间和开赛时间是否采用“时间类型+一个时间范围”？建议默认投注时间。"], annotations: [
+          agent498Page({ id: "P05", key: "agent-games-498", name: "游戏记录", menuGroup: "下级管理", role: "普通代理、团队主线、团队副线", questions: ["只展示已结算注单还是展示全部状态？", "时间筛选是否保留【时间类型】选择，并由同一个时间范围按所选的下注时间、结算时间或开赛时间查询？默认选择下注时间。"], annotations: [
             { id: "F01", name: "游戏记录筛选", type: "组合筛选", summary: "按会员、场馆、状态和时间查询投注。", rules: ["时间类型和时间范围组合使用"] },
-            { id: "T01", name: "游戏记录表", type: "数据表格", summary: "展示投注及场馆最终结算结果。", rules: ["有效投注和派彩读取场馆最终值", "默认每页20条"] },
+            { id: "T01", name: "游戏记录表", type: "数据表格", summary: "展示投注及场馆最终结算结果。", rules: ["有效投注和派彩读取场馆最终值", "默认展示当天数据", "默认每页20条"] },
             { id: "C01", name: "下注详情", type: "表格悬停详情", summary: "默认浏览前三行并按需查看完整字段。", rules: ["单元格默认展示下注详情前三行", "鼠标悬停或键盘聚焦后以只读气泡展示全部详情字段", "电子、棋牌、捕鱼无详情数据时只显示游戏名称"] },
             { id: "B01", name: "导出游戏记录", type: "导出操作", summary: "导出当前筛选结果。", rules: ["下注详情导出到同一单元格并按字段换行"] }
           ] }),
-          agent498Page({ id: "P06", key: "agent-team-498", name: "团队信息", menuGroup: "下级管理", role: "团队主线", questions: ["团队总范围是否只包含主线和直接副线，还是递归下级？", "下级会员数是否只统计当前行代理直属会员？", "团队关系申请、审批、生效、失败和备注变更是否全部写操作记录？"], annotations: [
+          agent498Page({ id: "P06", key: "agent-team-498", name: "团队信息", menuGroup: "下级管理", role: "团队主线", tabs: ["团队信息", "操作记录"], tabComponentId: "N02", questions: [], annotations: [
             { id: "F01", name: "团队信息筛选", type: "组合筛选", summary: "筛选团队副线。", rules: ["代理账号或编号智能匹配"] },
-            { id: "P01", name: "团队概览", type: "数据概览", summary: "展示主线、团队名称、团队代理和会员数量。", rules: ["团队数据按有效团队关系实时汇总"] },
-            { id: "T01", name: "团队信息表", type: "数据表格", summary: "展示各副线经营规模和快捷入口。", rules: ["团队财务和团队佣金跳转对应报表并自动带入代理", "修改备注保存操作人和时间", "点击下级会员数展示直属会员列表，默认10行/页", "默认每页20条"] }
+            { id: "P01", tab: "团队信息", name: "团队概览", type: "数据概览", summary: "", rules: ["团队数据按有效团队关系实时汇总"] },
+            { id: "T01", tab: "团队信息", name: "团队信息表", type: "数据表格", summary: "展示各副线经营规模和快捷入口。", rules: ["团队财务和团队佣金在后台框架内新tab跳转对应报表并自动带入代理账号的筛选结果", "修改备注保存操作人和时间", "点击下级会员数展示当前行代理直属会员，弹窗数据默认统计当天，默认10行/页", "默认每页20条"] },
+            { id: "T01", tab: "操作记录", name: "团队操作记录", type: "数据表格", summary: "记录团队关系及备注变更。", rules: ["团队创建、副线新增、关系申请、审批、生效、失败和备注变更均写入操作记录", "操作内容、操作理由、操作时间和操作人完整保留", "默认每页20条"] }
           ] }),
-          agent498Page({ id: "P07", key: "agent-active-members-498", name: "活跃会员", menuGroup: "下级管理", role: "普通代理、团队主线、团队副线", pageType: "new", showPageGoal: true, purpose: "按统一活跃规则查询本月命中的会员及类型。", questions: ["新增活跃、活跃会员、首存会员的完整判定规则是什么？", "规则按总控全局、站点还是佣金方案配置？", "同一会员是否可以同时命中多种活跃类型？建议类型内去重、类型间允许重复。"], annotations: [
-            { id: "F01", name: "活跃会员筛选", type: "组合筛选", summary: "按月份和活跃类型查询。", rules: ["统计月份按自然月"] },
+          agent498Page({ id: "P07", key: "agent-active-members-498", name: "活跃会员", menuGroup: "下级管理", role: "普通代理、团队主线、团队副线", pageType: "new", showPageGoal: true, purpose: "按统一活跃规则查询本月命中的会员及类型。", questions: ["同一会员是否可以同时命中多种活跃类型？建议类型内去重、类型间允许重复。"], annotations: [
+            { id: "F01", name: "活跃会员筛选", type: "组合筛选", summary: "按月份和活跃类型查询。", rules: ["统计月份按自然月", "新增活跃会员和活跃会员的判定标准读取【总控后台 → 代理管理 → 返佣方案 → 负盈利返佣方案】当前生效配置"] },
             { id: "T01", name: "活跃会员表", type: "数据表格", summary: "展示命中的会员和活跃类型。", rules: ["同一类型内按会员去重", "默认每页20条"] },
             { id: "B01", name: "导出活跃会员", type: "导出操作", summary: "导出当前筛选结果。", rules: ["导出全部筛选结果，不限当前页"] }
           ] }),
@@ -952,17 +947,17 @@
             { id: "F01", name: "下载任务筛选", type: "组合筛选", summary: "按发起时间、报表名称和状态筛选。", rules: ["状态包含等待、进行中、成功、失败、已过期"] },
             { id: "T01", name: "下载任务列表", type: "数据表格", summary: "展示异步导出处理结果。", rules: ["文件过期后禁止下载", "默认每页20条"] }
           ] }),
-          agent498Page({ id: "P23", key: "agent-activity-management-498", name: "活动管理", menuGroup: "运营中心", role: "星级代理、多层级代理、传统代理", annotations: [
-            { id: "F01", name: "活动筛选", type: "生产现有筛选", summary: "查询当前站点可见活动。", rules: ["仅星级代理、多层级代理和传统代理可访问；团队代理后端拒绝访问", "代理后台固定当前所属站点，不提供站点筛选"] },
+          agent498Page({ id: "P23", key: "agent-activity-management-498", name: "活动管理", menuGroup: "运营中心", role: "星级代理、多层级代理", annotations: [
+            { id: "F01", name: "活动筛选", type: "生产现有筛选", summary: "查询当前站点可见活动。", rules: ["仅星级代理和多层级代理可访问；团队代理后端拒绝访问", "代理后台固定当前所属站点，不提供站点筛选"] },
             { id: "T01", name: "活动列表", type: "生产现有页面", summary: "查看活动基础信息与详情。", rules: ["本次不修改活动管理功能与数据口径", "默认每页20条"] }
           ] }),
-          agent498Page({ id: "P24", key: "agent-reversal-repayment-498", name: "冲正回款报表", menuGroup: "财务中心", role: "星级代理、多层级代理、传统代理", annotations: [
-            { id: "F01", name: "冲正回款筛选", type: "生产现有筛选", summary: "按时间、债务类型、资金方向和关键字查询。", rules: ["仅星级代理、多层级代理和传统代理可访问；团队代理后端拒绝访问"] },
+          agent498Page({ id: "P24", key: "agent-reversal-repayment-498", name: "冲正回款报表", menuGroup: "财务中心", role: "星级代理、多层级代理", annotations: [
+            { id: "F01", name: "冲正回款筛选", type: "生产现有筛选", summary: "按时间、债务类型、资金方向和关键字查询。", rules: ["仅星级代理和多层级代理可访问；团队代理后端拒绝访问"] },
             { id: "T01", name: "冲正回款报表", type: "生产现有页面", summary: "查询代理对下级代理发生的代冲正及回款明细。", rules: ["不包含站点兜底台账", "同一账目多次回款时按当前累计回款额度展示一条记录", "默认每页20条"] },
             { id: "B01", name: "导出冲正回款报表", type: "导出操作", summary: "导出当前筛选结果。", rules: ["导出全部筛选结果，不限当前页"] }
           ] }),
-          agent498Page({ id: "P25", key: "agent-venue-fee-detail-498", name: "场馆代理费用明细", menuGroup: "财务中心", role: "星级代理、多层级代理、传统代理、团队负责人", annotations: [
-            { id: "F01", name: "场馆费用筛选", type: "生产现有筛选", summary: "按代理和完整周范围查询场馆费用。", rules: ["星级代理、多层级代理、传统代理及团队负责人可访问；团队副线后端拒绝访问", "代理后台固定当前所属站点，不提供站点筛选"] },
+          agent498Page({ id: "P25", key: "agent-venue-fee-detail-498", name: "场馆代理费用明细", menuGroup: "财务中心", role: "星级代理、多层级代理、团队负责人", annotations: [
+            { id: "F01", name: "场馆费用筛选", type: "生产现有筛选", summary: "按代理和完整周范围查询场馆费用。", rules: ["星级代理、多层级代理及团队负责人可访问；团队副线后端拒绝访问", "代理后台固定当前所属站点，不提供站点筛选"] },
             { id: "T01", name: "场馆代理费用明细", type: "生产现有页面", summary: "展示直属承担、级差承担与总承担费用。", rules: ["点击场馆数量查看各场馆盈亏、费用比例、费用金额及承担拆分", "默认每页20条"] },
             { id: "B01", name: "导出场馆代理费用明细", type: "导出操作", summary: "导出当前筛选结果。", rules: ["导出全部筛选结果，不限当前页"] }
           ] }),
@@ -994,9 +989,8 @@
             role: "产品、财务、代理运营、开发、测试",
             pageType: "new",
             showPageGoal: true,
-            purpose: "通过可调参数和实时资金流，理解现行站点分润、传统代理级差分佣，以及新增负盈利团队/单线模式的结算差异。",
+            purpose: "通过可调参数和实时资金流，理解现行站点分润、多层级代理级差分佣，以及负盈利团队与单线模式的结算差异。",
             annotations: [
-              { id: "N09", name: "板块切换", type: "原型导航", summary: "在代理后台改造、总控后台改造与分润模拟器之间切换。", rules: ["需求默认进入代理后台数据看板", "总控后台改造用于配置代理代存额度和审核溢出申请", "分润模拟器用于理解现行与新增结算模式", "此切换器只用于原型评审，不属于生产功能"] },
               { id: "N02", name: "模拟方式", type: "视图切换", summary: "在逐笔业务推演和综合计算之间切换。", rules: ["默认进入业务推演，按业务发生顺序逐步展示一笔返水", "业务推演用于建立业务认知；综合计算用于自由组合经营数据并验证复杂结算结果", "两种方式只用于原型演示，不属于代理后台生产功能"] },
               { id: "N01", name: "综合计算模式", type: "模拟场景", summary: "在综合计算中切换现行分佣和新增负盈利模式。", rules: ["现行多层级代理：直属代理获得自身比例，上级代理只获得正级差，站点获得站点比例扣除代理链最高有效比例后的剩余部分", "现行星级代理：只计算本代理直属会员，不继续向上计算代理级差", "负盈利团队多线：负责人和直接副线数据汇总为团队账单，最终佣金只向团队负责人处理发放", "负盈利单线：仍使用负盈利方案和团队主档，但只有负责人本人，不存在副线"] },
               { id: "F01", name: "计算参数", type: "实时输入", summary: "调整本期经营数据、比例、费用和历史项；悬停或聚焦字段问号可查看“是什么、数据从哪来、怎么用”。", rules: ["平台输赢与会员输赢方向相反：会员整体亏损时平台产生收益，会员整体盈利时平台承担亏损", "运营费用包括已领取的礼金、返水、推广奖励、活动奖励、余额宝利息，以及充值手续费差额、提款手续费差额和场馆费；系统按费用发生时的代理关系和比例保存当期口径", "充值、提款手续费使用站点向下收取的手续费与平台实际支付手续费之间的差额，结果可能为负；场馆费按站点、场馆和平台正收益所在金额档位计算，不按有效投注计算", "站点分润比例来自站点配置；代理比例来自代理当前佣金方案及等级或星级，同一代理链只分配逐级增加的部分，比例倒挂时不产生负级差", "代理佣金或余额不足以承担费用和亏损时，会先使用本级佣金与余额，再逐级向上使用上级佣金与余额，最终不足由站点垫付并形成欠款", "负盈利团队以前结转的输赢、费用、佣金和等级来自历史团队账单；本期产生正佣金时先偿还历史欠款", "金额按CNY计算，每一步四舍五入保留两位小数"] },
@@ -1111,53 +1105,150 @@
   const requirement512 = window.PROTOTYPE_DATA.requirements[requirement512Index];
 
   if (requirement509 && requirement512) {
-    const mergedRebatePages = requirement512.pages.map((page, index) => ({
-      ...page,
-      id: `P${String(index + 11).padStart(2, "0")}`,
-      moduleName: "会员管理",
-      workspaceName: "会员工作台",
-      annotations: [
-        { id: "N09", name: "端视图切换", type: "原型导航", summary: "在总控后台、会员端和新VIP算法之间切换。", rules: ["总控后台默认进入会员配置，会员端默认进入VIP尊享中心，新VIP算法进入技术实现规则视图", "此切换器只用于原型评审，不属于生产功能"] },
+    const clonePage = (page) => JSON.parse(JSON.stringify(page));
+    const originalPages = new Map(requirement509.pages.map((page) => [page.key, page]));
+    const phaseTwoKeys = [
+      "member-list-509", "same-ip-members-509", "member-level-config-509", "member-tag-config-509",
+      "invite-reward-settings-509", "identity-list-509", "member-logs-509", "member-vip-center-509",
+      "member-vip-detail-509", "member-vip-rules-509", "member-settings-509", "member-profile-509"
+    ];
+    const phaseTwoPages = phaseTwoKeys.map((key, index) => {
+      const page = clonePage(originalPages.get(key));
+      page.id = `P${String(index + 1).padStart(2, "0")}`;
+      page.key = page.key.replace(/-509$/, "-643");
+      page.annotations = (page.annotations || [])
+        .filter((annotation) => !(["member-vip-center-509"].includes(key) && ["P01", "P02"].includes(annotation.id)))
+        .map((annotation) => ({
+          ...annotation,
+          rules: (annotation.rules || []).map((rule) => rule
+            .replaceAll("#509", "#643")
+            .replaceAll("#512", "#509")
+            .replace("在总控后台、会员端和新VIP算法之间切换", "在总控后台和会员端之间切换")
+            .replace("新VIP算法为技术实现规则视图，不属于会员端生产功能", "一期已交付能力作为生产现状保留，不重复标记为二期修改"))
+        }));
+      return page;
+    });
+    phaseTwoPages.splice(4, 0, {
+      id: "P00", key: "vip-rebate-config-643", name: "VIP返水配置", role: "会员运营管理员", unchanged: true,
+      questions: [], annotations: [], purpose: "一期已完成，本期维持生产现状。"
+    });
+    phaseTwoPages.forEach((page, index) => { page.id = `P${String(index + 1).padStart(2, "0")}`; });
+
+    const rebatePages = requirement512.pages.map((source, index) => {
+      const page = clonePage(source);
+      page.id = `P${String(index + 2).padStart(2, "0")}`;
+      page.key = page.key.replace(/-512$/, "-509");
+      page.moduleName = "会员管理";
+      page.workspaceName = "会员工作台";
+      page.annotations = [
+        { id: "N09", name: "端视图切换", type: "原型导航", summary: "在总控后台、会员端和新VIP算法之间切换。", rules: ["总控后台默认进入VIP会员设置，会员端默认进入VIP尊享中心，新VIP算法进入规则说明视图", "此切换器只用于原型评审，不属于生产功能"] },
         ...page.annotations.map((annotation) => ({
           ...annotation,
-          rules: annotation.rules.map((rule) => rule
-            .replace("会员等级基础配置由#509维护，本模块不重复提供", "会员等级基础配置由本需求【会员配置】维护，本模块不重复提供")
-            .replace("返水流水倍数从#509会员等级页迁移至本页面维护", "返水流水倍数从本需求【会员配置-会员等级】迁移至本页面维护"))
+          rules: (annotation.rules || []).map((rule) => rule
+            .replaceAll("#512", "#509")
+            .replace("会员等级基础配置由#509维护，本模块不重复提供", "会员等级基础配置沿用生产【VIP会员设置】")
+            .replace("39个生产场馆在弹窗左侧纵向展示，顺序按生产场馆固定枚举；点击场馆后右侧切换对应游戏", "先配置7种场馆类型默认返水比例；选择【电子】后可继续按电子场馆和游戏设置覆盖比例"))
         }))
-      ]
-    }));
-
-    requirement509.pages.push(...mergedRebatePages);
-    requirement509.title = "总控后台-会员管理 会员配置优化";
-    requirement509.summary = "按站点统一维护会员等级、红利、标签和VIP文案配置，承载#512的VIP返水配置，并集中说明同步上线的新VIP算法。";
-    requirement509.updatedAt = "2026-08-01 19:14";
-
-    Object.assign(requirement512, {
-      mergedInto: "#509",
-      status: "已合并",
-      completionDate: "2026-07-30",
-      updatedAt: "2026-08-01 19:14",
-      summary: "此需求已合并到#509中一起实现。",
-      pages: [{
-        id: "P01",
-        key: "merged-into-509",
-        name: "合并说明",
-        role: "产品、开发、测试",
-        mergedInto: "#509",
-        mergedTargetPage: "rebate-level-config-512",
-        mergedLinkText: "查看#509中的VIP返水配置原型",
-        purpose: "此需求已合并到#509中一起实现。",
-        annotations: []
-      }]
+      ];
+      if (page.key === "rebate-level-config-509") {
+        page.purpose = "按VIP等级维护返水门槛、7种场馆类型默认比例和电子游戏覆盖比例。";
+        const levelTable = page.annotations.find((annotation) => annotation.id === "T01");
+        if (levelTable) levelTable.rules = [
+          ...(levelTable.rules || []),
+          "单独配置的场馆统计该VIP等级下至少有一个游戏使用独立返水比例的电子场馆数量",
+          "单独配置的游戏统计上述电子场馆内使用独立返水比例的游戏总数；使用电子类型默认比例的游戏不计入"
+        ];
+        const scope = page.annotations.find((annotation) => annotation.id === "P01");
+        if (scope) scope.rules = [
+          "总控默认配置作为全部站点的默认VIP返水配置",
+          "站点只能完整使用总控默认VIP返水配置或完整使用本站点单独VIP返水配置，不允许按VIP等级、场馆类型或电子游戏部分继承",
+          "本站点单独配置中的金额不得高于同VIP等级对应的总控默认金额，保存时逐项校验",
+          "总控默认配置修改后，所有仍使用默认配置的站点同步生效；已启用单独配置的站点不受影响",
+          "配置修改只影响修改后新生成的返水；已生成返水记录保留生成时的配置快照"
+        ];
+        const setting = page.annotations.find((annotation) => annotation.id === "M01");
+        if (setting) setting.rules = [
+          "先配置电子、真人、体育、棋牌、彩票、捕鱼、电竞7种场馆类型默认返水比例",
+          "只有电子类型支持继续按电子场馆和游戏维护单独覆盖比例；电子游戏单独比例优先于电子类型默认比例",
+          "电子游戏未填写单独比例时使用电子类型默认比例；恢复电子默认后不保存该游戏的单独比例",
+          "场馆与游戏对应关系读取场馆游戏对应表，左侧完整展示全部电子场馆；点击场馆后右侧完整展示该场馆全部游戏",
+          "弹窗正文使用单一纵向滚动，不在游戏表格内设置第二个纵向滚动条",
+          "比例设置为0表示不返水；比例最多保留4位小数，会员端按百分比展示",
+          "返水金额=符合条件的有效流水×最终生效返水比例，达到每日最高返水后不再继续返",
+          "批量操作只作用于当前电子场馆内已勾选的游戏；未选择游戏时按钮禁用",
+          "批量比例输入框常驻操作区，输入数值后点击【批量设置】直接写入选中游戏；点击【恢复电子默认】清空选中游戏的单独比例",
+          "领取有效期从返水生成时间开始计算，每个VIP等级可独立配置；设置为0代表永不过期"
+        ];
+        const enable = page.annotations.find((annotation) => annotation.id === "M02");
+        if (enable) enable.rules = ["仅当前站点使用总控默认配置时展示", "确认后全量复制当前总控默认VIP返水配置", "不提供部分范围选择；复制完成后本站点不再受总控默认配置后续修改影响", "已生成业务记录不追溯重算"];
+        const restore = page.annotations.find((annotation) => annotation.id === "M03");
+        if (restore) restore.rules = ["仅本站点单独配置状态展示", "确认后本站点整套独立VIP返水配置停止生效，不允许只恢复其中一部分", "恢复后立即读取最新总控默认VIP返水配置", "已生成业务记录保留配置快照，不追溯重算"];
+      }
+      if (page.key === "no-rebate-games-509") {
+        const filters = page.annotations.find((annotation) => annotation.id === "F01");
+        if (filters) {
+          filters.summary = "按站点、电子场馆和游戏查询。";
+          filters.rules = ["所属站点支持多选和全选", "场馆名称只读取电子场馆，不展示场馆类型筛选", "游戏名称提交前去除首尾空格"];
+        }
+        const table = page.annotations.find((annotation) => annotation.id === "T01");
+        if (table) table.rules = [
+          "列表只展示电子游戏单独覆盖比例设置为0的记录；本期其他场馆类型不能按游戏单独设置返水比例，不进入本列表",
+          "每条记录按当前生效的站点配置和VIP等级归属展示",
+          "站点采用单独配置时显示对应站点简称；记录来自总控默认配置时只显示【总控默认】，鼠标悬停或键盘聚焦后显示当前使用总控默认配置的全部站点",
+          "站点切换为单独配置或恢复总控默认后，列表归属按当前生效配置同步更新",
+          "游戏被停用或下架时保留历史返水记录中的配置快照",
+          "默认每页20条"
+        ];
+      }
+      return page;
     });
 
+    const vipSettingsPage = {
+      id: "P01", key: "vip-settings-509", name: "VIP会员设置", role: "会员运营管理员", questions: [],
+      annotations: [
+        { id: "N09", name: "端视图切换", type: "原型导航", summary: "在总控后台、会员端和新VIP算法之间切换。", rules: ["总控后台默认进入VIP会员设置，会员端默认进入VIP尊享中心，新VIP算法进入规则说明视图", "此切换器只用于原型评审，不属于生产功能"] },
+        { id: "T01", name: "VIP会员设置", type: "生产现有配置", summary: "", rules: ["移出保级设置、游戏返水比例和返水倍数设置；其余内容无需修改"] },
+        { id: "C01", name: "晋升流水", type: "字段名称修改", summary: "生产原【累计流水】统一改名为【晋升流水】。", rules: [] },
+        { id: "C02", name: "晋升存款", type: "新增晋升条件", summary: "每个VIP等级新增晋升存款配置。", rules: ["会员升级必须同时满足晋升存款和晋升流水要求", "晋升存款允许配置为0；配置为0时不限制存款条件"] }
+      ]
+    };
+    const phaseOneMemberCenter = clonePage(originalPages.get("member-vip-center-509"));
+    Object.assign(phaseOneMemberCenter, { id: "P05", key: "member-vip-center-509" });
+    phaseOneMemberCenter.annotations = [
+      { id: "N09", name: "端视图切换", type: "原型导航", summary: "在总控后台、会员端和新VIP算法之间切换。", rules: ["会员端仅制作移动端，原型按390px宽度展示", "此切换器只用于原型评审，不属于生产功能"] },
+      ...(phaseOneMemberCenter.annotations || []).filter((annotation) => ["P01", "P02"].includes(annotation.id)),
+      { id: "B01", name: "电子返水明细", type: "新增页面入口", summary: "从电子返水比例进入全部电子游戏明细。", rules: ["电子返水显示为明确可点击入口并提供【查看明细】提示", "点击后进入电子游戏返水比例页面", "返回时保持原VIP等级位置"] },
+      { id: "N01", name: "生产一致内容", type: "无修改说明", summary: "除晋升存款和电子返水明细入口外，本页与生产一致。", rules: ["VIP资料、福利领取、等级卡片、尊享特权、7类返水比例及横向等级切换沿用生产现状", "不得根据原型改变生产既有交互"] }
+    ];
+    const electronicDetailPage = {
+      id: "P06", key: "member-electronic-rebate-509", name: "会员端-电子返水明细", pageType: "new", role: "会员", purpose: "查看当前会员VIP等级对应的全部电子游戏返水比例。", questions: [],
+      annotations: [
+        { id: "N09", name: "端视图切换", type: "原型导航", summary: "在总控后台、会员端和新VIP算法之间切换。", rules: ["会员端仅制作移动端，原型按390px宽度展示", "此切换器只用于原型评审，不属于生产功能"] },
+        { id: "T01", name: "电子游戏返水比例", type: "移动端数据表", summary: "展示当前会员VIP等级下全部电子场馆和游戏的返水比例。", rules: ["顶部读取并显示当前会员VIP等级，表格仅加载该VIP等级的数据", "完整展示全部电子场馆及其全部游戏，不提供场馆切换或筛选；每行分别展示场馆、游戏名称和返水比例，不合并单元格", "不展示配置来源", "比例为0时显示【不返水】", "固定矩阵不分页"] }
+      ]
+    };
+    const algorithmPage = clonePage(originalPages.get("vip-algorithm-509"));
+    Object.assign(algorithmPage, { id: "P07", key: "vip-algorithm-509", purpose: "说明VIP单级升降、超额不结转及账本清零规则。" });
+
+    requirement509.pages = [vipSettingsPage, ...rebatePages, phaseOneMemberCenter, electronicDetailPage, algorithmPage];
     requirement509.pages.forEach((page) => page.annotations.forEach((annotation) => {
-      annotation.rules = annotation.rules.map((rule) => rule
-        .replace("返水配置迁移至运营管理-VIP返水，详见#512", "返水配置迁移至本需求【会员管理-VIP返水配置】菜单")
-        .replace("计算配置仍由#512维护", "计算配置由本需求【会员管理-VIP返水配置】菜单维护")
-        .replace("计算逻辑由#512实现", "计算逻辑由本需求【会员管理-VIP返水配置】菜单实现")
-        .replace("比例读取#512当前有效游戏级配置", "比例读取本需求【会员管理-VIP返水配置】当前有效的游戏级配置"));
+      if (annotation.id === "N09") annotation.rules = annotation.rules.slice(1);
     }));
+    Object.assign(requirement509, {
+      title: "一期：总控后台-VIP返水、新VIP算法",
+      summary: "改造VIP返水配置和算法，保留生产VIP会员设置必要配置，并补充会员端晋升存款与电子返水明细。",
+      updatedAt: "2026-08-05 02:05"
+    });
+
+    const requirement643 = {
+      id: "#643", title: "二期：总控后台-会员配置、会员端更新", owner: "Mike", status: "进行中", priority: "P0",
+      startDate: "2026-08-04", completionDate: "—", updatedAt: "2026-08-04 12:00",
+      summary: "新增按站点维护的会员配置、标签管理和会员端VIP详情及个人资料能力。",
+      moduleName: "会员管理", workspaceName: "会员工作台", roleName: "会员运营、风控、财务", pages: phaseTwoPages
+    };
+    window.PROTOTYPE_DATA.requirements.splice(requirement512Index, 1);
+    window.PROTOTYPE_DATA.requirements.push(requirement643);
+    window.PROTOTYPE_DATA.requirements.sort((left, right) => Number(right.id.replace(/\D/g, "")) - Number(left.id.replace(/\D/g, "")));
   }
 
   window.PROTOTYPE_DATA.requirements.forEach((requirement) => {
@@ -1169,6 +1260,21 @@
     }
     }));
   });
+
+  const requirement498 = window.PROTOTYPE_DATA.requirements.find((requirement) => requirement.id === "#498");
+  const simulatorIndex = requirement498?.pages.findIndex((page) => page.key === "profit-simulator-498") ?? -1;
+  const simulatorPage = simulatorIndex >= 0 ? requirement498.pages.splice(simulatorIndex, 1)[0] : null;
+  if (simulatorPage) {
+    simulatorPage.purpose = "通过可调参数和实时资金流，理解现行站点分润、多层级代理级差分佣，以及负盈利团队与单线模式的结算差异。";
+    simulatorPage.annotations = simulatorPage.annotations.filter((annotation) => annotation.id !== "N09");
+    window.PROTOTYPE_DATA.localTools = [{
+      id: "profit-simulator",
+      title: "分润与代理模式模拟器",
+      summary: "用于推演站点分润、代理佣金、返水费用承担和负盈利模式资金流。",
+      localOnly: true,
+      page: simulatorPage
+    }];
+  }
 
   const maxPageSizeRule = "支持最多200条/页的选项";
   window.PROTOTYPE_DATA.requirements.forEach((requirement) => {
@@ -1191,6 +1297,9 @@
     }));
     if (paginationRuleAdded) requirement.updatedAt = "2026-08-03 18:36";
   });
-  requirement509.updatedAt = "2026-08-03 22:40";
-  requirement406.updatedAt = "2026-08-03 18:53";
+  requirement498.updatedAt = "2026-08-04 10:30";
+  requirement509.updatedAt = "2026-08-05 02:05";
+  requirement406.updatedAt = "2026-08-04 15:30";
+  const requirement643 = window.PROTOTYPE_DATA.requirements.find((requirement) => requirement.id === "#643");
+  if (requirement643) requirement643.updatedAt = "2026-08-04 15:30";
 })();
