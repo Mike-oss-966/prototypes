@@ -1344,19 +1344,19 @@
     const editable = memberVipSiteMeta().editable;
     const editDisabled = editable ? "" : ' disabled title="当前站点使用总控默认配置，如需编辑请先启用本站点单独配置"';
     const rows = [
-      ["VIP0", "100", "5,000", "1天", "1", "3", "28", "mike.ops", "2026-07-23 19:06:12"],
-      ["VIP1", "200", "10,000", "1天", "1", "4", "46", "mike.ops", "2026-07-23 19:08:30"],
-      ["VIP2", "500", "20,000", "2天", "1", "5", "73", "amy.ops", "2026-07-23 19:12:44"],
-      ["VIP3", "1,000", "50,000", "2天", "1.5", "6", "112", "amy.ops", "2026-07-23 19:18:03"],
-      ["VIP4", "2,000", "100,000", "3天", "2", "7", "168", "mike.ops", "2026-07-23 19:22:51"]
+      ["VIP0", "5,000", "1天", "1", "3", "28", "mike.ops", "2026-07-23 19:06:12"],
+      ["VIP1", "10,000", "1天", "1", "4", "46", "mike.ops", "2026-07-23 19:08:30"],
+      ["VIP2", "20,000", "2天", "1", "5", "73", "amy.ops", "2026-07-23 19:12:44"],
+      ["VIP3", "50,000", "2天", "1.5", "6", "112", "amy.ops", "2026-07-23 19:18:03"],
+      ["VIP4", "100,000", "3天", "2", "7", "168", "mike.ops", "2026-07-23 19:22:51"]
     ];
-    return rows.map((row, index) => `<tr><td class="sticky-rebate-level"><strong>${row[0]}</strong></td><td><strong class="amount">${row[1]} CNY</strong></td><td><strong class="amount">${row[2]} CNY</strong></td><td>${row[3]}</td><td>${row[4]} 倍</td><td>${row[5]}</td><td>${row[6]}</td><td>${row[7]}</td><td>${row[8]}</td><td class="row-actions sticky-rebate-action"><button type="button" class="link-action rebate-setting${index === 1 ? ' annotated" data-component-id="M01' : ""}" data-level="${row[0]}"${editDisabled}>${index === 1 ? componentBadge("M01") : ""}设置</button><button type="button" class="link-action rebate-view${index === 1 ? ' annotated" data-component-id="B01' : ""}" data-level="${row[0]}">${index === 1 ? componentBadge("B01") : ""}详情</button></td></tr>`).join("");
+     return rows.map((row, index) => `<tr><td class="sticky-rebate-level"><strong>${row[0]}</strong></td><td><strong class="amount">${row[1]} CNY</strong></td><td>${row[2]}</td><td>${row[3]} 倍</td><td>${row[4]}</td><td>${row[5]}</td><td>${row[6]}</td><td>${row[7]}</td><td class="row-actions sticky-rebate-action"><button type="button" class="link-action rebate-setting${index === 1 ? ' annotated" data-component-id="M01' : ""}" data-level="${row[0]}"${editDisabled}>${index === 1 ? componentBadge("M01") : ""}设置</button><button type="button" class="link-action rebate-view${index === 1 ? ' annotated" data-component-id="B01' : ""}" data-level="${row[0]}">${index === 1 ? componentBadge("B01") : ""}详情</button></td></tr>`).join("");
   }
 
   function rebate512LevelContent(page) {
     const meta = memberVipSiteMeta();
     const siteContext = vipSiteConfigPanel({ enableId: "M02", restoreId: "M03", independentScope: "VIP返水" });
-    return `<div class="risk-page-heading vip-page-heading"><div><h1>返水等级</h1><span>总控默认配置与例外站点单独配置</span></div></div>${requirementPageTabs("#509", page, rebate509Tabs)}${siteContext}<section class="risk-list-card${meta.inherited ? " vip-config-readonly" : ""} annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>${memberVipConfigSite} · 返水等级配置</h2><span>共 5 个等级${meta.inherited ? " · 当前完整使用总控默认配置" : ""}</span></div></div><div class="risk-table-wrap"><table class="risk-table rebate-level-table"><thead><tr><th class="sticky-rebate-level">VIP等级</th><th>每日最高返水</th><th>最低流水要求</th><th>领取有效期</th><th>返水流水倍数</th><th>单独配置的场馆</th><th>单独配置的游戏</th><th>最后操作人</th><th>最后操作时间</th><th class="sticky-rebate-action">操作</th></tr></thead><tbody>${rebate512LevelRows()}</tbody></table></div>${pagination(20, 5)}</section>`;
+     return `<div class="risk-page-heading vip-page-heading"><div><h1>返水等级</h1><span>总控默认配置与例外站点单独配置</span></div></div>${requirementPageTabs("#509", page, rebate509Tabs)}${siteContext}<section class="risk-list-card${meta.inherited ? " vip-config-readonly" : ""} annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>${memberVipConfigSite} · 返水等级配置</h2><span>共 5 个等级${meta.inherited ? " · 当前完整使用总控默认配置" : ""}</span></div></div><div class="risk-table-wrap"><table class="risk-table rebate-level-table"><thead><tr><th class="sticky-rebate-level">VIP等级</th><th>最低流水要求</th><th>领取有效期</th><th>返水流水倍数</th><th>单独配置的场馆</th><th>单独配置的游戏</th><th>最后操作人</th><th>最后操作时间</th><th class="sticky-rebate-action">操作</th></tr></thead><tbody>${rebate512LevelRows()}</tbody></table></div>${pagination(20, 5)}</section>`;
   }
 
   function rebate512RecordContent(page) {
@@ -3486,8 +3486,8 @@
     const venueWorkspace = `<section class="electronic-override-config"><header><div><strong>电子游戏单独覆盖</strong><span>按电子场馆切换并维护例外游戏</span></div><em>${venueCatalog.length}个电子场馆</em></header><div class="venue-config-workspace">${venueList}<div class="venue-config-main">${venueTools}${batchToolbar}${gameTable}</div></div></section>`;
     const independentLimit = memberVipConfigSite === "总控默认配置" ? "" : '<p class="config-limit-note">本站点金额配置不得高于同VIP等级对应的总控默认金额，保存时逐项校验。</p>';
     const body = readonly
-      ? `${context}<div class="rebate-readonly-summary"><div><span>每日最高返水</span><strong>200 CNY</strong></div><div><span>最低流水要求</span><strong>10,000 CNY</strong></div><div><span>领取有效期</span><strong>1天</strong></div><div><span>返水流水倍数</span><strong>1倍</strong></div></div>${typeRates}${priorityNote}${venueWorkspace}`
-      : `${context}${independentLimit}<div class="rebate-base-config"><label>每日最高返水<div><input type="number" value="200" min="0.01" step="0.01" /><span>CNY</span></div></label><label>最低流水要求<div><input type="number" value="10000" min="0.01" step="0.01" /><span>CNY</span></div></label><label>领取有效期<div><input type="number" value="1" min="0" step="1" /><span>天</span></div></label><label>返水流水倍数<div><input type="number" value="1" min="1" step="0.1" /><span>倍</span></div></label></div>${typeRates}${priorityNote}${venueWorkspace}`;
+      ? `${context}<div class="rebate-readonly-summary"><div><span>最低流水要求</span><strong>10,000 CNY</strong></div><div><span>领取有效期</span><strong>1天</strong></div><div><span>返水流水倍数</span><strong>1倍</strong></div></div>${typeRates}${priorityNote}${venueWorkspace}`
+      : `${context}${independentLimit}<div class="rebate-base-config"><label>最低流水要求<div><input type="number" value="10000" min="0.01" step="0.01" /><span>CNY</span></div></label><label>领取有效期<div><input type="number" value="1" min="0" step="1" /><span>天</span></div></label><label>返水流水倍数<div><input type="number" value="1" min="1" step="0.1" /><span>倍</span></div></label></div>${typeRates}${priorityNote}${venueWorkspace}`;
     modal(`${level} 返水${readonly ? "详情" : "设置"}`, body, readonly ? "关闭" : "保存配置", footer);
     document.querySelector(".risk-modal")?.classList.add("rebate-setting-modal");
     const modalElement = document.querySelector(".risk-modal.rebate-setting-modal");
