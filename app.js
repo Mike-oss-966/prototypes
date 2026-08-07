@@ -1384,7 +1384,7 @@
   }
 
   const memberVipMobileKeys = [
-    "member-vip-center-509", "member-electronic-rebate-509",
+    "member-vip-center-509", "member-electronic-rebate-509", "member-center-509",
     "member-vip-center-643", "member-vip-detail-643", "member-vip-rules-643", "member-settings-643", "member-profile-643"
   ];
 
@@ -1393,7 +1393,7 @@
     const requirementId = phaseTwo ? "#643" : "#509";
     const pages = phaseTwo
       ? [["member-vip-center-643", "VIP页面"], ["member-settings-643", "设置"], ["member-profile-643", "个人资料"]]
-      : [["member-vip-center-509", "VIP页面"], ["member-electronic-rebate-509", "电子返水明细"]];
+      : [["member-vip-center-509", "VIP页面"], ["member-electronic-rebate-509", "电子返水明细"], ["member-center-509", "个人中心"]];
     const active = ["member-vip-detail-643", "member-vip-rules-643"].includes(activeKey) ? "member-vip-center-643" : activeKey;
     return `<nav class="member-mobile-prototype-nav" aria-label="会员端原型页面切换"><span>会员端页面</span><div>${pages.map(([key, name]) => `<a class="${active === key ? "active" : ""}" href="#requirement/${encodeURIComponent(requirementId)}/page/${key}">${name}</a>`).join("")}</div><small>原型评审导航，不属于生产功能</small></nav>`;
   }
@@ -1460,6 +1460,22 @@
       }).join("");
     }).join("");
     return mobileVipFrame(`${memberVipMobileHeader("电子返水明细", "member-vip-center-509")}<main class="member-electronic-rebate-page"><section class="electronic-rebate-overview"><span>当前会员VIP等级</span><strong>VIP${currentLevel}</strong></section><section class="member-electronic-rebate-table annotated" data-component-id="T01">${componentBadge("T01")}<div class="member-electronic-rebate-table-scroll"><table><thead><tr><th>场馆</th><th>游戏名称</th><th>返水比例</th></tr></thead><tbody>${rows}</tbody></table></div></section></main>`, "member-electronic-rebate");
+  }
+
+  function memberCenter509Content() {
+    const quickActions = [["存", "存款"], ["转", "转账"], ["提", "提款"], ["投", "投注记录"], ["账", "交易记录"], ["卡", "卡包管理"], ["推", "推广赚钱"]];
+    const helpActions = [["充", "充值教程"], ["提", "提款教程"], ["游", "游戏教程"], ["意", "意见反馈"]];
+    const listActions = [["信", "消息中心", "5"], ["协", "用户协议", ""], ["关", "关于我们", ""]];
+    return mobileVipFrame(`<main class="member-center-page">
+      <section class="member-center-hero member-production-same-item"><header><span></span><h1>我的</h1><div><button type="button">设置</button><button type="button">客服</button></div></header><div class="member-center-user"><span class="member-center-avatar">M</span><div><strong>mike31 <em>VIP0</em></strong><small>加入旺财体育第1天</small></div><b>›</b></div></section>
+      <section class="member-center-assets"><div class="member-center-balance member-production-same-item"><span>总资产　◉</span><strong>¥ 0.00</strong></div><div class="member-center-money-actions member-production-same-item">${quickActions.slice(0, 3).map(([icon, label]) => `<button type="button"><i>${icon}</i><span>${label}</span></button>`).join("")}</div><div class="member-center-vip-title member-production-same-item"><span>VIP等级: <strong>VIP0</strong></span><a href="#requirement/${encodeURIComponent("#509")}/page/member-vip-center-509">查看VIP福利　›</a></div>
+        <section class="member-center-vip-progress annotated" data-component-id="P01">${componentBadge("P01")}<div class="member-center-vip-levels"><span>VIP0</span><span>VIP1</span></div><div class="member-center-progress-row"><i><em style="width:42%"></em></i><div><span>晋升流水（元）</span><b>420.00 / 1,000.00</b></div></div><div class="member-center-progress-row"><i><em style="width:60%"></em></i><div><span>晋升存款（元）</span><b>300.00 / 500.00</b></div></div></section>
+      </section>
+      <section class="member-center-shortcuts member-production-same-item">${quickActions.slice(3).map(([icon, label]) => `<button type="button"><i>${icon}</i><span>${label}</span></button>`).join("")}</section>
+      <section class="member-center-help member-production-same-item"><h2>帮助中心</h2><div>${helpActions.map(([icon, label]) => `<button type="button"><i>${icon}</i><span>${label}</span></button>`).join("")}</div></section>
+      <section class="member-center-links member-production-same-item">${listActions.map(([icon, label, badge]) => `<button type="button"><i>${icon}</i><span>${label}</span>${badge ? `<em>${badge}</em>` : ""}<b>›</b></button>`).join("")}</section>
+      <nav class="member-center-bottom member-production-same-item"><a>首页</a><a>优惠</a><a>客服</a><a class="active">我的</a></nav>
+    </main>`, "member-center-mobile");
   }
 
   function memberVipBenefitTab() {
@@ -1605,6 +1621,7 @@
     if (page.key === "vip-settings-509") return vipSettings509Content();
     if (["member-vip-center-509", "member-vip-center-643"].includes(page.key)) return memberVipCenter509Content(page);
     if (page.key === "member-electronic-rebate-509") return memberElectronicRebateContent();
+    if (page.key === "member-center-509") return memberCenter509Content();
     if (page.key === "member-vip-detail-643") return memberVipDetail509Content(page);
     if (page.key === "member-vip-rules-643") return memberVipRules509Content();
     if (page.key === "member-settings-643") return memberSettings509Content();

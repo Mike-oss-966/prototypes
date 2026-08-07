@@ -1235,6 +1235,55 @@ td { border-top: 1px solid #e8ece9; padding: 18px; font-size: 13px; vertical-ali
 .member-vip-detail-link small { color: #77847c; font-size: 10px; }
 .member-vip-detail-link > span:last-child { color: #68766e; font-size: 26px; }
 .member-vip-detail-link > .component-badge { top: 5px; right: -8px; }
+.member-center-mobile { background: #eef4f0; }
+.member-center-page { position: relative; min-height: 812px; padding-bottom: 70px; background: #eef4f0; }
+.member-center-hero { min-height: 178px; padding: 8px 18px 24px; background: #dcece3; }
+.member-center-hero header { height: 48px; display: grid; grid-template-columns: 82px 1fr 82px; align-items: center; }
+.member-center-hero h1 { margin: 0; font-size: 20px; text-align: center; }
+.member-center-hero header > div { display: flex; justify-content: flex-end; gap: 12px; }
+.member-center-hero header button { padding: 0; color: #334139; background: transparent; border: 0; font-size: 11px; cursor: pointer; }
+.member-center-user { display: grid; grid-template-columns: 58px minmax(0, 1fr) 18px; align-items: center; gap: 12px; margin-top: 10px; }
+.member-center-avatar { width: 58px; height: 58px; display: grid; place-items: center; color: #fff; background: #49685a; border: 3px solid rgba(255,255,255,.8); border-radius: 50%; font-size: 22px; font-weight: 800; }
+.member-center-user > div { display: grid; gap: 6px; }
+.member-center-user strong { font-size: 18px; }
+.member-center-user em { margin-left: 6px; padding: 3px 6px; color: #fff; background: #397e60; font-size: 10px; font-style: normal; }
+.member-center-user small { color: #68776f; font-size: 12px; }
+.member-center-user > b { color: #75827b; font-size: 24px; }
+.member-center-assets { position: relative; z-index: 2; margin: -17px 14px 0; padding: 15px 14px 13px; background: #fff; border: 1px solid #d8e2dc; border-radius: 8px; }
+.member-center-balance { display: grid; gap: 7px; }
+.member-center-balance span { color: #68766e; font-size: 12px; font-weight: 700; }
+.member-center-balance strong { font-size: 24px; }
+.member-center-money-actions { position: absolute; top: 13px; right: 14px; display: flex; gap: 14px; }
+.member-center-money-actions button,.member-center-shortcuts button,.member-center-help button { display: grid; justify-items: center; gap: 6px; padding: 0; color: #45534b; background: transparent; border: 0; font-size: 11px; }
+.member-center-money-actions i,.member-center-shortcuts i,.member-center-help i { width: 31px; height: 31px; display: grid; place-items: center; color: #fff; background: #3c8062; border-radius: 6px; font-size: 11px; font-style: normal; font-weight: 800; }
+.member-center-vip-title { height: 42px; display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding: 0 10px; background: #f5f8f6; border: 1px solid #e2e8e4; }
+.member-center-vip-title span { color: #66746c; font-size: 11px; }
+.member-center-vip-title strong { color: #2e3d35; font-size: 13px; }
+.member-center-vip-title a { color: #fff; background: #397e60; padding: 8px 11px; text-decoration: none; font-size: 11px; font-weight: 700; }
+.member-center-vip-progress { position: relative; margin-top: 11px; padding: 10px 10px 9px; background: #f8faf9; border: 1px solid #dce4df; }
+.member-center-vip-progress > .component-badge { top: -8px; right: -7px; }
+.member-center-vip-levels { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.member-center-vip-levels > span { min-width: 58px; height: 27px; display: grid; place-items: center; padding: 0 13px; color: #2d5d47; background: #edf5f0; border: 1px solid #78a28d; border-radius: 999px; font-size: 12px; font-weight: 800; }
+.member-center-progress-row { display: grid; gap: 5px; padding-top: 7px; }
+.member-center-progress-row + .member-center-progress-row { margin-top: 5px; border-top: 1px solid #e6ebe8; }
+.member-center-progress-row > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.member-center-progress-row span { color: #58675f; font-size: 11px; }
+.member-center-progress-row b { color: #2e4036; font-size: 11px; white-space: nowrap; }
+.member-center-progress-row > i { order: -1; height: 6px; overflow: hidden; background: #dce7e1; border-radius: 3px; }
+.member-center-progress-row > i em { display: block; height: 100%; background: #397e60; border-radius: 3px; }
+.member-center-shortcuts { display: grid; grid-template-columns: repeat(4, 1fr); margin: 12px 14px 0; padding: 17px 10px; background: #fff; border: 1px solid #dce4df; border-radius: 8px; }
+.member-center-help { margin: 12px 14px 0; background: #fff; border: 1px solid #dce4df; border-radius: 8px; }
+.member-center-help h2 { margin: 0; padding: 11px 14px; background: #dcece3; font-size: 16px; }
+.member-center-help > div { display: grid; grid-template-columns: repeat(4, 1fr); padding: 15px 8px; }
+.member-center-links { margin: 12px 14px 0; background: #fff; border: 1px solid #dce4df; border-radius: 8px; }
+.member-center-links button { width: 100%; min-height: 48px; display: grid; grid-template-columns: 26px 1fr auto 16px; align-items: center; gap: 7px; padding: 0 13px; color: #344139; background: transparent; border: 0; border-bottom: 1px solid #edf0ee; text-align: left; }
+.member-center-links button:last-child { border-bottom: 0; }
+.member-center-links i { color: #60766a; font-style: normal; font-weight: 800; }
+.member-center-links em { min-width: 20px; height: 20px; display: grid; place-items: center; color: #fff; background: #b6382d; border-radius: 10px; font-size: 10px; font-style: normal; }
+.member-center-links b { color: #98a29c; font-size: 19px; }
+.member-center-bottom { position: absolute; left: 0; right: 0; bottom: 0; height: 58px; display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; background: rgba(255,255,255,.97); border-top: 1px solid #dce3df; }
+.member-center-bottom a { color: #68766e; text-align: center; font-size: 11px; text-decoration: none; }
+.member-center-bottom a.active { color: #397e60; font-weight: 800; }
 .member-electronic-rebate { min-height: 844px; background: #f3f6f4; }
 .member-electronic-rebate-page { min-height: 758px; padding: 14px; }
 .electronic-rebate-overview { display: grid; grid-template-columns: auto 1fr auto 1fr; align-items: center; gap: 5px 9px; margin-bottom: 12px; padding: 12px; color: #5f6d65; background: #fff; border: 1px solid #dce2de; font-size: 11px; }

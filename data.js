@@ -1225,17 +1225,24 @@
         { id: "T01", name: "电子游戏返水比例", type: "移动端数据表", summary: "展示当前会员VIP等级下全部电子场馆和游戏的返水比例。", rules: ["顶部读取并显示当前会员VIP等级，表格仅加载该VIP等级的数据", "完整展示全部电子场馆及其全部游戏，不提供场馆切换或筛选；每行分别展示场馆、游戏名称和返水比例，不合并单元格", "不展示配置来源", "比例为0时显示【不返水】", "固定矩阵不分页"] }
       ]
     };
+    const memberCenterPage = {
+      id: "P07", key: "member-center-509", name: "会员端-个人中心", role: "会员", questions: [],
+      annotations: [
+        { id: "P01", name: "VIP晋升进度", type: "个人中心VIP模块", summary: "调整个人中心VIP等级进度展示，并增加晋升存款进度。", rules: ["晋升流水和晋升存款分别展示进度条，名称、当前值和要求值位于对应进度条下方，样式与当前样式保持一致即可", "当前值最大只展示到对应要求值，不展示超额部分", "当前VIP的晋升存款要求配置为0时隐藏晋升存款进度条"] },
+        { id: "N01", name: "生产一致内容", type: "无修改说明", summary: "除VIP晋升进度区域外，本页与生产一致，无需修改。", rules: ["会员资料、资产信息、功能入口、帮助中心、消息及底部导航等页面结构和交互均保持生产现状", "不得根据原型改变生产既有页面样式和交互"] }
+      ]
+    };
     const algorithmPage = clonePage(originalPages.get("vip-algorithm-509"));
-    Object.assign(algorithmPage, { id: "P07", key: "vip-algorithm-509", purpose: "说明VIP单级升降、超额不结转及账本清零规则。" });
+    Object.assign(algorithmPage, { id: "P08", key: "vip-algorithm-509", purpose: "说明VIP单级升降、超额不结转及账本清零规则。" });
 
-    requirement509.pages = [vipSettingsPage, ...rebatePages, phaseOneMemberCenter, electronicDetailPage, algorithmPage];
+    requirement509.pages = [vipSettingsPage, ...rebatePages, phaseOneMemberCenter, electronicDetailPage, memberCenterPage, algorithmPage];
     requirement509.pages.forEach((page) => page.annotations.forEach((annotation) => {
       if (annotation.id === "N09") annotation.rules = annotation.rules.slice(1);
     }));
     Object.assign(requirement509, {
       title: "一期：总控后台-VIP返水、新VIP算法",
       summary: "改造VIP返水配置和算法，保留生产VIP会员设置必要配置，并补充会员端晋升存款与电子返水明细。",
-      updatedAt: "2026-08-06 17:58"
+      updatedAt: "2026-08-07 22:14"
     });
 
     const requirement643 = {
