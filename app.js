@@ -114,6 +114,39 @@
   };
   const profitSimulatorState = { ...profitSimulatorDefaults };
 
+  const p0RiskSimulatorDefaults = {
+    view: "journey",
+    domain: "venue-out",
+    step: 0,
+    outcome: "risk",
+    tgFailure: false,
+    backendTab: "dashboard",
+    eventStatus: "待处理",
+    selectedService: "event",
+    replayStatus: "idle",
+    replayCount: 0,
+    autoPlaying: false,
+    queueCycle: 0,
+    healthLastChecked: "2026-08-11 10:31:13",
+    healthCheckRunning: false,
+    control: {
+      scenarios: {
+        "venue-out": {
+          scenarioEnabled: true,
+          rules: {
+            amount: true,
+            state: true,
+            duplicate: true,
+            venue: true
+          }
+        }
+      }
+    }
+  };
+  const p0RiskSimulatorState = { ...p0RiskSimulatorDefaults };
+  let p0RiskAutoTimer = null;
+  let p0HealthCheckTimer = null;
+
   function visibleRequirements() {
     return requirements.filter((requirement) => !requirement.localOnly || isLocalPrototype);
   }
@@ -198,6 +231,10 @@
 
   function annotationCard(annotation) {
     let demoControls = "";
+    if (annotation.name === "系统与场景健康") {
+      const healthIssue = p0RiskV2EnsureState().healthIssue;
+      demoControls = `<div class="spec-view-switch" aria-label="风控健康状态演示"><span>原型状态演示</span><div><button type="button" class="${healthIssue ? "active" : ""}" data-p0-health-demo="issue">异常状态</button><button type="button" class="${healthIssue ? "" : "active"}" data-p0-health-demo="normal">正常状态</button></div><small>仅用于原型评审，不属于生产功能</small></div>`;
+    }
     if (annotation.name === "列表状态切换") demoControls = `<div class="spec-demo-controls"><label><input type="checkbox" checked id="spec-claim-toggle" /><span>展示待领取数据</span></label><label><input type="checkbox" checked id="spec-review-toggle" /><span>展示待审核数据</span></label></div>`;
     if (annotation.name === "登录日志列表状态") demoControls = `<div class="spec-demo-controls"><label><input type="checkbox" ${loginState.searched ? "checked" : ""} id="spec-login-data-toggle" /><span>展示有数据状态</span></label></div>`;
     if (annotation.name === "流水列表状态") demoControls = `<div class="spec-demo-controls"><label><input type="checkbox" ${transactionState.searched ? "checked" : ""} id="spec-transaction-data-toggle" /><span>展示有数据状态</span></label></div>`;
@@ -284,6 +321,13 @@
   }
 
   function sidebar(requirement, page) {
+    if (requirement.id === "#680") {
+      const menuItems = visiblePages(requirement).map((item, index) => {
+        const active = item.key === page.key || (item.key === "risk-events-680" && p0RiskSimulatorState.backendTab === "detail");
+        return `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${item.key}" class="risk-680-menu-item ${active ? "active" : ""}"><span class="risk-680-menu-icon icon-${index + 1}" aria-hidden="true"></span><span class="menu-name">${escapeHtml(item.name)}</span></a>`;
+      }).join("");
+      return `<aside class="risk-sidebar risk-680-sidebar"><div class="risk-680-logo"><span>R</span><strong>风控中心</strong></div><nav class="risk-680-menu-tree"><section class="risk-680-menu-group is-expanded"><button type="button" class="risk-680-menu-parent" aria-expanded="true" data-risk-680-menu-toggle><span class="risk-680-parent-icon"></span><span>风控管理</span><i></i></button><div class="risk-680-menu-children">${menuItems}</div></section></nav></aside>`;
+    }
     if (requirement.id === "#498" && page.key.startsWith("control-")) {
       const links = [
         ["control-agent-quota-498", "代存额度设置"],
@@ -996,15 +1040,20 @@
     ["balance-change-488", "账变记录"], ["risk-record-488", "风控记录"]
   ];
 
+  function member488ContextAccount() {
+    return sessionStorage.getItem("prototype-member-detail-account") || "member_10086";
+  }
+
   function member488DateRange(id, label, annotated = true) {
     const annotation = annotated ? ` annotated" data-component-id="${id}` : "";
     return `<div class="risk-field risk-field-wide date-range-field${annotation}">${annotated ? componentBadge(id) : ""}<div class="field-title-row"><label>${label}</label><div class="quick-ranges"><button type="button">今日</button><button type="button">昨日</button><button type="button">本周</button><button type="button">30天</button><button type="button">90天</button><button type="button">180天</button></div></div><button class="risk-range" type="button" data-date-trigger><span>2026-07-19 00:00:00</span><b>至</b><span>2026-07-19 18:30:00</span></button><div class="date-picker-popover" hidden><div><label>开始时间<input type="datetime-local" step="1" value="2026-07-19T00:00:00" /></label><label>结束时间<input type="datetime-local" step="1" value="2026-07-19T18:30:00" /></label></div><footer><button type="button" class="secondary-action date-close">取消</button><button type="button" class="main-action date-apply">确定</button></footer></div></div>`;
   }
 
   function member488DetailHeader(page) {
+    const memberAccount = escapeHtml(member488ContextAccount());
     const tabs = member488DetailPages.map(([key, name]) => `<a href="#requirement/${encodeURIComponent("#488")}/page/${key}" class="${key === page.key ? "active" : ""}">${name}</a>`).join("");
     const annotation = page.key === "member-basic-488" ? ` annotated" data-component-id="N01` : "";
-    return `<section class="member-context${annotation}">${page.key === "member-basic-488" ? componentBadge("N01") : ""}<div class="member-context-main"><div class="member-context-identity"><strong>会员账号：member_10086</strong><span>会员ID：<em>10886421</em></span><span>账号状态：<b>正常</b></span><span>会员等级：<b>VIP6</b></span></div><div class="member-context-search"><input type="text" placeholder="请输入会员账号" /><button type="button" class="main-action member-search-action">搜索</button><a href="#requirement/${encodeURIComponent("#488")}/page/member-list-488" aria-label="关闭会员详情" title="关闭会员详情">×</a></div></div><div class="member-detail-section-title">会员信息</div><nav class="member-detail-tabs" aria-label="会员详情三级菜单">${tabs}</nav></section>`;
+    return `<section class="member-context${annotation}">${page.key === "member-basic-488" ? componentBadge("N01") : ""}<div class="member-context-main"><div class="member-context-identity"><strong>会员账号：${memberAccount}</strong><span>会员ID：<em>10886421</em></span><span>账号状态：<b>正常</b></span><span>会员等级：<b>VIP6</b></span></div><div class="member-context-search"><input type="text" placeholder="请输入会员账号" /><button type="button" class="main-action member-search-action">搜索</button><a href="#requirement/${encodeURIComponent("#488")}/page/member-list-488" aria-label="关闭会员详情" title="关闭会员详情">×</a></div></div><div class="member-detail-section-title">会员信息</div><nav class="member-detail-tabs" aria-label="会员详情三级菜单">${tabs}</nav></section>`;
   }
 
   function member488DetailPage(page, body) {
@@ -1633,6 +1682,1191 @@
     if (page.key === "rebate-records-509") return rebate512RecordContent(page);
     if (page.key === "no-rebate-games-509") return rebate512ExcludedContent(page);
     return "";
+  }
+
+  /* Legacy multi-domain simulator model retained for historical reference only.
+  const p0RiskDomainsLegacy = [
+    {
+      id: "venue-out", code: "P0-01", short: "场馆转出", name: "场馆转出与主钱包结算",
+      trigger: "场馆转出订单创建、三方返回、查单、主钱包结算和恢复任务",
+      event: "会员从DB电子转出 1,000,000 元。三方返回成功，但场馆余额只减少 20 元，平台准备按成功金额给主钱包入账。",
+      normalEvent: "会员从DB电子转出 20,000 元。三方返回成功，场馆余额减少 20,000 元，主钱包唯一入账 20,000 元。",
+      amount: "1,000,000", subject: "XY体育 / member_10086 / DB电子", order: "VTO-20260806-000187",
+      production: ["同一转出单号复用并校验参数一致", "会员与场馆维度处理互斥", "保存转出前后场馆余额和版本", "成功结算具备幂等及恢复扫描"],
+      deterministic: ["三方成功金额、场馆余额减少额、主钱包入账额三者不一致", "同一转出单出现多次三方成功或多次主钱包入账", "转入未完成时仍发起转出，或订单状态发生非法回退", "恢复任务重复结算、扫描游标停滞或连续失败"],
+      baseline: ["单会员短时转出次数或累计金额超过阈值", "单场馆余额差异会员数、金额或失败率突增"],
+      evidence: ["转出订单及状态时间线", "三方请求、响应与查单摘要", "场馆余额前后快照", "主钱包前后值及账变分录", "转入订单、版本号和恢复任务记录"],
+      rule: "三方成功 1,000,000 元，但场馆余额仅减少 20 元，差额 999,980 元，命中确定性资金不一致。",
+      normalRule: "订单、三方结果、场馆余额差和主钱包入账四方一致，保存证据后正常结束。",
+      severity: "P0", tg: "场馆转出金额与余额变化不一致，平台存在重复或超额入账风险。",
+      action: "立即核对三方查单和主钱包分录；一期只报警，现有生产后台中的该笔业务仍需人工处理。",
+      productionPage: "会员管理 > 会员详情 > 场馆钱包 / 财务账变",
+      flow: ["场馆钱包", "转出订单", "三方场馆", "主钱包", "资金对账"]
+    },
+    {
+      id: "bet-sync", code: "P0-02", short: "注单与解锁", name: "注单同步、有效投注、流水解锁和可提现金额",
+      trigger: "注单同步批次、注单保存/更新、后处理、流水任务分配、解锁和资金对账",
+      event: "DB彩票注单先以有效投注 1,000 元参与解锁，40 分钟后结算为无效；会员可提现金额已增加且没有对应冲销。",
+      normalEvent: "已结算有效注单 1,000 元进入流水任务，按剩余任务值解锁 1,000 元，可提现前后值与解锁分录一致。",
+      amount: "1,000", subject: "WC体育 / player_2026 / DB彩票", order: "BET-DBL-88201931",
+      production: ["旧同步任务查询近期时间窗口，V2使用游标增量同步", "已有注单可更新并记录已结算数据变化", "流水任务、分配、锁定与可提现均有分录", "资金结算提供差额记录与对账服务"],
+      deterministic: ["同步任务停止、游标长期不前进或同批注单大量重复", "未结算、无效或撤销注单贡献有效投注和流水解锁", "单次解锁大于任务剩余值或可核验有效投注", "可提现增加额与解锁分录不一致，或已结算注单被反向修改未冲销"],
+      baseline: ["场馆注单延迟、更新率、撤销率或有效投注下降幅度异常", "会员短时可提现增加额显著偏离投注和充值规模"],
+      evidence: ["同步任务、批次时间窗和游标", "场馆原始注单与平台注单快照", "结算状态和有效投注变更", "流水任务剩余值与分配记录", "锁定/可提现前后值及对账差异"],
+      rule: "无效注单已经贡献 1,000 元解锁，可提现金额增加但未产生冲销，命中资金与注单状态不一致。",
+      normalRule: "注单已结算且有效，解锁不超过剩余任务，可提现变化与账本一致。",
+      severity: "P0", tg: "无效注单已解锁可提现金额，且账本未冲销。",
+      action: "核对场馆原始注单、结算变化和流水分配；在生产后台处理前先确认是否已有提款或场馆转出。",
+      productionPage: "会员管理 > 投注记录 / 流水查询 / 账变记录",
+      flow: ["场馆注单", "同步批次", "有效投注", "流水任务", "可提现余额"]
+    },
+    {
+      id: "withdraw", code: "P0-03", short: "提款出口", name: "提款申请、审核、三方代付、退款与解冻",
+      trigger: "提款申请、审核、代付提交/查单、成功、失败、退款和资金池处理",
+      event: "同一提款单在三方状态未知时被再次提交代付；第一次随后成功，第二次仍在处理中，存在重复出款。",
+      normalEvent: "提款单唯一提交，三方成功后唯一扣减站点与总站资金池，订单和会员资金状态一致。",
+      amount: "80,000", subject: "CS体育 / summer_728 / USDT-TRC20", order: "WD-20260806-003921",
+      production: ["申请、审核、处理中、成功、失败等状态已存在", "按真实可提现金额校验申请", "失败流程存在退款与解冻账变", "代付提交、查单、资金池扣减及回滚有独立记录"],
+      deterministic: ["同一提款单或同一外部单号重复提交三方", "提款状态非法跳转，成功无资金池扣减，失败无退款/解冻", "退款金额、手续费、实际到账或预占金额不一致", "三方未知时先退款又重新代付，或同一失败单重复退款"],
+      baseline: ["三方未知状态持续时间、通道失败率或单会员提款频率异常", "注单同步降级期间出现大额或批量提款"],
+      evidence: ["提款订单完整状态时间线", "真实可提现与预占快照", "审核人与审核结果", "三方提交、响应及查单", "会员账变、退款/解冻和站点/总站资金池分录"],
+      rule: "三方未知状态下同一订单再次提交，外部请求号不同但业务单相同，命中重复代付。",
+      normalRule: "提款只提交一次，订单、三方、会员资金和资金池状态全部一致。",
+      severity: "P0", tg: "同一提款订单疑似重复提交三方代付，存在重复出款风险。",
+      action: "立即对两笔三方请求查单；未知结果不得先退款或再次提交，一期由现有财务页面人工收口。",
+      productionPage: "财务管理 > 提款审核 / 提款记录",
+      flow: ["可提现余额", "提款订单", "审核", "三方代付", "资金池/退款"]
+    },
+    {
+      id: "deposit", code: "P0-04", short: "充值入账", name: "充值回调与会员入账",
+      trigger: "支付回调、订单校验、关联订单、会员入账、奖励计算和通道对账",
+      event: "支付通道对同一三方单号重复回调，两次回调使用不同平台请求号，会员主钱包被重复入账。",
+      normalEvent: "支付回调验签通过，实付金额与订单一致，同一三方单号只完成一次会员入账。",
+      amount: "50,000", subject: "YY体育 / deposit_user8 / USDT", order: "DP-20260806-001566",
+      production: ["充值订单已有等待、处理中、失败和成功状态", "保存支付通道、回调和关联订单信息", "成功后形成会员资金账变", "部分服务已有订单幂等和奖励记录"],
+      deterministic: ["同一三方单号、支付订单或链上交易哈希重复入账", "验签失败、订单不存在或状态不允许时仍入账", "实付、订单、会员入账和奖励基础金额不一致", "成功订单被回退后再次入账，或关联订单相互冲突"],
+      baseline: ["同通道短时重复回调、失败率、金额差异或超时率突增", "单会员充值金额、次数或充值奖励显著异常"],
+      evidence: ["充值订单和关联订单", "脱敏回调原文、验签结果和通道", "实付与订单金额", "会员前后余额及入账分录", "奖励资格、金额和配置快照"],
+      rule: "相同三方单号出现两笔成功入账分录，命中重复充值入账。",
+      normalRule: "验签、订单、实付和入账一致，幂等键只产生一次成功事实。",
+      severity: "P0", tg: "同一支付单发生重复会员入账，需立即核对通道回调与账变。",
+      action: "核对通道原单和会员账变；禁止直接改余额，纠正必须走生产反向分录和复核。",
+      productionPage: "财务管理 > 存款记录 / 会员账变",
+      flow: ["支付通道", "充值订单", "验签/幂等", "会员主钱包", "通道对账"]
+    },
+    {
+      id: "manual-funds", code: "P0-05", short: "人工资金", name: "总控、站点和代理人工资金操作",
+      trigger: "额度增减、人工上下分、人工解锁、资金池调整的申请、审核和执行",
+      event: "站点操作员单笔给会员增加 500,000 元，并由同一账号完成审核；会员到账但站点资金池未产生对应扣减。",
+      normalEvent: "操作人与审核人分离，金额在权限范围内，会员和资金池形成方向相反、金额一致的两侧分录。",
+      amount: "500,000", subject: "NS体育 / ops_site03 / member_8899", order: "QA-20260806-000078",
+      production: ["额度调整记录保存操作类型、金额和状态", "部分资金操作记录执行前后资金池值", "会员账户形成独立账变", "审批与执行在不同服务中有状态记录"],
+      deterministic: ["操作人和审核人为同一账号，或跨站点、跨角色权限操作", "执行成功但会员余额、来源资金池或账变任一缺失", "同一申请重复执行，或失败后余额已经变化", "人工解锁大于锁定余额或没有可追溯业务原因"],
+      baseline: ["单笔、单人、单站点日累计金额或次数超阈值", "短时对同一会员反复加减同额资金或批量操作异常"],
+      evidence: ["申请单、类型、原因和附件", "操作人、审核人、角色和权限范围", "会员与资金池前后快照", "双方账变和执行结果", "关联订单、工单或审批记录"],
+      rule: "同一账号申请并审核 500,000 元上分，且站点资金池未扣减，命中职责冲突和单边入账。",
+      normalRule: "双人复核、权限范围、双侧余额和账变全部一致。",
+      severity: "P0", tg: "人工上分存在同人审批且资金池未扣减，已发生单边资金变化。",
+      action: "暂停继续人工操作并核对审批链；通过生产反向分录纠正，风险后台仅登记处理单号。",
+      productionPage: "财务管理 > 额度增减 / 人工上下分审核",
+      flow: ["操作申请", "权限校验", "人工审核", "会员余额", "站点资金池"]
+    },
+    {
+      id: "rewards", code: "P0-06", short: "奖励发放", name: "活动、红利、返水、红包和余额宝收益",
+      trigger: "资格计算、批次生成、领取/发放、会员入账、流水锁定和费用归属",
+      event: "返水批次重跑时未复用领取幂等键，同一会员同一场馆自然日返水被生成并领取两次。",
+      normalEvent: "资格和配置快照固定，同一会员、来源、业务日和场馆只生成一笔可领取返水并唯一入账。",
+      amount: "12,860", subject: "DW体育 / vip_member9 / DB电子", order: "RB-20260805-009812",
+      production: ["返水、红利、红包、VIP礼金和余额宝分别有生成/领取记录", "部分领取服务已有状态与幂等校验", "发放后形成会员账变和流水要求", "批次任务与配置服务相互独立"],
+      deterministic: ["同一资格键重复生成、重复领取或重复入账", "资格不成立、已过期、次数超限仍发放", "计算金额、会员入账、锁定流水或费用来源不一致", "批次使用错误配置版本、单位或站点范围"],
+      baseline: ["单批次总额、单会员累计奖励或领取成功率异常", "配置变更后奖励金额、覆盖会员数或流水负担突增"],
+      evidence: ["资格判断与领取幂等键", "活动/返水/VIP配置版本快照", "计算明细和批次", "会员账变与锁定流水", "站点、代理或平台费用归属"],
+      rule: "同一会员、业务日、场馆和奖励类型出现两笔成功领取，命中重复发放。",
+      normalRule: "资格成立、唯一领取、金额和账变一致，配置快照可追溯。",
+      severity: "P0", tg: "同一返水资格发生重复生成和领取，批次可能继续扩大。",
+      action: "核对本批次全部同类幂等键并停止人工重跑；生产纠正需保留反向账变和批次关联。",
+      productionPage: "活动管理 / VIP返水记录 / 会员红利记录",
+      flow: ["资格计算", "配置快照", "奖励批次", "会员领取", "账变/流水"]
+    },
+    {
+      id: "agent-site", code: "P0-07", short: "代理与站点资金", name: "代理代存、转账、额度/佣金账户和站点资金池",
+      trigger: "代理代存/转账申请、钱包选择、审核、双方账变、解冻和资金池对账",
+      event: "代理选择佣金账户代存 100,000 元，实际却扣减额度账户；会员已到账，佣金账户保持不变。",
+      normalEvent: "代理选择的来源钱包余额充足，审核通过后来源扣减与目标会员入账原子完成。",
+      amount: "100,000", subject: "XY体育 / agent_mike / member_30018", order: "AD-20260806-000291",
+      production: ["代理额度和可用佣金为独立资金账户", "代存、转账存在申请和审核状态", "部分操作要求支付密码", "站点资金池和代理账变有独立记录"],
+      deterministic: ["选择钱包与实际扣款钱包不一致，或余额不足仍成功", "来源已扣但目标未入账，目标已入账但来源未扣", "代理关系、所属站点或收款对象不匹配", "审核拒绝未解冻、待审核资金已可用或同单重复执行"],
+      baseline: ["代理单笔/累计代存、转账金额或失败次数异常", "站点资金池与代理钱包汇总差额持续扩大"],
+      evidence: ["申请人与目标对象关系", "支付钱包、支付密码校验结果", "审核状态与审核人", "来源和目标前后余额及双侧分录", "站点资金池和失败解冻记录"],
+      rule: "支付账户选择为佣金账户，实际扣减额度账户且会员已到账，命中钱包错用和单边资金变化。",
+      normalRule: "来源钱包正确且余额充足，双方分录原子一致。",
+      severity: "P0", tg: "代理代存扣错来源钱包，会员已经入账，账户账本不一致。",
+      action: "核对代理双钱包和会员账变；生产处理应使用可审计的冲正/补记流程。",
+      productionPage: "代理管理 > 代存/转账记录 / 站点资金池",
+      flow: ["代理钱包", "申请订单", "审核", "会员/下级代理", "站点资金池"]
+    },
+    {
+      id: "config", code: "P0-08", short: "关键配置", name: "VIP、返水、活动、提款、场馆和代理关键配置",
+      trigger: "关键配置草稿、校验、审批、发布、生效、影响监控和版本回滚",
+      event: "返水领取有效期原应为 7 天，发布时单位误写为小时，影响 7 个站点、13 个VIP等级和 18,600 名会员。",
+      normalEvent: "配置按强类型校验为 7 天，完成影响试算和双人审批，定时发布后指标正常。",
+      amount: "18,600人", subject: "全平台 / VIP返水领取有效期", order: "CFG-20260806-000041",
+      production: ["VIP、返水、活动、提款、场馆和返佣均有独立配置服务", "部分字段已有正数、倍数或范围校验", "配置记录通常保存操作人与时间", "不同配置的生效和历史快照能力不完全一致"],
+      deterministic: ["时间、金额、比例或倍数单位改变但未明确迁移", "值越界、上下限倒置、站点/场馆/VIP适用范围异常", "关键配置单人直接发布或发布版本与审批版本不同", "发布后实际读取值、缓存值和数据库版本不一致"],
+      baseline: ["影响会员数、预计金额或业务通过率较历史版本突变", "配置发布后返水、奖励、提款失败或场馆调用指标异常"],
+      evidence: ["配置修改前后diff与强类型单位", "适用站点、场馆、VIP和会员数量", "历史数据影响与预计金额试算", "操作人、审批人、版本和生效时间", "发布后读取值、缓存及业务指标"],
+      rule: "有效期单位由天变为小时，影响全平台且未经过迁移确认，命中单位变更和大范围资金配置风险。",
+      normalRule: "单位和值合法，影响试算、审批版本与实际发布版本完全一致。",
+      severity: "P0", tg: "关键配置单位由天误变为小时，影响全平台返水领取。",
+      action: "一期立即通知配置负责人核查并在生产配置服务处理；历史已生成业务须按对应快照核对。",
+      productionPage: "会员管理 / 活动管理 / 财务管理 / 代理管理相关配置页",
+      flow: ["配置草稿", "类型校验", "影响试算", "审批发布", "生效监控"]
+    }
+  ];
+
+  */
+
+  // 一期只模拟“下分后投注一致性核验”。后续场景继续追加到此数组，避免主流程被未上线能力打散。
+  const p0RiskDomains = [
+    {
+      id: "withdraw-bet-match", code: "P0-01", short: "下分投注核验", name: "下分后投注记录一致性核验",
+      trigger: "生产完成上分或下分后，向风控队列推送会员、时间、金额、场馆和游戏信息",
+      event: "会员 member_10086 在 DB电子上分 10,000 元后下分 86,000 元。场馆已完成轮询，但窗口内没有任何投注记录，实际下分无法由投注和钱包流水解释。",
+      normalEvent: "会员 player_2026 上分 10,000 元后在 DB电子产生 76,000 元投注，已结算净赢 76,000 元；实际下分 86,000 元与钱包账本和投注证据一致。",
+      amount: "86,000", subject: "XY体育 / member_10086 / DB电子", order: "WD-20260809-000187",
+      production: ["生产上下分事务写入Outbox并按事件ID投递", "三方场馆轮询器独立推进场馆游标并写入投注库", "风控只读投注库或只读副本，不直接推进游标", "事件、投注快照、规则版本和处理记录不可覆盖"],
+      deterministic: ["实际下分金额无法由上分、已结算投注净赢和允许的账变解释", "场馆水位已越过下分时间但窗口内无投注记录，或投注记录状态为未结算/无效", "钱包余额变化、下分订单与投注净赢存在金额差额", "同一上下分事件重复通知、重复计算或TG重复发送"],
+      baseline: ["场馆同步水位延迟、游标停滞、轮询失败或投注记录批量重复", "同一会员短时快速上分后下分、下分倍数或无投注下分比例异常", "同一场馆短时间内多名会员同时出现无投注下分"],
+      evidence: ["上下分订单、事件ID和钱包账本快照", "场馆同步水位、游标、批次和最后成功轮询时间", "窗口内投注单、状态、投注额和会员视角输赢", "应解释金额、实际下分金额和差额计算", "规则版本、评分、重试、TG消息ID和人工处理单号"],
+      rule: "下分 86,000 元，但已同步窗口内投注笔数为 0；账本无法解释该金额，命中 P0-01 下分与投注不一致。",
+      normalRule: "场馆水位达到安全窗口，投注记录已结算且有效，钱包账本、投注净赢和实际下分金额在允许误差内一致。",
+      severity: "P0", tg: "会员下分金额无法由投注记录和钱包流水解释，疑似三方场馆异常放大下分。",
+      action: "立即在生产投注记录、钱包账变和场馆后台核查；一期只报警，不阻断下分、不冻结账户，处理单号回填后再关闭。",
+      productionPage: "会员管理 > 投注记录 / 财务管理 > 账变记录 / 场馆同步监控",
+      flow: ["上下分事件", "Outbox/队列", "场馆同步水位", "投注证据", "规则评分", "TG/人工闭环"]
+    }
+  ];
+
+  /* Legacy eight-domain renderer retained for historical reference only.
+  const p0RiskServices = [
+    { id: "adapter", stage: 0, side: "生产侧", name: "业务薄适配层", input: "订单、状态、金额、账户快照和配置版本", process: "只补齐统一事件字段，不改变原有业务判断", output: "一条可追踪的业务事实" },
+    { id: "outbox", stage: 1, side: "生产侧", name: "本地待上报表", input: "与业务事务同时写入的事件", process: "持久化、按幂等键排队并异步重试", output: "不因中台不可用而丢失事件" },
+    { id: "collector", stage: 2, side: "风控中台", name: "采集网关", input: "各生产服务上报的事件批次", process: "鉴权、验签、限流、接收确认和链路追踪", output: "原始事件与接收回执" },
+    { id: "normalize", stage: 2, side: "风控中台", name: "标准化与幂等", input: "不同业务格式的原始事件", process: "统一字段、校验金额精度并按幂等键去重", output: "唯一标准业务事实" },
+    { id: "evidence", stage: 3, side: "风控中台", name: "证据中心", input: "标准事实和关联订单/账本引用", process: "保存发生当时的不可覆盖快照并串联链路", output: "可还原的证据包" },
+    { id: "rules", stage: 4, side: "风控中台", name: "规则引擎", input: "标准事实、证据、固定规则版本和阈值", process: "先执行确定性一致性规则，再执行阈值和基线规则", output: "命中结果、等级、原因和规则版本" },
+    { id: "aggregate", stage: 5, side: "风控中台", name: "事件聚合", input: "规则命中结果", process: "按业务单、规则和原因合并次数与累计金额", output: "新风险事件或原事件升级" },
+    { id: "state", stage: 5, side: "风控中台", name: "事件状态机", input: "风险事件和人工处理动作", process: "限制状态转换并追加不可删除的处理时间线", output: "待确认到关闭的完整审计链" },
+    { id: "telegram", stage: 6, side: "通知服务", name: "TG通知与补发", input: "需通知的P0/P1事件摘要", process: "脱敏、分群、发送、失败入队和无人确认升级", output: "发送结果、重试次数和消息ID" },
+    { id: "readmodel", stage: 6, side: "风控后台", name: "后台查询模型", input: "事件、证据、规则、健康和处理记录", process: "按权限组织看板、列表和详情，不读取后覆盖历史快照", output: "值班人员可直接判断的页面" },
+    { id: "reconcile", stage: 7, side: "风控中台", name: "定时对账", input: "生产订单、资金账本、三方结果和风控事实", process: "按订单与账户交叉核对漏报、单边账和金额差", output: "对账差异事件与恢复结果" },
+    { id: "health", stage: 7, side: "风控中台", name: "系统健康监控", input: "采集、规则、TG、对账和数据源指标", process: "检测积压、失败率、心跳丢失和最后成功时间", output: "系统风险事件和恢复通知" }
+  ];
+
+  const p0RiskJourneySteps = [
+    ["业务发生", "生产原流程完成一笔订单、状态或资金变化，并形成风险所需原始事实。"],
+    ["可靠暂存", "业务事务同时写入本地待上报表，风控故障不回滚生产，后续持续补报。"],
+    ["采集标准化", "中台接收事件、校验公共字段并按幂等键去重，得到唯一标准事实。"],
+    ["固化证据", "串起订单、三方结果、余额前后、分录、操作人和配置版本。"],
+    ["执行规则", "确定性一致性规则优先；阈值和基线规则在初期只用于P1/P2观察。"],
+    ["聚合成事件", "相同业务单、规则和原因只维护一个事件，持续更新次数、金额和风险等级。"],
+    ["后台与TG", "后台先落库；TG发送脱敏摘要，失败进入补发队列，完整证据不依赖TG。"],
+    ["人工闭环", "值班人员认领、分析并回到生产后台处理，风险事件登记处理单号后关闭。"]
+  ];
+
+  function p0RiskDomain() {
+    return p0RiskDomains.find((item) => item.id === p0RiskSimulatorState.domain) || p0RiskDomains[0];
+  }
+
+  function p0RiskViewSwitch() {
+    const views = [["journey", "闭环推演", "跟随一笔事件逐步运行"], ["backend", "风控后台", "查看值班与处置界面"], ["rules", "监控规则全景", "核对8个单元的规则和证据"]];
+    return `<div class="p0-risk-view-switch annotated" data-component-id="N01">${componentBadge("N01")}${views.map(([id, name, hint]) => `<button type="button" data-p0-view="${id}" class="${p0RiskSimulatorState.view === id ? "active" : ""}"><strong>${name}</strong><span>${hint}</span></button>`).join("")}</div>`;
+  }
+
+  function p0RiskDomainRail(compact = false) {
+    return `<nav class="p0-risk-domain-rail ${compact ? "compact" : ""}" aria-label="一期P0业务单元">${p0RiskDomains.map((item, index) => `<button type="button" data-p0-domain="${item.id}" class="${item.id === p0RiskSimulatorState.domain ? "active" : ""}"><span>${String(index + 1).padStart(2, "0")}</span><div><small>${item.code}</small><strong>${item.short}</strong>${compact ? "" : `<em>${item.name}</em>`}</div></button>`).join("")}</nav>`;
+  }
+
+  function p0RiskServiceChain(step) {
+    const activeService = p0RiskServices.find((service) => service.id === p0RiskSimulatorState.selectedService) || p0RiskServices[0];
+    return `<section class="p0-risk-service-panel annotated" data-component-id="P02">${componentBadge("P02")}<header><div><span>中台服务链</span><strong>点击服务查看本步输入、处理和输出</strong></div><small>第一期旁路运行</small></header><div class="p0-risk-service-chain">${p0RiskServices.map((service) => `<button type="button" data-p0-service="${service.id}" class="${service.id === activeService.id ? "selected" : ""} ${step >= service.stage ? "ran" : "waiting"}"><i>${step >= service.stage ? "已运行" : "等待"}</i><small>${service.side}</small><strong>${service.name}</strong></button>`).join("")}</div><article class="p0-risk-service-detail"><div><span>输入</span><p>${activeService.input}</p></div><div><span>运行逻辑</span><p>${activeService.process}</p></div><div><span>输出</span><p>${activeService.output}</p></div></article></section>`;
+  }
+
+  function p0RiskTgPreview(domain, step, risk) {
+    const shouldAlert = risk && step >= 6;
+    const failed = shouldAlert && p0RiskSimulatorState.tgFailure;
+    return `<section class="p0-risk-tg annotated ${shouldAlert ? "ready" : "waiting"}" data-component-id="P03">${componentBadge("P03")}<header><div><span>TG值班群</span><strong>${!shouldAlert ? "等待风险事件" : failed ? "发送失败，已进入补发队列" : "消息已送达并等待认领"}</strong></div>${shouldAlert ? `<label><input type="checkbox" data-p0-tg-failure ${failed ? "checked" : ""} /> 模拟TG发送失败</label>` : ""}</header>${shouldAlert ? `<div class="p0-risk-tg-message"><div><b>${domain.severity} 紧急</b><code>RC-${domain.code.replace("P0-", "260806-")}</code></div><h3>${domain.tg}</h3><dl><div><dt>对象</dt><dd>${domain.subject}</dd></div><div><dt>业务单</dt><dd>${domain.order}</dd></div><div><dt>影响金额</dt><dd>${domain.amount}</dd></div><div><dt>当前结果</dt><dd>生产流程已执行，等待人工核查</dd></div></dl><p>${domain.action}</p><button type="button" data-p0-open-detail>查看风控事件详情</button></div><footer><span>${failed ? "重试 2 次 · 下次重试 10 秒后" : "消息ID TG-882109 · 发送耗时 328ms"}</span>${failed ? `<button type="button" data-p0-tg-retry>立即补发</button>` : ""}</footer>` : `<div class="p0-risk-empty"><strong>${risk ? "规则尚未运行" : "正常事件不会发TG"}</strong><p>${risk ? "推进到第7步后，先落库风险事件，再发送TG摘要。" : "正常事实仍保存证据并参加对账，用于证明事件没有被漏掉。"}</p></div>`}</section>`;
+  }
+
+  function p0RiskJourneyContent() {
+    const state = p0RiskSimulatorState;
+    const domain = p0RiskDomain();
+    const step = Math.max(0, Math.min(7, Number(state.step)));
+    const risk = state.outcome === "risk";
+    const current = p0RiskJourneySteps[step];
+    const currentServices = p0RiskServices.filter((service) => service.stage === step).map((service) => service.name).join("、");
+    const result = step < 4 ? "等待检测" : risk ? `命中 ${domain.severity}` : "规则通过";
+    return `<div class="p0-risk-journey-layout"><aside class="p0-risk-scenario-panel"><header><span>第一期实施顺序</span><strong>选择业务单元</strong></header>${p0RiskDomainRail()}<div class="p0-risk-boundary"><b>一期边界</b><p>只记录、检测、展示和报警；不阻断生产、不冻结账户、不直接改余额。</p></div></aside><div class="p0-risk-journey-main"><section class="p0-risk-journey annotated" data-component-id="P01">${componentBadge("P01")}<nav class="p0-risk-stepper">${p0RiskJourneySteps.map(([name], index) => `<button type="button" data-p0-step="${index}" class="${index === step ? "active" : index < step ? "done" : ""}"><span>${index + 1}</span><strong>${name}</strong></button>`).join("")}</nav><div class="p0-risk-scene"><header><div><span>${domain.code} · 第 ${step + 1}/8 步</span><h2>${current[0]}</h2><p>${current[1]}</p></div><div class="p0-risk-result ${risk && step >= 4 ? "danger" : ""}"><small>当前结论</small><strong>${result}</strong></div></header><div class="p0-risk-case-toggle"><button type="button" data-p0-outcome="risk" class="${risk ? "active danger" : ""}"><strong>异常命中</strong><span>观察事件、TG和人工闭环</span></button><button type="button" data-p0-outcome="normal" class="${risk ? "" : "active"}"><strong>正常通过</strong><span>只留证据，不生成风险事件</span></button></div><article class="p0-risk-event-card"><div><span>生产触发点</span><strong>${domain.trigger}</strong></div><p>${risk ? domain.event : domain.normalEvent}</p><footer><code>${domain.order}</code><span>${domain.subject}</span><b>${domain.amount}</b></footer></article><div class="p0-risk-flow">${domain.flow.map((node, index) => `<div class="${index <= Math.min(4, Math.floor(step / 1.5)) ? "active" : ""}"><span>${index + 1}</span><strong>${node}</strong></div>${index < domain.flow.length - 1 ? "<i></i>" : ""}`).join("")}</div><div class="p0-risk-step-output"><div><span>本步运行服务</span><strong>${currentServices || "人工处置与跨系统核查"}</strong></div><div><span>当前输出</span><p>${step === 0 ? "生产业务事实形成，准备可靠上报。" : step === 1 ? "事件已持久化；中台不可用时保留并重试。" : step === 2 ? "公共字段完整，幂等键未产生重复事实。" : step === 3 ? `${domain.evidence.length}类证据已固化，可还原发生时状态。` : step === 4 ? (risk ? domain.rule : domain.normalRule) : step === 5 ? (risk ? "已生成一个风险事件；后续同原因命中只更新次数和累计影响。" : "未命中规则，不生成风险事件；事实继续进入定时对账。") : step === 6 ? (risk ? "后台事件已生成，TG通知独立发送。" : "后台不产生待处理事件，健康指标记录规则执行成功。") : (risk ? "处理人员回到生产后台核查处理，再把处理单号和结论登记到风控事件。" : "定时对账一致，正常事实闭环。")}</p></div></div></div><footer class="p0-risk-actions"><button type="button" data-p0-prev ${step === 0 ? "disabled" : ""}>上一步</button><span>可直接点击上方步骤回看任一环节</span>${step < 7 ? `<button type="button" data-p0-next>下一步</button>` : `<button type="button" data-p0-view="backend">进入风控后台</button>`}</footer></section>${p0RiskServiceChain(step)}${p0RiskTgPreview(domain, step, risk)}</div></div>`;
+  }
+
+  function p0RiskBackendTabs() {
+    const tabs = [["dashboard", "风险看板"], ["events", "事件列表"], ["detail", "事件详情"], ["rules", "固定规则"], ["health", "采集与告警健康"]];
+    return `<nav class="p0-risk-backend-tabs">${tabs.map(([id, label]) => `<button type="button" data-p0-backend-tab="${id}" class="${p0RiskSimulatorState.backendTab === id ? "active" : ""}">${label}</button>`).join("")}</nav>`;
+  }
+
+  function p0RiskDashboard() {
+    return `<div class="p0-risk-dashboard"><div class="p0-risk-metrics"><button type="button" data-p0-backend-tab="events"><span>今日新增 P0</span><strong>6</strong><small>较昨日 +2</small></button><button type="button" data-p0-backend-tab="events"><span>未确认</span><strong>3</strong><small>最久 08:42</small></button><button type="button" data-p0-backend-tab="events"><span>处理中</span><strong>5</strong><small>2项持续扩大</small></button><button type="button"><span>待核查金额（CNY）</span><strong>1,748,920</strong><small>已确认 500,000</small></button></div><div class="p0-risk-dashboard-grid"><section><header><strong>最近高风险事件</strong><button type="button" data-p0-backend-tab="events">查看全部</button></header><div class="p0-risk-event-list">${p0RiskDomains.slice(0, 5).map((item, index) => `<button type="button" data-p0-event-detail data-p0-domain="${item.id}"><b>P0</b><div><strong>${item.short}</strong><span>${item.tg}</span></div><time>${index ? `10:${38 - index * 4}` : "10:42"}</time></button>`).join("")}</div></section><section><header><strong>关键链路健康</strong><button type="button" data-p0-backend-tab="health">查看健康详情</button></header><div class="p0-risk-health-summary"><div><i class="ok"></i><span>事件采集</span><strong>99.98%</strong></div><div><i class="warn"></i><span>注单同步</span><strong>延迟 8m</strong></div><div><i class="ok"></i><span>规则执行</span><strong>99.99%</strong></div><div><i class="danger"></i><span>TG通知</span><strong>积压 2</strong></div><div><i class="ok"></i><span>资金对账</span><strong>刚刚完成</strong></div></div></section></div><section class="p0-risk-scope-chart"><header><strong>今日风险域分布</strong><span>点击风险域查看规则与事件</span></header><div>${p0RiskDomains.map((item, index) => `<button type="button" data-p0-domain="${item.id}" data-p0-backend-tab="events"><span>${item.short}</span><i style="--risk-bar:${88 - index * 7}%"></i><strong>${Math.max(1, 8 - index)}</strong></button>`).join("")}</div></section></div>`;
+  }
+
+  function p0RiskEvents() {
+    const domain = p0RiskDomain();
+    return `<div class="p0-risk-list-view"><div class="p0-risk-list-filters"><label>风险域<select data-p0-domain-select>${p0RiskDomains.map((item) => `<option value="${item.id}" ${item.id === domain.id ? "selected" : ""}>${item.short}</option>`).join("")}</select></label><label>风险等级<select><option>P0紧急</option><option>P1高风险</option><option>P2观察</option></select></label><label>状态<select><option>全部状态</option><option>待确认</option><option>已认领</option><option>分析中</option><option>已关闭</option></select></label><button type="button">查询</button></div><div class="p0-risk-table-wrap"><table><thead><tr><th>事件编号</th><th>等级</th><th>风险类型</th><th>状态</th><th>影响对象</th><th>累计影响</th><th>发生次数</th><th>最近发生时间</th><th>TG状态</th><th>操作</th></tr></thead><tbody>${p0RiskDomains.map((item, index) => `<tr class="${item.id === domain.id ? "selected" : ""}"><td><code>RC-${item.code.replace("P0-", "260806-")}</code></td><td><b class="p0-risk-level">P0</b></td><td>${item.short}</td><td><span class="p0-risk-status">${index % 3 === 0 ? "待确认" : index % 3 === 1 ? "分析中" : "已认领"}</span></td><td>${item.subject}</td><td>${item.amount}</td><td>${index + 1}</td><td>2026-08-06 10:${String(42 - index * 3).padStart(2, "0")}:18</td><td>${index === 2 ? "补发中" : "已发送"}</td><td><button type="button" data-p0-event-detail data-p0-domain="${item.id}">详情</button></td></tr>`).join("")}</tbody></table></div><footer class="p0-risk-pagination"><span>共 8 条</span><button class="active">1</button><select><option>20条/页</option><option>50条/页</option><option>100条/页</option><option>200条/页</option></select></footer></div>`;
+  }
+
+  function p0RiskEventDetail() {
+    const domain = p0RiskDomain();
+    const status = p0RiskSimulatorState.eventStatus;
+    const actions = status === "待确认" ? [["claim", "认领事件"]] : status === "已认领" ? [["analyze", "开始分析"]] : status === "分析中" ? [["risk", "确认风险"], ["false", "标记误报"]] : ["已确认风险", "误报"].includes(status) ? [["close", "关闭事件"]] : [];
+    return `<div class="p0-risk-detail-view"><header><div><span>${domain.code} · RC-${domain.code.replace("P0-", "260806-")}</span><h2>${domain.tg}</h2><p>${domain.subject} · ${domain.order}</p></div><div><b class="p0-risk-level">${domain.severity}</b><span class="p0-risk-status">${status}</span></div></header><div class="p0-risk-detail-actions">${actions.map(([id, label]) => `<button type="button" data-p0-status-action="${id}">${label}</button>`).join("")}<button type="button" class="secondary">转交</button><button type="button" class="secondary">添加备注</button></div><section class="p0-risk-detail-summary"><div><span>发生了什么</span><p>${domain.rule}</p></div><div><span>资金现在在哪里</span><p>${domain.flow.join(" → ")}；当前生产结果需以订单和账变核查为准。</p></div><div><span>建议去哪里处理</span><p>${domain.productionPage}<br>${domain.action}</p></div></section><div class="p0-risk-detail-columns"><section><header><strong>业务与资金时间线</strong><span>发生时快照</span></header><ol><li><time>10:38:02</time><div><strong>生产业务执行</strong><p>${domain.event}</p></div></li><li><time>10:38:03</time><div><strong>证据完成固化</strong><p>${domain.evidence.slice(0, 3).join("、")}</p></div></li><li><time>10:38:04</time><div><strong>确定性规则命中</strong><p>${domain.rule}</p></div></li><li><time>10:38:05</time><div><strong>后台事件与TG</strong><p>事件先落库，TG摘要随后发送；完整证据保留在本页。</p></div></li></ol></section><section><header><strong>规则与证据</strong><span>不可覆盖</span></header><dl><div><dt>命中规则</dt><dd>${domain.deterministic[0]}</dd></div><div><dt>规则版本</dt><dd>R-${domain.code}-v1.3</dd></div><div><dt>影响金额</dt><dd>${domain.amount}</dd></div><div><dt>生产已有保护</dt><dd>${domain.production.join("；")}</dd></div><div><dt>证据包</dt><dd>${domain.evidence.join("；")}</dd></div></dl></section></div><section class="p0-risk-audit"><header><strong>处理记录</strong><span>风控后台不直接修改生产资金</span></header><table><thead><tr><th>时间</th><th>操作</th><th>处理人</th><th>说明/关联生产单号</th></tr></thead><tbody><tr><td>2026-08-06 10:38:04</td><td>生成事件</td><td>系统</td><td>命中 R-${domain.code}-v1.3</td></tr>${status !== "待确认" ? `<tr><td>2026-08-06 10:41:20</td><td>${status}</td><td>risk_mike</td><td>${status === "已关闭" ? "关联生产处理单 PRD-260806-019" : "正在核对生产订单与三方结果"}</td></tr>` : ""}</tbody></table></section></div>`;
+  }
+
+  function p0RiskFixedRules() {
+    const domain = p0RiskDomain();
+    return `<div class="p0-risk-rules-view"><header><div><span>${domain.code}</span><h2>${domain.name}</h2><p>一期固定模板允许开关、等级、阈值、范围和通知配置，不提供自由编程。</p></div>${p0RiskDomainRail(true)}</header><div class="p0-risk-rule-cards">${domain.deterministic.map((rule, index) => `<article><div><b>确定性</b><span>${index === 0 ? "P0" : "P1/P0"}</span></div><h3>${rule}</h3><dl><div><dt>运行范围</dt><dd>全平台 / 已接入业务</dd></div><div><dt>聚合窗口</dt><dd>10分钟</dd></div><div><dt>通知</dt><dd>P0值班群，10分钟无人认领升级</dd></div></dl><footer><span>版本 v1.${index + 1} · 已审批</span><button type="button">查看试跑结果</button></footer></article>`).join("")}${domain.baseline.map((rule, index) => `<article class="baseline"><div><b>阈值/基线</b><span>P1/P2</span></div><h3>${rule}</h3><dl><div><dt>初始模式</dt><dd>试跑，不发送P0</dd></div><div><dt>阈值来源</dt><dd>历史分位值 + 人工上限</dd></div><div><dt>调整要求</dt><dd>保留版本、操作人和审批人</dd></div></dl><footer><span>版本 v0.${index + 8} · 观察中</span><button type="button">查看命中样本</button></footer></article>`).join("")}</div></div>`;
+  }
+
+  function p0RiskHealth() {
+    const rows = [
+      ["生产Outbox", "99.99%", "36", "42秒", "2026-08-06 10:43:18", "正常"],
+      ["事件采集网关", "99.98%", "12", "8秒", "2026-08-06 10:43:20", "正常"],
+      ["注单同步数据源", "96.80%", "1,862", "8分12秒", "2026-08-06 10:35:08", "告警"],
+      ["规则执行", "99.99%", "0", "0秒", "2026-08-06 10:43:19", "正常"],
+      ["TG通知", "98.20%", "2", "1分06秒", "2026-08-06 10:42:12", "告警"],
+      ["资金定时对账", "100%", "0", "0秒", "2026-08-06 10:40:00", "正常"]
+    ];
+    return `<div class="p0-risk-health-view"><div class="p0-risk-health-alert"><div><b>系统风险事件</b><strong>注单同步延迟超过 5 分钟</strong><p>已生成 SYS-260806-0021 并通知值班群；生产业务未被风控中台阻断。</p></div><button type="button" data-p0-backend-tab="detail">查看事件</button></div><div class="p0-risk-table-wrap"><table><thead><tr><th>服务/数据源</th><th>成功率</th><th>积压数量</th><th>最长积压</th><th>最后成功时间</th><th>状态</th></tr></thead><tbody>${rows.map((row) => `<tr>${row.map((cell, index) => `<td>${index === 5 ? `<span class="p0-risk-health-state ${cell === "告警" ? "danger" : ""}">${cell}</span>` : cell}</td>`).join("")}</tr>`).join("")}</tbody></table></div><section class="p0-risk-health-rules"><header><strong>基础健康告警</strong><span>从第一个业务单元同步建设</span></header><div>${["待上报表积压量或最老事件年龄超限", "采集失败率持续升高或某业务最后事件时间中断", "规则执行失败、超时或规则版本加载失败", "TG发送失败、重试积压或长时间无成功消息", "对账心跳丢失、差异未收敛或任务停止", "注单同步、三方接口或生产数据源中断"].map((item) => `<p>${item}</p>`).join("")}</div></section></div>`;
+  }
+
+  function p0RiskBackendContent() {
+    const state = p0RiskSimulatorState;
+    const body = state.backendTab === "dashboard" ? p0RiskDashboard() : state.backendTab === "events" ? p0RiskEvents() : state.backendTab === "detail" ? p0RiskEventDetail() : state.backendTab === "rules" ? p0RiskFixedRules() : p0RiskHealth();
+    return `<section class="p0-risk-backend annotated" data-component-id="P04">${componentBadge("P04")}<aside><div class="p0-risk-backend-brand"><span>RC</span><strong>风控中心</strong></div><nav><button class="active">风险事件</button><button>规则管理</button><button>系统健康</button><button>处理审计</button></nav><footer><span>一期模式</span><strong>旁路监控</strong></footer></aside><main><header class="p0-risk-backend-top"><div><span>总控后台 / 风控中心</span><strong>资金风险监控</strong></div><div><i></i> 5项服务正常 · 2项需关注</div></header>${p0RiskBackendTabs()}<div class="p0-risk-backend-body">${body}</div></main></section>`;
+  }
+
+  function p0RiskRulesPanorama() {
+    return `<section class="p0-risk-panorama annotated" data-component-id="T01">${componentBadge("T01")}<header><div><span>一期完整监控目录</span><h2>8个P0业务单元的规则、证据与报警</h2><p>确定性资金错误直接P0；阈值和基线规则先试跑并以P1/P2校准。</p></div><div><b>8</b><span>业务单元</span><b>${p0RiskDomains.reduce((sum, item) => sum + item.deterministic.length + item.baseline.length, 0)}</b><span>规则组</span></div></header><div class="p0-risk-panorama-table"><table><thead><tr><th>顺序 / 风险域</th><th>生产触发点与已有保护</th><th>确定性监控（P0/P1）</th><th>阈值与基线（初期P1/P2）</th><th>必须固化的证据</th><th>报警与人工入口</th></tr></thead><tbody>${p0RiskDomains.map((domain, index) => `<tr><td><span>${String(index + 1).padStart(2, "0")}</span><strong>${domain.short}</strong><small>${domain.code}</small></td><td><b>${domain.trigger}</b><ul>${domain.production.map((item) => `<li>${item}</li>`).join("")}</ul></td><td><ol>${domain.deterministic.map((item) => `<li>${item}</li>`).join("")}</ol></td><td><ol>${domain.baseline.map((item) => `<li>${item}</li>`).join("")}</ol></td><td><ul>${domain.evidence.map((item) => `<li>${item}</li>`).join("")}</ul></td><td><b>${domain.severity}：${domain.tg}</b><p>${domain.productionPage}</p><button type="button" data-p0-domain="${domain.id}" data-p0-view="journey">推演此事件</button></td></tr>`).join("")}</tbody></table></div></section>`;
+  }
+
+  function p0RiskSimulatorInner() {
+    const state = p0RiskSimulatorState;
+    return `<header class="p0-risk-heading"><div><span>RISK CONTROL OBSERVATORY</span><h1>P0风控闭环模拟器</h1><p>从生产事件开始，观察旁路采集、规则检测、证据、后台、TG与人工处置如何形成闭环。</p></div><div><i></i><span>第一期：记录 + 检测 + 报警</span></div></header>${p0RiskViewSwitch()}${state.view === "journey" ? p0RiskJourneyContent() : state.view === "backend" ? p0RiskBackendContent() : p0RiskRulesPanorama()}`;
+  }
+
+  function p0RiskSimulatorContent() {
+    return `<main id="p0-risk-simulator-root" class="p0-risk-simulator">${p0RiskSimulatorInner()}</main>`;
+  }
+
+  function refreshP0RiskSimulator(page) {
+    const root = document.getElementById("p0-risk-simulator-root");
+    if (!root) return;
+    root.innerHTML = p0RiskSimulatorInner();
+    delete root.dataset.bound;
+    bindP0RiskSimulatorBehavior(page);
+    bindComponentLinks();
+  }
+
+  function bindP0RiskSimulatorBehavior(page) {
+    const root = document.getElementById("p0-risk-simulator-root");
+    if (!root || root.dataset.bound === "true") return;
+    root.dataset.bound = "true";
+    root.querySelectorAll("[data-p0-view]").forEach((button) => button.addEventListener("click", () => {
+      if (button.dataset.p0Domain) p0RiskSimulatorState.domain = button.dataset.p0Domain;
+      p0RiskSimulatorState.view = button.dataset.p0View;
+      if (p0RiskSimulatorState.view === "backend" && p0RiskSimulatorState.backendTab === "dashboard" && button.hasAttribute("data-p0-open-detail")) p0RiskSimulatorState.backendTab = "detail";
+      refreshP0RiskSimulator(page);
+    }));
+    root.querySelectorAll("[data-p0-domain]").forEach((button) => button.addEventListener("click", () => {
+      p0RiskSimulatorState.domain = button.dataset.p0Domain;
+      p0RiskSimulatorState.step = 0;
+      p0RiskSimulatorState.eventStatus = "待确认";
+      if (button.dataset.p0BackendTab) p0RiskSimulatorState.backendTab = button.dataset.p0BackendTab;
+      if (button.dataset.p0View) p0RiskSimulatorState.view = button.dataset.p0View;
+      refreshP0RiskSimulator(page);
+    }));
+    root.querySelector("[data-p0-domain-select]")?.addEventListener("change", (event) => {
+      p0RiskSimulatorState.domain = event.target.value;
+      p0RiskSimulatorState.eventStatus = "待确认";
+      refreshP0RiskSimulator(page);
+    });
+    root.querySelectorAll("[data-p0-step]").forEach((button) => button.addEventListener("click", () => {
+      p0RiskSimulatorState.step = Number(button.dataset.p0Step);
+      const service = p0RiskServices.find((item) => item.stage === p0RiskSimulatorState.step);
+      if (service) p0RiskSimulatorState.selectedService = service.id;
+      refreshP0RiskSimulator(page);
+    }));
+    root.querySelector("[data-p0-prev]")?.addEventListener("click", () => {
+      p0RiskSimulatorState.step = Math.max(0, p0RiskSimulatorState.step - 1);
+      refreshP0RiskSimulator(page);
+    });
+    root.querySelector("[data-p0-next]")?.addEventListener("click", () => {
+      p0RiskSimulatorState.step = Math.min(7, p0RiskSimulatorState.step + 1);
+      const service = p0RiskServices.find((item) => item.stage === p0RiskSimulatorState.step);
+      if (service) p0RiskSimulatorState.selectedService = service.id;
+      refreshP0RiskSimulator(page);
+    });
+    root.querySelectorAll("[data-p0-outcome]").forEach((button) => button.addEventListener("click", () => {
+      p0RiskSimulatorState.outcome = button.dataset.p0Outcome;
+      p0RiskSimulatorState.tgFailure = false;
+      refreshP0RiskSimulator(page);
+    }));
+    root.querySelectorAll("[data-p0-service]").forEach((button) => button.addEventListener("click", () => {
+      p0RiskSimulatorState.selectedService = button.dataset.p0Service;
+      refreshP0RiskSimulator(page);
+    }));
+    root.querySelector("[data-p0-tg-failure]")?.addEventListener("change", (event) => {
+      p0RiskSimulatorState.tgFailure = event.target.checked;
+      refreshP0RiskSimulator(page);
+    });
+    root.querySelector("[data-p0-tg-retry]")?.addEventListener("click", () => {
+      p0RiskSimulatorState.tgFailure = false;
+      refreshP0RiskSimulator(page);
+    });
+    root.querySelectorAll("[data-p0-backend-tab]").forEach((button) => button.addEventListener("click", () => {
+      p0RiskSimulatorState.backendTab = button.dataset.p0BackendTab;
+      refreshP0RiskSimulator(page);
+    }));
+    root.querySelectorAll("[data-p0-event-detail], [data-p0-open-detail]").forEach((button) => button.addEventListener("click", () => {
+      if (button.dataset.p0Domain) p0RiskSimulatorState.domain = button.dataset.p0Domain;
+      p0RiskSimulatorState.eventStatus = "待确认";
+      p0RiskSimulatorState.view = "backend";
+      p0RiskSimulatorState.backendTab = "detail";
+      refreshP0RiskSimulator(page);
+    }));
+    root.querySelectorAll("[data-p0-history-risk]").forEach((button) => button.addEventListener("click", () => openP0HistoryRiskModal(page, button.dataset.p0HistoryRisk)));
+    root.querySelectorAll("[data-p0-status-action]").forEach((button) => button.addEventListener("click", () => {
+      p0RiskSimulatorState.eventStatus = { claim: "已认领", analyze: "分析中", risk: "已确认风险", false: "误报", close: "已关闭" }[button.dataset.p0StatusAction] || p0RiskSimulatorState.eventStatus;
+      refreshP0RiskSimulator(page);
+    }));
+    root.querySelector(".p0-risk-list-filters > button")?.addEventListener("click", (event) => {
+      event.currentTarget.textContent = "已查询";
+    });
+    root.querySelector(".p0-risk-metrics button:not([data-p0-backend-tab])")?.addEventListener("click", () => {
+      p0RiskSimulatorState.backendTab = "events";
+      refreshP0RiskSimulator(page);
+    });
+    const backendMenuTabs = ["dashboard", "rules", "health", "detail"];
+    root.querySelectorAll(".p0-risk-backend > aside nav button").forEach((button, index) => button.addEventListener("click", () => {
+      p0RiskSimulatorState.backendTab = backendMenuTabs[index] || "dashboard";
+      refreshP0RiskSimulator(page);
+    }));
+    root.querySelectorAll(".p0-risk-rule-cards footer button").forEach((button) => button.addEventListener("click", () => {
+      modal("规则试跑结果", "<p>近7天共试跑 18,620 条业务事实，命中 12 条；确定性规则证据完整率 100%，阈值规则继续观察误报率。</p>", "关闭");
+    }));
+    root.querySelectorAll(".p0-risk-detail-actions .secondary").forEach((button) => button.addEventListener("click", () => {
+      const transfer = button.textContent.trim() === "转交";
+      modal(transfer ? "转交风险事件" : "添加处理备注", transfer ? "<div class=\"tag-form\"><label>转交给<select><option>P0资金值班组</option><option>财务核查组</option><option>场馆技术组</option></select></label><label>转交说明<textarea>请核对生产订单、三方结果和资金分录。</textarea></label></div>" : "<div class=\"tag-form\"><label>处理备注<textarea>已进入生产后台核对，待回填处理单号。</textarea></label></div>", transfer ? "确认转交" : "保存备注");
+    }));
+  }
+
+  */
+
+  /* P0一期重写：单场景、可回放、可观察的下分投注一致性闭环。 */
+  const p0RiskPhaseSteps = [
+    ["生产事件", "上下分事务完成并可靠通知风控"],
+    ["队列接入", "Outbox、鉴权、幂等和重试"],
+    ["等待水位", "按场馆水位等待投注数据完整"],
+    ["固化证据", "读取只读投注库并保存快照"],
+    ["规则判断", "核对金额、状态、时间和重复事件"],
+    ["评分聚合", "生成风险等级和唯一风险事件"],
+    ["TG告警", "发送摘要、失败补发和人工认领"],
+    ["对账回放", "健康监控、回放和生产处理回填"]
+  ];
+
+  const p0RiskCompactSteps = [
+    ["收到下分", "生产已把这次上下分事实发送给风控"],
+    ["进入队列", "事件已去重并等待 Worker 处理"],
+    ["等待水位", "先确认场馆投注数据已经同步完整"],
+    ["读取投注", "从生产投注库读取本次上下分窗口"],
+    ["金额核验", "比较应下分、实际下分和差额"],
+    ["生成结果", "保存结果，风险事件发送 TG"]
+  ];
+
+  const p0RiskScenario = {
+    risk: {
+      label: "异常样例",
+      event: "member_10086 上分 10,000 元后，在 DB电子下分 86,000 元；场馆窗口内没有投注记录。",
+      member: "member_10086",
+      memberName: "member_10086",
+      vip: "VIP6",
+      agent: "north_star / AG20318",
+      priorRiskCount: "2次",
+      venue: "DB电子",
+      site: "XY体育",
+      game: "经典电子厅",
+      upAt: "2026-08-09 10:20:00",
+      downAt: "2026-08-09 10:30:00",
+      upAmount: "10,000.00",
+      downAmount: "86,000.00",
+      betCount: "0",
+      turnover: "0.00",
+      netWin: "0.00",
+      walletDelta: "76,000.00",
+      expected: "10,000.00",
+      difference: "76,000.00",
+      watermarkBefore: "2026-08-09 10:29:20",
+      watermarkAfter: "2026-08-09 10:31:10",
+      cursor: "VENUE-DBE-884201",
+      order: "WD-20260809-000187",
+      eventId: "EVT-20260809-000187",
+      score: 100,
+      verdict: "命中 P0：下分金额无法由投注记录解释",
+      rule: "下分 86,000 元，但安全窗口内投注笔数为 0；钱包账本无法解释 76,000 元差额。",
+      normalRule: "",
+      action: "请核对生产投注记录、钱包账变和场馆后台；风控一期不直接冻结或修改余额。",
+      evidence: ["上下分订单与事件ID", "钱包账本前后快照", "DB电子水位和游标", "安全窗口投注快照", "规则v1.0与差额计算"]
+    },
+    normal: {
+      label: "正常样例",
+      event: "player_2026 上分 10,000 元后，在 DB电子产生有效投注和已结算净赢，实际下分与账本一致。",
+      member: "player_2026",
+      memberName: "player_2026",
+      vip: "VIP3",
+      agent: "starter_agent / AG10001",
+      priorRiskCount: "0次",
+      venue: "DB电子",
+      site: "XY体育",
+      game: "经典电子厅",
+      upAt: "2026-08-09 10:20:00",
+      downAt: "2026-08-09 10:30:00",
+      upAmount: "10,000.00",
+      downAmount: "86,000.00",
+      betCount: "42",
+      turnover: "76,000.00",
+      netWin: "76,000.00",
+      walletDelta: "76,000.00",
+      expected: "86,000.00",
+      difference: "0.00",
+      watermarkBefore: "2026-08-09 10:29:20",
+      watermarkAfter: "2026-08-09 10:31:10",
+      cursor: "VENUE-DBE-884202",
+      order: "WD-20260809-000188",
+      eventId: "EVT-20260809-000188",
+      score: 0,
+      verdict: "通过：投注、钱包账本和实际下分一致",
+      rule: "",
+      normalRule: "水位达到安全窗口，42笔投注均已结算有效；上分、净赢、钱包账本和实际下分一致。",
+      action: "无需人工处理；保留事实、证据和规则版本用于后续对账回放。",
+      evidence: ["上下分订单与事件ID", "钱包账本前后快照", "DB电子水位和游标", "42笔已结算投注快照", "规则v1.0与一致性计算"]
+    }
+  };
+
+  function p0RiskV2EnsureState() {
+    const state = p0RiskSimulatorState;
+    if (state.view === "rules") { state.view = "backend"; state.backendTab = "rules"; }
+    if (!state.view || !["journey", "backend"].includes(state.view)) state.view = "journey";
+    if (!state.outcome || !p0RiskScenario[state.outcome]) state.outcome = "risk";
+    if (!Number.isInteger(state.step) || state.step < 0 || state.step > 5) state.step = 0;
+    if (!state.eventStatus || state.eventStatus === "待确认") state.eventStatus = "待处理";
+    if (!Array.isArray(state.processedMembers)) state.processedMembers = [];
+    if (typeof state.healthSceneExpanded !== "boolean") state.healthSceneExpanded = false;
+    if (typeof state.tgFailure !== "boolean") state.tgFailure = false;
+    if (typeof state.watermarkReady !== "boolean") state.watermarkReady = false;
+    if (typeof state.replayDone !== "boolean") state.replayDone = false;
+    if (!state.replayStatus) state.replayStatus = state.replayDone ? "same" : "idle";
+    if (!Number.isInteger(state.replayCount) || state.replayCount < 0) state.replayCount = 0;
+    if (typeof state.healthIssue !== "boolean") state.healthIssue = false;
+    if (!state.queueAttempts) state.queueAttempts = 0;
+    if (typeof state.autoPlaying !== "boolean") state.autoPlaying = false;
+    if (!Number.isInteger(state.queueCycle) || state.queueCycle < 0) state.queueCycle = 0;
+    if (!state.healthLastChecked) state.healthLastChecked = "2026-08-11 10:31:13";
+    if (typeof state.healthCheckRunning !== "boolean") state.healthCheckRunning = false;
+    if (typeof state.healthCommonExpanded !== "boolean") state.healthCommonExpanded = false;
+    if (typeof state.healthScenarioExpanded !== "boolean") state.healthScenarioExpanded = false;
+    if (!state.eventFilterPreset) state.eventFilterPreset = "all";
+    if (!state.selectedScenario || !p0RiskV2ControlModel.scenarios.some((scenario) => scenario.id === state.selectedScenario)) state.selectedScenario = "venue-out";
+    if (!state.selectedService || !p0RiskV2Services.some((service) => service.id === state.selectedService)) state.selectedService = "event";
+    return state;
+  }
+
+  function p0RiskV2Data() {
+    const state = p0RiskV2EnsureState();
+    return p0RiskScenario[state.outcome];
+  }
+
+  function p0RiskV2ReplayData(data) {
+    const state = p0RiskV2EnsureState();
+    const changed = state.replayStatus === "changed";
+    if (!changed) return data;
+    return {
+      ...data,
+      betCount: "42",
+      turnover: "76,000.00",
+      netWin: "76,000.00",
+      expected: data.downAmount,
+      difference: "0.00",
+      replayNote: "复验时发现生产投注记录已补发"
+    };
+  }
+
+  function p0RiskV2Header() {
+    return `<header class="p0-risk-heading annotated" data-component-id="N01">${componentBadge("N01")}<div><span>PHASE 1 · WITHDRAWAL BET MATCH</span><h1>P0风控闭环模拟器</h1><p>只模拟“下分后投注一致性核验”的事件流转；正式风控后台见#680需求。</p></div><div><i></i><span>一期状态：旁路监控</span></div></header>`;
+  }
+
+  function p0RiskV2Stage(step) {
+    const state = p0RiskV2EnsureState();
+    const data = p0RiskV2Data();
+    const risk = state.outcome === "risk";
+    const stageText = [
+      "生产已提交上下分事件；事件ID、订单号、会员、场馆和金额形成原始事实。",
+      state.queueAttempts ? `事件已进入队列；已重试 ${state.queueAttempts} 次，消费仍保持幂等。` : "事件已进入队列；Outbox 与风控接入确认可在失败时重试。",
+      state.watermarkReady ? "场馆水位已越过下分时间 + 安全延迟，Worker 可以读取投注记录。" : "场馆水位仍早于下分时间，Worker 不直接查三方接口，进入延迟队列等待。",
+      risk ? "读取窗口内 0 条投注记录，并固化钱包账本、水位、游标和原始订单快照。" : "读取 42 条已结算有效投注，固化投注单、钱包账本、水位和游标快照。",
+      risk ? data.rule : data.normalRule,
+      risk ? "确定性规则命中，评分 100，按事件ID + 规则版本聚合成一个 P0 事件。" : "规则未命中，评分 0；正常事实保留证据并进入对账基线。",
+      risk ? (state.tgFailure ? "TG 首次发送失败，摘要进入补发队列；风险事件不会丢失。" : "风险事件先落库，再发送脱敏 TG 摘要，等待管理员认领。") : "正常事件不发送 TG，只保留证据和健康指标。",
+      state.replayDone ? "回放已完成，输入快照、规则版本和人工处理单号均可追溯。" : "对账任务可以按原始快照回放；处理在生产后台完成，风控只回填结果。"
+    ];
+    const replayAction = step === 7 ? (state.replayDone ? `<button type="button" class="p0-v2-inline-action" disabled>回放已完成 · 证据一致</button>` : `<button type="button" class="p0-v2-inline-action" data-p0-replay>执行一次回放对账</button>`) : "";
+    return `<section class="p0-risk-journey annotated" data-component-id="P01">${componentBadge("P01")}<nav class="p0-risk-stepper">${p0RiskPhaseSteps.map(([name], index) => `<button type="button" data-p0-step="${index}" class="${index === step ? "active" : index < step ? "done" : ""}"><span>${index + 1}</span><strong>${name}</strong></button>`).join("")}</nav><div class="p0-risk-scene"><header><div><span>一期唯一场景 · 第 ${step + 1}/8 步</span><h2>${p0RiskPhaseSteps[step][0]}</h2><p>${p0RiskPhaseSteps[step][1]}</p></div><div class="p0-risk-result ${risk && step >= 4 ? "danger" : ""}"><small>当前结论</small><strong>${step < 4 ? "等待数据" : risk ? data.verdict : data.verdict}</strong></div></header><div class="p0-risk-case-toggle"><button type="button" data-p0-outcome="risk" class="${risk ? "active danger" : ""}"><strong>异常样例</strong><span>无投注记录，触发P0告警</span></button><button type="button" data-p0-outcome="normal" class="${risk ? "" : "active"}"><strong>正常样例</strong><span>有有效投注，正常结束</span></button></div>${p0RiskV2EventCard(data, risk)}${p0RiskV2Evidence(data, step, risk)}<div class="p0-risk-step-output"><div><span>本步运行服务</span><strong>${p0RiskV2Services.filter((service) => service.stage === step).map((service) => service.name).join("、") || "人工处置与回放服务"}</strong></div><div><span>当前输出</span><p>${stageText[step]}</p>${replayAction}</div></div></div><footer class="p0-risk-actions"><button type="button" data-p0-prev ${step === 0 ? "disabled" : ""}>上一步</button><span>${step === 2 && !state.watermarkReady ? "先推进场馆水位，再进入投注核验" : "每一步都可点击回看"}</span>${step < 7 ? `<button type="button" data-p0-next>下一步</button>` : `<button type="button" data-p0-view="backend" data-p0-open-detail>进入风险后台</button>`}</footer></section>`;
+  }
+
+  function p0RiskV2EventCard(data, risk) {
+    return `<article class="p0-risk-event-card"><div><span>生产触发</span><strong>下分完成后通知风控</strong></div><p>${risk ? data.event : data.normalEvent}</p><footer><code>${data.eventId}</code><span>${data.site} / ${data.member} / ${data.venue} / ${data.game}</span><b>提款 ${data.downAmount}</b></footer></article>`;
+  }
+
+  function p0RiskV2Evidence(data, step, risk) {
+    const state = p0RiskV2EnsureState();
+    const rows = [["上分时间", data.upAt], ["下分时间", data.downAt], ["上分金额", data.upAmount], ["实际下分", data.downAmount], ["投注笔数", step >= 3 ? data.betCount : "待同步"], ["有效投注", step >= 3 ? data.turnover : "待同步"], ["场馆水位", state.watermarkReady ? data.watermarkAfter : data.watermarkBefore], ["游标", data.cursor]];
+    const calc = step >= 4 ? `<div class="p0-v2-calc"><span>应解释金额</span><strong>${data.expected}</strong><span>实际下分</span><strong>${data.downAmount}</strong><span>差额</span><strong class="${risk ? "bad" : "good"}">${data.difference}</strong></div>` : `<div class="p0-v2-calc is-waiting"><strong>${step < 3 ? "等待投注数据" : "证据已固化，下一步执行规则"}</strong></div>`;
+    return `<div class="p0-v2-evidence"><header><strong>核验输入快照</strong><span>${step >= 3 ? "只读投注库 · 不推进场馆游标" : "等待数据水位"}</span></header><div class="p0-v2-evidence-grid">${rows.map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`).join("")}</div>${calc}${step === 2 && !state.watermarkReady ? `<button type="button" class="p0-v2-inline-action" data-p0-advance-watermark>模拟场馆轮询成功，推进水位</button>` : ""}</div>`;
+  }
+
+  const p0RiskV2Services = [
+    { id: "event", stage: 0, side: "生产侧", name: "上下分事件", input: "上分/下分订单与钱包账本", process: "事务提交后写入事件ID和Outbox", output: "可重试的原始业务事实" },
+    { id: "queue", stage: 1, side: "生产侧 + 队列", name: "Outbox与幂等接入", input: "事件ID、订单号、会员和金额", process: "鉴权、验签、去重、入队、失败重试", output: "唯一风控任务" },
+    { id: "watermark", stage: 2, side: "生产轮询器", name: "场馆水位协调", input: "场馆游标和轮询批次", process: "按场馆维护水位；Worker只等待，不抢游标", output: "数据是否完整的可判断信号" },
+    { id: "evidence", stage: 3, side: "风控中台 + PostgreSQL", name: "投注证据快照", input: "水位达标后的生产投注库只读副本", process: "按上下分窗口读取，写入风控结果库并保存不可覆盖快照", output: "投注、账本和水位证据包" },
+    { id: "rules", stage: 4, side: "风控中台", name: "一期规则引擎", input: "证据包与固定规则版本", process: "核对金额、状态、时间窗口、重复事件", output: "命中原因和可解释差额" },
+    { id: "score", stage: 5, side: "风控中台", name: "评分与事件聚合", input: "规则结果和影响金额", process: "确定性规则赋分；同订单同规则幂等聚合", output: "P0/P1/P2风险事件" },
+    { id: "telegram", stage: 6, side: "通知服务", name: "TG告警与补发", input: "风险事件脱敏摘要", process: "发送、失败入补发队列、去重和升级", output: "TG消息ID和发送状态" },
+    { id: "replay", stage: 7, side: "对账与健康", name: "回放、对账与健康", input: "原始快照、规则版本、链路指标", process: "回放验证并监控Outbox、队列、水位、规则、TG", output: "处理闭环和系统风险告警" }
+  ];
+
+  const p0RiskV2ControlModel = {
+    scenarios: [{
+      id: "venue-out",
+      code: "P0-01",
+      name: "下分后投注核验",
+      description: "会员完成下分后，核对实际下分是否能被上分、已结算投注和同一场馆的历史下分解释。",
+      rules: ["amount", "venue"],
+      services: ["watermark", "evidence", "rules", "score"]
+    }],
+    commonServices: ["event", "queue", "telegram", "replay"],
+    rules: [
+      { id: "amount", name: "金额一致性", description: "判断实际下分是否能被生产中的成功上分、已结算净输赢和成功下分解释。", formula: "实际下分 -（成功上分 + 已结算净输赢 - 成功下分） = 0", pass: "", warning: "", service: "rules" },
+      { id: "venue", name: "场馆数据健康", description: "监测场馆同步水位、游标和批次是否持续正常。", formula: "同步延迟 = 当前时间 - 场馆最后成功水位时间。", pass: "同步延迟不超过5分钟且游标持续推进。", warning: "延迟超过5分钟、游标停滞或轮询批次连续失败。", service: "watermark" }
+    ]
+  };
+
+  function p0RiskV2ControlState() {
+    const state = p0RiskV2EnsureState();
+    const legacy = state.control || {};
+    if (!legacy.scenarios) {
+      state.control = { scenarios: { "venue-out": { scenarioEnabled: legacy.scenarioEnabled !== false, rules: legacy.rules || {} } } };
+    }
+    p0RiskV2ControlModel.scenarios.forEach((scenario) => {
+      const source = state.control.scenarios[scenario.id] || {};
+      state.control.scenarios[scenario.id] = {
+        scenarioEnabled: source.scenarioEnabled !== false,
+        rules: Object.fromEntries(scenario.rules.map((ruleId) => [ruleId, source.rules?.[ruleId] !== false]))
+      };
+    });
+    return state.control.scenarios[state.selectedScenario] || state.control.scenarios["venue-out"];
+  }
+
+  function p0RiskV2ServiceEnabled(id) {
+    return p0RiskV2Services.some((service) => service.id === id);
+  }
+
+  function p0RiskV2RuleEnabled(id) {
+    const control = p0RiskV2ControlState();
+    return control.scenarioEnabled && control.rules[id] !== false && p0RiskV2ServiceEnabled(p0RiskV2ControlModel.rules.find((rule) => rule.id === id)?.service);
+  }
+
+  function p0RiskV2ScenarioActive() {
+    const control = p0RiskV2ControlState();
+    return control.scenarioEnabled && p0RiskV2ServiceEnabled("event") && p0RiskV2ServiceEnabled("queue") && p0RiskV2ServiceEnabled("evidence") && p0RiskV2ServiceEnabled("rules");
+  }
+
+  function p0RiskV2ServiceStatus(service, step) {
+    if (!p0RiskV2ServiceEnabled(service.id)) return ["已关闭", "off"];
+    if (!p0RiskV2ControlState().scenarioEnabled) return ["场景关闭", "off"];
+    if (service.stage <= step) return ["已运行", "ran"];
+    return ["等待", "waiting"];
+  }
+
+  function p0RiskV2ServiceChain(step) {
+    const state = p0RiskV2EnsureState();
+    const selected = p0RiskV2Services.find((item) => item.id === state.selectedService) || p0RiskV2Services[0];
+    return `<section class="p0-risk-service-panel annotated" data-component-id="P02">${componentBadge("P02")}<header><div><span>一期服务链</span><strong>每个服务的失败都要可观察、可重试</strong></div><small>独立风控服务</small></header><div class="p0-risk-service-chain">${p0RiskV2Services.map((service) => `<button type="button" data-p0-service="${service.id}" class="${service.id === selected.id ? "selected" : ""} ${step >= service.stage ? "ran" : "waiting"}"><i>${step >= service.stage ? "已运行" : "等待"}</i><small>${service.side}</small><strong>${service.name}</strong></button>`).join("")}</div><article class="p0-risk-service-detail"><div><span>输入</span><p>${selected.input}</p></div><div><span>运行逻辑</span><p>${selected.process}</p></div><div><span>输出</span><p>${selected.output}</p></div></article></section>`;
+  }
+
+  function p0RiskV2Tg(data, step, risk) {
+    const state = p0RiskV2EnsureState();
+    const ready = risk && step >= 6;
+    const failed = ready && state.tgFailure;
+    return `<section class="p0-risk-tg annotated ${ready ? "ready" : "waiting"}" data-component-id="P03">${componentBadge("P03")}<header><div><span>TG值班群</span><strong>${!ready ? "等待规则命中" : failed ? "发送失败 · 已进入补发队列" : "已发送 · 等待管理员认领"}</strong></div>${ready ? `<label><input type="checkbox" data-p0-tg-failure ${failed ? "checked" : ""} />模拟发送失败</label>` : ""}</header>${ready ? `<div class="p0-risk-tg-message"><div><b>P0 紧急</b><code>RC-${data.eventId.replace("EVT-", "")}</code></div><h3>${data.verdict}</h3><dl><div><dt>会员</dt><dd>${data.member}</dd></div><div><dt>场馆/游戏</dt><dd>${data.venue} / ${data.game}</dd></div><div><dt>下分金额</dt><dd>${data.downAmount}</dd></div><div><dt>投注证据</dt><dd>${data.betCount} 笔 / ${data.turnover}</dd></div></dl><p>${data.action}</p><button type="button" data-p0-open-detail>查看风险事件详情</button></div><footer><span>${failed ? "重试 2 次 · 保留原事件" : "消息ID TG-882109 · 摘要脱敏"}</span>${failed ? `<button type="button" data-p0-tg-retry>立即补发</button>` : ""}</footer>` : `<div class="p0-risk-empty"><strong>${risk ? "规则尚未命中" : "正常事件不发送TG"}</strong><p>${risk ? "推进到第7步后，风险事件先落库再通知。" : "正常事实仍保留证据并进入对账基线。"}</p></div>`}</section>`;
+  }
+
+  function p0RiskV2CompactJourney() {
+    const state = p0RiskV2EnsureState();
+    const data = p0RiskV2Data();
+    const control = p0RiskV2ControlState();
+    const step = state.step;
+    const risk = state.outcome === "risk";
+    const watermark = state.watermarkReady ? data.watermarkAfter : data.watermarkBefore;
+    const stageOutput = [
+      `事件 ${data.eventId} 已生成`,
+      state.queueAttempts ? `队列重试 ${state.queueAttempts} 次，事件仍保持唯一` : "队列接收成功，等待处理",
+      state.watermarkReady ? "水位已覆盖下分时间，可以读取投注" : "水位早于下分时间，暂不判断用户风险",
+      risk ? "读取到 0 笔投注记录" : `读取到 ${data.betCount} 笔已结算投注`,
+      risk ? `发现 ${data.difference} CNY 无法解释` : "应下分与实际下分一致",
+      risk ? "生成 P0 风险事件并发送 TG" : "核验正常，不生成风险告警"
+    ];
+    const effectiveRisk = risk && p0RiskV2ScenarioActive() && p0RiskV2RuleEnabled("amount");
+    const stageBody = step === 2
+      ? `<div class="p0-v2-watermark-check ${state.watermarkReady ? "ready" : "waiting"}"><div><span>下分时间</span><strong>${data.downAt}</strong></div><i></i><div><span>场馆水位</span><strong>${watermark}</strong></div>${!state.watermarkReady ? `<button type="button" data-p0-advance-watermark>模拟场馆轮询完成</button>` : `<b>水位已就绪</b>`}</div>`
+      : step === 3
+        ? `<div class="p0-v2-stage-numbers"><div><span>投注笔数</span><strong>${data.betCount}</strong></div><div><span>有效投注</span><strong>${data.turnover}</strong></div><div><span>净输赢</span><strong>${data.netWin}</strong></div></div>`
+        : step >= 4
+          ? `<div class="p0-v2-stage-numbers"><div><span>应下分</span><strong>${data.expected}</strong></div><div><span>实际下分</span><strong>${data.downAmount}</strong></div><div class="${effectiveRisk ? "bad" : "good"}"><span>差额</span><strong>${effectiveRisk ? data.difference : "0.00"}</strong></div></div>`
+          : `<div class="p0-v2-stage-event"><span>${step === 0 ? "生产事件" : "风控队列"}</span><strong>${step === 0 ? data.event : `${data.member} / ${data.venue} / ${data.downAmount} CNY`}</strong></div>`;
+    const stepServices = [["event"], ["queue"], ["watermark"], ["evidence"], ["rules", "score"], ["telegram", "replay"]][step] || [];
+    const serviceRows = stepServices.map((id) => {
+      const service = p0RiskV2Services.find((item) => item.id === id);
+      const [status, className] = p0RiskV2ServiceStatus(service, step === 5 ? 7 : step);
+      const result = !p0RiskV2ServiceEnabled(id) ? "管理员已关闭此服务，本步不执行。" : step === 2 && !state.watermarkReady ? "等待场馆水位达到安全窗口。" : service.output;
+      return `<div class="p0-v2-step-service ${className}"><div><b>${service.name}</b><span>${status}</span></div><p>${result}</p></div>`;
+    }).join("");
+    const serviceRail = p0RiskV2Services.map((service) => { const [status, className] = p0RiskV2ServiceStatus(service, step === 5 ? 7 : step); return `<button type="button" data-p0-service="${service.id}" class="${service.id === state.selectedService ? "selected" : ""} ${className}"><i>${status}</i><strong>${service.name}</strong><small>${service.side}</small></button>`; }).join("");
+    const selected = p0RiskV2Services.find((item) => item.id === state.selectedService) || p0RiskV2Services[0];
+    const fullFlow = p0RiskV2Services.map((service, index) => `<div class="p0-v2-flow-node ${p0RiskV2ServiceEnabled(service.id) ? "" : "off"}"><span>${index + 1}</span><strong>${service.name}</strong><small>${service.process}</small>${index < p0RiskV2Services.length - 1 ? "<b>→</b>" : ""}</div>`).join("");
+    const resultText = control.scenarioEnabled ? (effectiveRisk ? stageOutput[step] : step >= 4 ? "规则或关键服务未启用：只记录证据，不生成风险结论。" : stageOutput[step]) : "场景已关闭：只保留生产事实，不执行风控判断。";
+    return `<section class="p0-v2-compact-journey annotated" data-component-id="P01">${componentBadge("P01")}<header><div><span>第一期唯一场景</span><h2>下分后投注核验</h2></div><div class="p0-risk-case-toggle"><button type="button" data-p0-outcome="risk" class="${risk ? "active danger" : ""}"><strong>异常样例</strong><span>无投注，金额不一致</span></button><button type="button" data-p0-outcome="normal" class="${risk ? "" : "active"}"><strong>正常样例</strong><span>投注与金额一致</span></button></div></header><section class="p0-v2-business-context"><div><span>会员</span><strong>${data.member}</strong></div><div><span>所属站点</span><strong>${data.site}</strong></div><div><span>场馆 / 游戏</span><strong>${data.venue} / ${data.game}</strong></div><div><span>下分时间</span><strong>${data.downAt}</strong></div><div><span>实际下分</span><strong>${data.downAmount} CNY</strong></div><div><span>事件编号</span><strong>${data.eventId}</strong></div></section><nav class="p0-v2-compact-steps">${p0RiskCompactSteps.map(([name], index) => `<button type="button" data-p0-step="${index}" class="${index === step ? "active" : index < step ? "done" : ""}"><span>${index + 1}</span><strong>${name}</strong></button>`).join("")}</nav><div class="p0-v2-compact-body"><aside class="p0-v2-service-rail"><header><span>风控中台服务</span><strong>当前运行链路</strong></header>${serviceRail}<article><span>已选服务</span><strong>${selected.name}</strong><p>${selected.process}</p><small>输出：${selected.output}</small></article></aside><section><header><span>第 ${step + 1} 步</span><h3>${p0RiskCompactSteps[step][0]}</h3></header>${stageBody}<section class="p0-v2-step-services"><header><strong>本步运行的中台服务</strong><span>服务执行结果</span></header>${serviceRows}</section><footer class="${effectiveRisk && step >= 4 ? "danger" : ""}"><span>当前结果</span><strong>${resultText}</strong></footer></section></div><section class="p0-v2-full-flow"><header><strong>完整业务与中台服务流程</strong><span>一次展示全部链路，不按当前步骤隐藏节点</span></header><div class="p0-v2-flow-track">${fullFlow}</div></section><div class="p0-risk-actions"><button type="button" data-p0-prev ${step === 0 ? "disabled" : ""}>上一步</button><span>${step === 2 && !state.watermarkReady ? "水位未就绪时不会判断用户风险" : "每一步都显示本步服务和服务结果"}</span>${step < 5 ? `<button type="button" data-p0-next>下一步</button>` : `<button type="button" data-p0-view="backend" data-p0-open-detail>查看事件详情</button>`}</div></section>`;
+  }
+
+  function p0RiskV3Journey() {
+    const state = p0RiskV2EnsureState();
+    const data = p0RiskV2Data();
+    const risk = state.outcome === "risk";
+    const effectiveRisk = risk && p0RiskV2ScenarioActive() && p0RiskV2RuleEnabled("amount");
+    const step = state.step;
+    const active = (target) => step === target ? "active" : step > target ? "done" : "waiting";
+    const token = (target) => step === target ? `<span class="p0-v3-focus-token"><b>${data.eventId.replace("EVT-", "")}</b><small>重点事件</small></span>` : "";
+    const queuePool = ["EVT-000181", "EVT-000182", "EVT-000183", "EVT-000184", "EVT-000185", "EVT-000186", "EVT-000189", "EVT-000190", "EVT-000191"];
+    const queueCardsData = Array.from({ length: 6 }, (_, index) => queuePool[(state.queueCycle + 5 - index + queuePool.length) % queuePool.length]);
+    if (step === 1) queueCardsData[2] = data.eventId;
+    const queueCards = queueCardsData.map((id, index) => `<div class="p0-v3-queue-card shifting ${id === data.eventId ? "focus" : ""} ${index === queueCardsData.length - 1 ? "queue-head" : ""}" style="--queue-index:${index}"><strong>${id.replace("EVT-", "")}</strong><small>${id === data.eventId ? "下分核验" : index % 2 ? "提款核验" : "账变核验"}</small></div>`).join("");
+    const rotated = queueCardsData;
+    const logs = [
+      ["10:30:00", "生产完成下分并写入Outbox"],
+      ["10:30:01", "接入服务验签、幂等后投递主队列"],
+      ["10:30:03", state.watermarkReady ? "场馆水位已覆盖安全窗口" : "场馆水位不足，事件进入延迟队列"],
+      ["10:31:10", risk ? "读取到0笔投注，固化证据快照" : `读取到${data.betCount}笔已结算投注`],
+      ["10:31:12", effectiveRisk ? `金额规则命中，差额${data.difference}` : "规则核验通过"],
+      ["10:31:13", effectiveRisk ? "生成P0事件并发送TG" : "保存正常核验结果"]
+    ].slice(0, step + 1);
+    const currentService = [["上下分事件", "保存业务事实"], ["Outbox与幂等接入", "事件进入主任务队列"], ["场馆水位协调", state.watermarkReady ? "水位就绪，允许继续" : "进入延迟队列等待"], ["投注证据快照", risk ? "读取0笔投注并固化快照" : `读取${data.betCount}笔已结算投注`], ["规则引擎与事件聚合", effectiveRisk ? `命中P0，差额${data.difference}` : "规则通过"], ["TG与风险后台", effectiveRisk ? "风险事件已通知" : "正常结果已留档"]][step];
+    return `<section class="p0-v3-journey annotated ${state.autoPlaying ? "is-playing" : ""}" data-component-id="P01">${componentBadge("P01")}<header><div><span>动态业务推演</span><h2>下分后投注核验</h2></div><div class="p0-risk-case-toggle"><button type="button" data-p0-outcome="risk" class="${risk ? "active danger" : ""}"><strong>异常样例</strong><span>无投注，金额不一致</span></button><button type="button" data-p0-outcome="normal" class="${risk ? "" : "active"}"><strong>正常样例</strong><span>投注与金额一致</span></button></div></header><section class="p0-v2-business-context"><div><span>会员</span><strong>${data.member}</strong></div><div><span>所属站点</span><strong>${data.site}</strong></div><div><span>场馆 / 游戏</span><strong>${data.venue} / ${data.game}</strong></div><div><span>下分时间</span><strong>${data.downAt}</strong></div><div><span>实际下分</span><strong>${data.downAmount} CNY</strong></div><div><span>重点事件</span><strong>${data.eventId}</strong></div></section><div class="p0-v3-player"><div><button type="button" data-p0-flow-reset>重新开始</button><button type="button" data-p0-prev ${step === 0 ? "disabled" : ""}>上一步</button><button type="button" class="primary" data-p0-autoplay>${state.autoPlaying ? "暂停" : step === 5 ? "重新播放" : "自动播放"}</button><button type="button" data-p0-next ${step === 5 ? "disabled" : ""}>下一步</button></div><span>第 ${step + 1}/6 段 · ${currentService[0]}</span></div><section class="p0-v3-flow-board"><div class="p0-v3-lane production"><header><strong>生产业务</strong><span>业务继续运行</span></header><div class="p0-v3-lane-content"><article class="p0-v3-node ${active(0)}"><small>生产后台</small><strong>下分完成</strong><span>${data.downAmount} CNY</span>${token(0)}</article><i>→</i><article class="p0-v3-node ${active(0)}"><small>事务事件</small><strong>写入 Outbox</strong><span>业务与事件同事务</span></article><i>→</i><article class="p0-v3-node ${active(1)}"><small>风控接入</small><strong>验签、幂等、去重</strong><span>事件保持唯一</span></article></div></div><div class="p0-v3-lane queue"><header><strong>风控队列</strong><span>持续进入 · 并发消费</span></header><div class="p0-v3-lane-content queue-content"><div class="p0-v3-queue-in"><b>事件持续进入</b><i>→</i></div><section class="p0-v3-main-queue ${active(1)}"><header><strong>主任务队列</strong><span>待消费 ${rotated.length}</span></header><div>${queueCards}</div><footer><span>至少一次投递</span><span>幂等消费</span></footer></section><i>→</i><section class="p0-v3-workers ${step === 1 || step === 2 ? "active" : step > 2 ? "done" : "waiting"}"><header><strong>Worker池</strong><span>10并发</span></header><div><b>W01</b><b>W02</b><b>W03</b></div>${step === 1 ? token(1) : ""}</section><i>→</i><article class="p0-v3-node gate ${active(2)} ${!state.watermarkReady && step === 2 ? "blocked" : ""}"><small>水位闸门</small><strong>${state.watermarkReady ? "数据已完整" : "数据未完整"}</strong><span>${state.watermarkReady ? data.watermarkAfter : data.watermarkBefore}</span>${step === 2 && state.watermarkReady ? token(2) : ""}</article><section class="p0-v3-delay-queue ${step === 2 && !state.watermarkReady ? "active" : "waiting"}"><header><strong>延迟队列</strong><span>${step === 2 && !state.watermarkReady ? "30秒后重试" : "0条"}</span></header>${step === 2 && !state.watermarkReady ? `<div>${token(2)}<small>倒计时后回到主队列</small></div><button type="button" data-p0-advance-watermark>推进场馆水位</button>` : `<p>水位不足的事件在这里等待</p>`}</section></div></div><div class="p0-v3-lane risk"><header><strong>风控计算</strong><span>只读生产数据</span></header><div class="p0-v3-lane-content"><article class="p0-v3-node ${active(3)}"><small>投注证据服务</small><strong>读取投注与账本</strong><span>${step >= 3 ? `${data.betCount}笔 / ${data.turnover}` : "等待水位"}</span>${token(3)}</article><i>→</i><article class="p0-v3-node ${active(3)}"><small>证据库</small><strong>固化不可覆盖快照</strong><span>投注、账本、水位、游标</span></article><i>→</i><article class="p0-v3-node diamond ${active(4)}"><small>规则引擎</small><strong>金额一致性判断</strong><span>${step >= 4 ? `差额 ${effectiveRisk ? data.difference : "0.00"}` : "等待计算"}</span>${token(4)}</article><div class="p0-v3-branches"><span class="pass">通过 ↓</span><span class="warn">预警 ↓</span></div></div></div><div class="p0-v3-lane result"><header><strong>结果与处置</strong><span>先落库，再通知</span></header><div class="p0-v3-lane-content"><article class="p0-v3-node result-normal ${step === 5 && !effectiveRisk ? "active" : "waiting"}"><small>正常分支</small><strong>保存正常结果</strong><span>进入对账基线</span>${step === 5 && !effectiveRisk ? token(5) : ""}</article><article class="p0-v3-node result-risk ${step === 5 && effectiveRisk ? "active" : "waiting"}"><small>风险分支</small><strong>生成 P0 风险事件</strong><span>${effectiveRisk ? data.verdict : "未命中"}</span>${step === 5 && effectiveRisk ? token(5) : ""}</article><i>→</i><article class="p0-v3-node ${step === 5 && effectiveRisk ? "active" : "waiting"}"><small>通知服务</small><strong>TG 值班群</strong><span>${step === 5 && effectiveRisk ? "已发送" : "等待风险事件"}</span></article><article class="p0-v3-node ${step === 5 && effectiveRisk ? "active" : "waiting"}"><small>风控后台</small><strong>事件详情与人工处理</strong><span>${step === 5 && effectiveRisk ? "待确认" : "无待处理事件"}</span></article></div></div></section><footer class="p0-v3-runtime"><section><header><strong>当前服务运行结果</strong><span>${state.autoPlaying ? "自动播放中" : "已暂停"}</span></header><div><b>${currentService[0]}</b><p>${currentService[1]}</p></div></section><section><header><strong>运行日志</strong><span>按时间追加</span></header><ol>${logs.map(([time, text]) => `<li><time>${time}</time><span>${text}</span></li>`).join("")}</ol></section></footer></section>`;
+  }
+
+  function p0RiskV2Journey() {
+    const state = p0RiskV2EnsureState();
+    const data = p0RiskV2Data();
+    const step = state.step;
+    const risk = state.outcome === "risk";
+    return `<div class="p0-risk-journey-layout"><aside class="p0-risk-scenario-panel"><header><span>第一期唯一场景</span><strong>下分后投注核验</strong></header><div class="p0-risk-boundary"><b>模拟边界</b><p>生产不被阻断；风控只读取投注库、计算风险、发TG和登记处理结果。</p></div><div class="p0-v2-side-list"><div><span>并发 Worker</span><strong>10</strong></div><div><span>队列语义</span><strong>至少一次 + 幂等</strong></div><div><span>游标归属</span><strong>生产轮询器</strong></div><div><span>结果存储</span><strong>风控 PostgreSQL</strong></div><div><span>数据窗口</span><strong>下分前后安全窗口</strong></div></div></aside><div class="p0-risk-journey-main">${p0RiskV2Stage(step)}${p0RiskV2ServiceChain(step)}${p0RiskV2Tg(data, step, risk)}</div></div>`;
+  }
+
+  function p0RiskEventRows(state = p0RiskV2EnsureState()) {
+    const processed = (member, fallback) => state.processedMembers.includes(member) ? "已处理" : fallback;
+    return [
+      { rule: "下分金额一致性", member: "member_10086", memberName: "测试会员10086", vip: "VIP6", status: processed("member_10086", "待处理"), level: "P0紧急", site: "XY体育", venue: "DB电子", game: "经典电子厅", agent: "north_star / AG20318", priorRisk: "2次", upAt: "2026-08-11 10:20:00", up: "10,000.00", bets: "0", turnover: "0.00", winLoss: "0.00", downAt: "2026-08-11 10:30:00", theoretical: "10,000.00", down: "86,000.00", diff: "76,000.00", watermark: "2026-08-11 10:31:10", cursorCovered: "是", id: "RC-20260811-000187", handler: state.processedMembers.includes("member_10086") ? "Mike" : "-", handledAt: state.processedMembers.includes("member_10086") ? "2026-08-11 10:36:20" : "-", tg: "发送成功" },
+      { rule: "场馆数据健康", member: "lucky_7788", memberName: "测试会员7788", vip: "VIP4", status: "待处理", level: "P0紧急", site: "WC体育", venue: "GOD Lottery", game: "GOD Lottery", agent: "agent_wc01 / AG10822", priorRisk: "1次", upAt: "2026-08-11 09:35:12", up: "5,000.00", bets: "18", turnover: "2,300.00", winLoss: "10,200.00", downAt: "2026-08-11 09:42:18", theoretical: "15,200.00", down: "17,500.00", diff: "2,300.00", watermark: "2026-08-11 09:37:02", cursorCovered: "否", id: "RC-20260811-000186", handler: "-", handledAt: "-", tg: "发送成功" },
+      { rule: "场馆数据健康", member: "eve_0088", memberName: "测试会员0088", vip: "VIP5", status: "已处理", level: "P0紧急", site: "拉布布", venue: "DB真人", game: "真人百家乐", agent: "lab_agent / AG10386", priorRisk: "3次", upAt: "2026-08-11 08:16:30", up: "8,000.00", bets: "31", turnover: "12,800.00", winLoss: "0.00", downAt: "2026-08-11 08:26:10", theoretical: "8,000.00", down: "8,000.00", diff: "0.00", watermark: "2026-08-11 08:27:01", cursorCovered: "是", id: "RC-20260811-000181", handler: "finance_02", handledAt: "2026-08-11 08:48:22", tg: "发送成功" },
+      { rule: "场馆数据健康", member: "kai_2201", memberName: "测试会员2201", vip: "VIP3", status: "已处理", level: "P0紧急", site: "CS体育", venue: "沙巴体育", game: "足球滚球", agent: "cs_agent / AG12051", priorRisk: "0次", upAt: "2026-08-11 07:44:20", up: "20,000.00", bets: "12", turnover: "35,000.00", winLoss: "15,000.00", downAt: "2026-08-11 08:01:03", theoretical: "35,000.00", down: "45,000.00", diff: "10,000.00", watermark: "2026-08-11 08:02:10", cursorCovered: "是", id: "RC-20260811-000176", handler: "Mike", handledAt: "2026-08-11 08:20:40", tg: "发送成功" },
+      { rule: "无", member: "player_2026", memberName: "测试会员2026", vip: "VIP3", status: "风控通过", level: "N0正常", site: "XY体育", venue: "DB电竞", game: "电竞赛事", agent: "starter_agent / AG10001", priorRisk: "0次", upAt: "2026-08-11 06:20:00", up: "10,000.00", bets: "42", turnover: "76,000.00", winLoss: "76,000.00", downAt: "2026-08-11 06:30:00", theoretical: "86,000.00", down: "86,000.00", diff: "0.00", watermark: "2026-08-11 06:31:10", cursorCovered: "是", id: "RC-20260811-000172", handler: "-", handledAt: "-", tg: "未触发" },
+      { rule: "无", member: "joy_6600", memberName: "测试会员6600", vip: "VIP2", status: "风控通过", level: "N0正常", site: "YY体育", venue: "开元棋牌", game: "经典斗地主", agent: "yy_agent / AG11880", priorRisk: "0次", upAt: "2026-08-11 05:16:04", up: "3,000.00", bets: "16", turnover: "8,500.00", winLoss: "1,200.00", downAt: "2026-08-11 05:28:40", theoretical: "4,200.00", down: "4,200.00", diff: "0.00", watermark: "2026-08-11 05:29:18", cursorCovered: "是", id: "RC-20260811-000168", handler: "-", handledAt: "-", tg: "未触发" },
+      { rule: "场馆数据健康", member: "momo_1919", memberName: "测试会员1919", vip: "VIP7", status: "已处理", level: "P0紧急", site: "NS体育", venue: "Choice真人", game: "真人龙虎", agent: "ns_agent / AG13008", priorRisk: "1次", upAt: "2026-08-10 23:10:08", up: "6,000.00", bets: "9", turnover: "14,600.00", winLoss: "4,600.00", downAt: "2026-08-10 23:25:11", theoretical: "10,600.00", down: "12,100.00", diff: "1,500.00", watermark: "2026-08-10 23:26:20", cursorCovered: "是", id: "RC-20260810-000159", handler: "finance_02", handledAt: "2026-08-10 23:46:03", tg: "发送成功" },
+      { rule: "无", member: "sun_5533", memberName: "测试会员5533", vip: "VIP1", status: "风控通过", level: "N0正常", site: "DW体育", venue: "PP电子", game: "水果机", agent: "dw_agent / AG14020", priorRisk: "0次", upAt: "2026-08-10 22:03:00", up: "2,000.00", bets: "27", turnover: "9,800.00", winLoss: "1,600.00", downAt: "2026-08-10 22:14:21", theoretical: "3,600.00", down: "3,600.00", diff: "0.00", watermark: "2026-08-10 22:15:00", cursorCovered: "是", id: "RC-20260810-000155", handler: "-", handledAt: "-", tg: "未触发" }
+    ].map((row, index) => ({
+      ...row,
+      rule: row.status === "风控通过" ? "无" : "下分金额一致性",
+      eventAt: row.eventAt || row.downAt
+    }));
+  }
+
+  function p0RiskV2Dashboard() {
+    const state = p0RiskV2EnsureState();
+    const pendingRows = p0RiskEventRows(state).filter((row) => row.status === "待处理").slice(0, 5);
+    const healthState = (value) => `<span class="p0-health-state ${value === "异常" ? "danger" : "ok"}">${value}</span>`;
+    const memberHref = `#requirement/${encodeURIComponent("#488")}/page/member-basic-488`;
+    const pendingTable = pendingRows.map((row) => `<tr><td>${row.rule}</td><td><a class="member-detail-link p0-member-detail-link" href="${memberHref}" target="_blank" rel="noopener" data-member-account="${row.member}" title="在新标签打开会员详情">${row.member}</a></td><td>${row.vip}</td><td>${row.venue}</td><td>${row.game}</td><td class="amount danger-money">${row.diff}</td><td>${row.downAt}</td><td><button type="button" class="p0-link-button" data-p0-event-detail="${row.member}" data-p0-event-id="${row.id}" data-p0-event-status="${row.status}">详情</button><button type="button" class="p0-link-button" data-p0-process="${row.member}">处理</button></td></tr>`).join("");
+    const sceneStatus = state.healthIssue ? "异常" : "正常";
+    const queueStatus = state.queueAttempts > 2 ? "异常" : "正常";
+    const issueItems = state.healthIssue
+      ? `<div class="p0-dashboard-health-issue"><strong>下分后投注核验</strong>${healthState("异常")}<span>DB电子水位延迟 8分12秒</span><small>影响相关事件延迟核验，等待游标覆盖后自动恢复。</small></div>`
+      : `<div class="p0-dashboard-health-empty"><strong>当前运行正常</strong><span>独立服务、任务队列和全部场馆水位均未发现异常。</span></div>`;
+    return `<div class="p0-risk-dashboard"><section class="p0-dashboard-metric-grid annotated" data-component-id="P01">${componentBadge("P01")}<button type="button" data-p0-backend-tab="events"><span>待处理风险</span><strong>${pendingRows.length}</strong><small>P0紧急</small></button><button type="button" data-p0-backend-tab="events"><span>今日新增风险</span><strong>4</strong><small>较昨日 +1</small></button><button type="button" data-p0-backend-tab="events"><span>队列中事件</span><strong>6</strong><small>待Worker消费</small></button><button type="button" data-p0-backend-tab="events"><span>今日已处理事件</span><strong>7</strong><small>已完成处理</small></button><button type="button" data-p0-backend-tab="health"><span>游标状态</span><strong class="${state.healthIssue ? "danger-text" : "ok-text"}">${sceneStatus}</strong><small>最后成功 ${state.healthIssue ? "10:23:01" : "10:31:10"}</small></button></section><section class="p0-dashboard-panel p0-dashboard-pending annotated" data-component-id="T01">${componentBadge("T01")}<header><div><strong>待处理风险事件</strong><span>按P0紧急优先展示</span></div><button type="button" data-p0-backend-tab="events">查看全部</button></header><div class="p0-risk-table-wrap"><table class="p0-dashboard-pending-table"><thead><tr><th>命中规则</th><th>会员账号</th><th>VIP等级</th><th>涉及场馆</th><th>涉及游戏</th><th>异常差异金额</th><th>下分时间</th><th>操作</th></tr></thead><tbody>${pendingTable}</tbody></table></div></section><section class="p0-dashboard-panel p0-dashboard-health p0-dashboard-health-summary annotated" data-component-id="P02">${componentBadge("P02")}<header><div><strong>健康检查</strong><span>只展示当前结论和异常摘要</span></div><div><span>最后检查 ${state.healthLastChecked}</span><button type="button" class="p0-default-button" data-p0-health-recheck>重新检查</button><button type="button" class="p0-primary-button" data-p0-backend-tab="health">查看健康详情</button></div></header><div class="p0-dashboard-health-body"><section><header><strong>整体状态</strong>${healthState(state.healthIssue || queueStatus === "异常" ? "异常" : "正常")}</header>${issueItems}</section><section><header><strong>队列摘要</strong>${healthState(queueStatus)}</header><dl><div><dt>待消费</dt><dd>6</dd></div><div><dt>重试</dt><dd>${state.queueAttempts}</dd></div><div><dt>死信</dt><dd>0</dd></div></dl><p>${queueStatus === "异常" ? "存在重试积压，最老任务等待超过5分钟。" : "Worker心跳与链路探测正常。"}</p></section></div></section></div>`;
+  }
+
+  function openP0HealthRecheck(page) {
+    const state = p0RiskV2EnsureState();
+    const services = ["风控事件接入服务", "下分核验Worker", "TG通知服务", "风控健康监控服务"];
+    const venues = ["Choice真人", "BBIN真人", "DB捕鱼", "DB彩票", "DB电子", "DB多宝电子", "沙巴体育", "DG视讯", "DB电竞", "开元棋牌", "Sex真人", "EVOPLAY电子", "FC电子", "DB哈希", "FB体育", "JDB电子", "IM体育", "MG电子", "NetEnt电子", "PG电子", "PA捕鱼", "VR彩票", "IM电竞", "KingsMidas棋牌", "PP电子", "PP真人", "RED TIGER电子", "SBO体育", "V8棋牌", "CMD体育", "EVOLUTION真人", "天成彩票", "雷火电竞", "旺财棋牌", "DB真人", "CQ9电子", "熊猫体育", "DB棋牌", "GOD Lottery"];
+    const steps = [{ group: "场景中台服务", name: "检查场景【下分后投注核验】中台服务是否正常" }, ...services.map((name) => ({ group: "场景中台服务", name: `${name}检查完成` })), ...venues.map((name) => ({ group: "场馆水位", name: `${name}水位检查完成` })), { group: "队列", name: "检查队列是否正常" }];
+    modal("健康检查", `<div class="p0-health-check-modal"><header><strong>正在逐项检查当前运行状态</strong><span class="p0-health-check-progress">0 / ${steps.length}</span></header><ol class="p0-health-check-list">${steps.map((step) => `<li><i></i><div><strong>${step.group}</strong><span>${step.name}</span></div><b>等待检查</b></li>`).join("")}</ol><p class="p0-health-check-result">检查完成后，健康检查面板会更新最后检查时间；检查不会修复或改变异常状态。</p></div>`, "关闭");
+    const modalRoot = document.getElementById("modal-root");
+    state.healthCheckRunning = true;
+    if (p0HealthCheckTimer) window.clearInterval(p0HealthCheckTimer);
+    let index = 0;
+    p0HealthCheckTimer = window.setInterval(() => {
+      const list = modalRoot.querySelectorAll(".p0-health-check-list li");
+      const progress = modalRoot.querySelector(".p0-health-check-progress");
+      if (!list.length) { window.clearInterval(p0HealthCheckTimer); p0HealthCheckTimer = null; state.healthCheckRunning = false; return; }
+      if (index >= list.length) {
+        window.clearInterval(p0HealthCheckTimer);
+        p0HealthCheckTimer = null;
+        state.healthCheckRunning = false;
+        state.healthLastChecked = "2026-08-11 10:32:00";
+        const result = modalRoot.querySelector(".p0-health-check-result");
+        if (result) result.textContent = state.healthIssue ? "全部检查完成。DB电子水位仍异常，已保留告警；其他场景服务、场馆水位和队列正常。" : "全部检查完成。场景中台服务正常，全部场馆水位正常，队列正常。";
+        if (progress) progress.textContent = `${list.length} / ${list.length}`;
+        return;
+      }
+      const item = list[index];
+      item.classList.add("checked");
+      const label = item.querySelector("b");
+      const isVenueIssue = index >= 1 + services.length && index === 1 + services.length + 4 && state.healthIssue;
+      if (label) label.textContent = isVenueIssue ? "异常" : "正常";
+      item.classList.toggle("danger", isVenueIssue);
+      if (progress) progress.textContent = `${index + 1} / ${list.length}`;
+      index += 1;
+    }, 130);
+    modalRoot.querySelector(".modal-close")?.addEventListener("click", () => { if (p0HealthCheckTimer) window.clearInterval(p0HealthCheckTimer); p0HealthCheckTimer = null; state.healthCheckRunning = false; });
+    modalRoot.querySelector(".modal-confirm")?.addEventListener("click", () => { refreshP0RiskSimulator(page); });
+  }
+
+  function openP0ProcessModal(page, account) {
+    const row = p0RiskEventRows().find((item) => item.member === account) || p0RiskEventRows()[0];
+    modal("处理风险事件", `<div class="p0-process-modal annotated" data-component-id="M01">${componentBadge("M01")}<div class="p0-process-summary"><span>会员账号</span><strong>${row.member}</strong><span>命中规则</span><strong>${row.rule}</strong><span>异常差额</span><b>${row.diff} CNY</b></div><label>处理备注<span class="required">必填</span><textarea data-p0-process-note placeholder="请填写核查结论、生产处理结果和处理单号"></textarea><small data-p0-process-error>备注不能为空，提交前必须填写处理结论。</small></label></div>`, "", '<footer><button type="button" class="secondary-action modal-cancel">取消</button><button type="button" class="main-action" data-p0-process-submit>提交处理</button></footer>');
+    const modalRoot = document.getElementById("modal-root");
+    bindComponentLinks();
+    modalRoot.querySelector("[data-p0-process-submit]")?.addEventListener("click", () => {
+      const note = modalRoot.querySelector("[data-p0-process-note]");
+      const error = modalRoot.querySelector("[data-p0-process-error]");
+      if (!note?.value.trim()) { if (error) error.classList.add("visible"); note?.focus(); return; }
+      if (!p0RiskSimulatorState.processedMembers.includes(account)) p0RiskSimulatorState.processedMembers.push(account);
+      p0RiskSimulatorState.selectedEventMember = account;
+      p0RiskSimulatorState.eventStatus = "已处理";
+      modalRoot.innerHTML = "";
+      refreshP0RiskSimulator(page);
+    });
+  }
+
+  function p0RiskV2Events() {
+    const state = p0RiskV2EnsureState();
+    const sites = ["XY体育", "拉布布", "WC体育", "CS体育", "YY体育", "NS体育", "DW体育"];
+    const venues = ["Choice真人", "BBIN真人", "DB捕鱼", "DB彩票", "DB电子", "DB多宝电子", "沙巴体育", "DG视讯", "DB电竞", "开元棋牌", "Sex真人", "EVOPLAY电子", "FC电子", "DB哈希", "FB体育", "JDB电子", "IM体育", "MG电子", "NetEnt电子", "PG电子", "PA捕鱼", "VR彩票", "IM电竞", "KingsMidas棋牌", "PP电子", "PP真人", "RED TIGER电子", "SBO体育", "V8棋牌", "CMD体育", "EVOLUTION真人", "天成彩票", "雷火电竞", "旺财棋牌", "DB真人", "CQ9电子", "熊猫体育", "DB棋牌", "GOD Lottery"];
+    const statusOrder = { "待处理": 0, "已处理": 1, "风控通过": 2 };
+    const rows = [...p0RiskEventRows(state)].sort((left, right) => {
+      const statusDiff = statusOrder[left.status] - statusOrder[right.status];
+      return statusDiff || right.eventAt.localeCompare(left.eventAt);
+    });
+    const preset = state.eventFilterPreset || "all";
+    const today = "2026-08-11";
+    const optionList = (items, empty, selected = "") => `<select><option>${empty}</option>${items.map((item) => `<option ${item === selected ? "selected" : ""}>${item}</option>`).join("")}</select>`;
+    const statusTag = (status) => `<span class="p0-event-status ${status === "待处理" ? "pending" : status === "已处理" ? "done" : "pass"}">${status}</span>`;
+    const memberHref = `#requirement/${encodeURIComponent("#488")}/page/member-basic-488`;
+    const rowsHtml = rows.map((row) => `<tr data-level="${row.level}" data-status="${row.status}" data-site="${row.site}" data-venue="${row.venue}" data-member="${row.member}" data-event-at="${row.eventAt}"><td class="sticky-risk-rule">${row.rule}</td><td class="sticky-risk-member"><a class="member-detail-link p0-member-detail-link" href="${memberHref}" target="_blank" rel="noopener" data-member-account="${row.member}" title="在新标签打开会员详情">${row.member}</a></td><td class="sticky-risk-status">${statusTag(row.status)}</td><td>${row.site}</td><td>${row.venue}</td><td>${row.game}</td><td>${row.upAt}</td><td class="amount">${row.up}</td><td>${row.bets}</td><td class="amount">${row.turnover}</td><td>${row.downAt}</td><td class="amount">${row.down}</td><td class="amount ${row.diff !== "0.00" ? "danger-money" : ""}">${row.diff}</td><td><code>${row.id}</code></td><td><span class="p0-handler-cell"><strong>${row.handler}</strong><small>${row.handledAt}</small></span></td><td>${row.eventAt}</td><td class="sticky-risk-action"><button type="button" class="p0-link-button" data-p0-event-detail="${row.member}" data-p0-event-id="${row.id}" data-p0-event-status="${row.status}">详情</button>${row.status === "待处理" ? `<button type="button" class="p0-link-button" data-p0-process="${row.member}">处理</button>` : ""}</td></tr>`).join("");
+    const selectedLevel = preset === "today-p0" ? "P0紧急" : "";
+    const selectedStatus = preset === "today-handled" ? "已处理" : preset === "pending" ? "待处理" : "";
+    const timeStart = ["today-p0", "today-handled"].includes(preset) ? `${today}T00:00` : "";
+    const timeEnd = ["today-p0", "today-handled"].includes(preset) ? `${today}T23:59` : "";
+    return `<div class="p0-risk-list-view"><div class="p0-risk-list-filters annotated" data-component-id="F01">${componentBadge("F01")}<label><span>场景</span><select><option>下分后投注核验</option></select></label><label><span>风险等级</span>${optionList(["P0紧急", "N0正常"], "全部等级", selectedLevel)}</label><label><span>状态</span>${optionList(["待处理", "已处理", "风控通过"], "全部状态", selectedStatus)}</label><label><span>所属站点</span>${optionList(sites, "全部所属站点")}</label><label><span>所属场馆</span>${optionList(venues, "全部所属场馆")}</label><label><span>会员账号</span><input type="text" data-p0-member-filter placeholder="请输入会员账号" /></label><label class="p0-event-time-filter"><span>事件时间</span><div><input type="datetime-local" data-p0-event-start value="${timeStart}" /><b>至</b><input type="datetime-local" data-p0-event-end value="${timeEnd}" /></div></label><div class="p0-risk-filter-actions"><button type="button" class="p0-primary-button" data-p0-query>搜索</button><button type="button" class="p0-default-button" data-p0-reset>重置</button></div></div><section class="p0-dashboard-panel p0-event-list-panel annotated" data-component-id="T01">${componentBadge("T01")}<header><div><strong>风险事件列表</strong><span>默认展示全部状态</span></div><span>共 ${rows.length} 条</span></header><div class="p0-risk-table-wrap"><table class="p0-risk-event-table"><thead><tr><th class="sticky-risk-rule">命中规则</th><th class="sticky-risk-member">会员账号</th><th class="sticky-risk-status">状态</th><th>所属站点</th><th>发生场馆</th><th>发生游戏</th><th>上分时间</th><th>上分金额（CNY）</th><th>投注笔数</th><th>流水金额（CNY）</th><th>下分时间</th><th>下分金额（CNY）</th><th>差额（CNY）</th><th>事件编号</th><th>处理人/处理时间</th><th>事件时间</th><th class="sticky-risk-action">操作</th></tr></thead><tbody>${rowsHtml}</tbody></table></div><footer class="p0-risk-pagination"><span>共 ${rows.length} 条</span><select aria-label="每页数量"><option>10条/页</option><option selected>20条/页</option><option>50条/页</option><option>100条/页</option><option>200条/页</option></select><button type="button" aria-label="上一页" disabled>‹</button><button type="button" class="active">1</button><button type="button">2</button><button type="button" aria-label="下一页">›</button><label>前往 <input type="number" min="1" value="1" /> 页</label></footer></section></div>`;
+  }
+
+  function openP0HistoryRiskModal(page, account) {
+    const state = p0RiskV2EnsureState();
+    const current = p0RiskEventRows(state).find((item) => item.member === account) || p0RiskEventRows(state)[0];
+    const count = Math.max(1, Number.parseInt(current.priorRisk, 10) || 1);
+    const historyRows = Array.from({ length: count }, (_, index) => ({
+      ...current,
+      id: `RC-202607${String(28 - index).padStart(2, "0")}-${String(146 - index).padStart(6, "0")}`,
+      status: "已处理",
+      eventAt: `2026-07-${String(28 - index).padStart(2, "0")} ${index ? "16:42:18" : "09:18:36"}`,
+      handler: index ? "finance_02" : "Mike",
+      handledAt: `2026-07-${String(28 - index).padStart(2, "0")} ${index ? "17:05:09" : "09:36:20"}`,
+      downAt: `2026-07-${String(28 - index).padStart(2, "0")} ${index ? "16:40:55" : "09:17:10"}`
+    }));
+    const memberHref = `#requirement/${encodeURIComponent("#488")}/page/member-basic-488`;
+    const rows = historyRows.map((row) => `<tr><td class="sticky-history-rule">${row.rule}</td><td class="sticky-history-member"><a class="member-detail-link p0-member-detail-link" href="${memberHref}" target="_blank" rel="noopener" data-member-account="${row.member}">${row.member}</a></td><td class="sticky-history-status"><span class="p0-event-status done">${row.status}</span></td><td>${row.site}</td><td>${row.venue}</td><td>${row.game}</td><td>${row.upAt}</td><td>${row.up}</td><td>${row.bets}</td><td>${row.turnover}</td><td>${row.downAt}</td><td>${row.down}</td><td class="danger-money">${row.diff}</td><td><code>${row.id}</code></td><td><span class="p0-handler-cell"><strong>${row.handler}</strong><small>${row.handledAt}</small></span></td><td>${row.eventAt}</td><td class="sticky-history-action"><button type="button" class="p0-link-button" data-p0-history-detail="${row.id}">详情</button></td></tr>`).join("");
+    modal("历史风险事件", `<div class="p0-history-risk-modal"><div class="p0-history-risk-summary">会员账号：<strong>${current.member}</strong>，共命中 <strong>${count}</strong> 次历史风险</div><div class="p0-risk-table-wrap"><table class="p0-risk-event-table"><thead><tr><th>命中规则</th><th>会员账号</th><th>状态</th><th>所属站点</th><th>发生场馆</th><th>发生游戏</th><th>上分时间</th><th>上分金额（CNY）</th><th>投注笔数</th><th>流水金额（CNY）</th><th>下分时间</th><th>下分金额（CNY）</th><th>差额（CNY）</th><th>事件编号</th><th>处理人/处理时间</th><th>事件时间</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></div></div>`, "关闭");
+    const modalRoot = document.getElementById("modal-root");
+    modalRoot.querySelector(".risk-modal")?.classList.add("p0-history-modal-shell");
+    const historyBackdrop = modalRoot.querySelector(".modal-backdrop");
+    const prototypePane = document.querySelector(".prototype-pane");
+    if (historyBackdrop && prototypePane) {
+      const paneRect = prototypePane.getBoundingClientRect();
+      historyBackdrop.classList.add("p0-history-modal-backdrop");
+      historyBackdrop.style.left = `${Math.max(0, paneRect.left)}px`;
+      historyBackdrop.style.right = `${Math.max(0, window.innerWidth - paneRect.right)}px`;
+    }
+    const historyTableWrap = modalRoot.querySelector(".p0-history-risk-modal .p0-risk-table-wrap");
+    if (historyTableWrap) { historyTableWrap.scrollLeft = 0; historyTableWrap.scrollTop = 0; }
+    modalRoot.querySelectorAll("[data-p0-history-detail]").forEach((button) => button.addEventListener("click", () => {
+      const selected = historyRows.find((row) => row.id === button.dataset.p0HistoryDetail);
+      if (!selected) return;
+      state.selectedEventId = selected.id;
+      state.selectedEventMember = selected.member;
+      state.historySelectedEvent = selected;
+      state.replayStatus = "idle";
+      state.replayCount = 0;
+      modalRoot.innerHTML = "";
+      refreshP0RiskSimulator(page);
+    }));
+  }
+
+  function p0RiskV2CompactDetail() {
+    const state = p0RiskV2EnsureState();
+    const row = state.historySelectedEvent?.id === state.selectedEventId ? state.historySelectedEvent : p0RiskEventRows(state).find((item) => item.id === state.selectedEventId) || p0RiskEventRows(state).find((item) => item.member === state.selectedEventMember) || p0RiskEventRows(state)[0];
+    const replayBusy = state.replayStatus === "running";
+    const replayFinished = ["same", "changed"].includes(state.replayStatus);
+    const replayRisk = row.status !== "风控通过" && row.diff !== "0.00";
+    const compareRows = replayFinished ? [
+      ["理论下分金额", row.theoretical, row.theoretical],
+      ["实际下分金额", row.down, row.down],
+      ["投注笔数", row.bets, row.bets],
+      ["有效投注", row.turnover, row.turnover],
+      ["输赢", row.winLoss, row.winLoss],
+      ["差额", row.diff, row.diff]
+    ].map(([label, current, before]) => `<tr><td>${label}</td><td>${before}</td><td>${current}</td></tr>`).join("") : "";
+    const info = (label, value, alert = false) => `<div class="p0-v2-info-row ${alert ? "is-alert" : ""}"><span>${label}</span><strong>${value}</strong></div>`;
+    const memberHref = `#requirement/${encodeURIComponent("#488")}/page/member-basic-488`;
+    const memberLink = `<a class="member-detail-link p0-member-detail-link" href="${memberHref}" target="_blank" rel="noopener" data-member-account="${row.member}" title="在新标签打开会员详情">${row.member}</a>`;
+    const durationMs = Math.max(0, new Date(row.downAt.replace(" ", "T")) - new Date(row.upAt.replace(" ", "T")));
+    const durationMinutes = Math.floor(durationMs / 60000);
+    const durationSeconds = Math.floor((durationMs % 60000) / 1000);
+    const duration = `${durationMinutes >= 60 ? `${Math.floor(durationMinutes / 60)}小时` : ""}${durationMinutes % 60}分${String(durationSeconds).padStart(2, "0")}秒`;
+    const historyInfo = row.priorRisk !== "0次" ? `<div class="p0-v2-info-row is-alert"><span>历史风险</span><strong><button type="button" class="p0-history-risk-link" data-p0-history-risk="${row.member}">${row.priorRisk}</button></strong></div>` : info("历史风险", row.priorRisk);
+    const statusClass = row.status === "风控通过" ? "pass" : row.status === "已处理" ? "handled" : "risk";
+    const ruleText = row.rule === "无" ? "未命中风险规则，本次下分对账通过。" : `${row.rule}：实际下分 ${row.down} CNY，理论下分 ${row.theoretical} CNY，异常差额 ${row.diff} CNY。`;
+    const replaySection = replayFinished ? `<section class="p0-v2-detail-section p0-replay-result-section"><header><strong>复验结果</strong><span>复验不会覆盖首次核验快照</span></header><div class="p0-replay-alert ${replayRisk ? "risk" : "resolved"}"><strong>${replayRisk ? "风险依旧存在" : "风险已消除"}</strong><span>第 ${state.replayCount} 次复验 · ${replayRisk ? "仍存在无法解释的金额差额" : "未发现无法解释的金额差额"}</span></div><div class="p0-risk-table-wrap"><table class="p0-replay-compare-table"><thead><tr><th>核验项</th><th>首次核验</th><th>本次复验</th></tr></thead><tbody>${compareRows}</tbody></table></div></section>` : "";
+    return `<div class="p0-risk-detail-view annotated" data-component-id="M02">${componentBadge("M02")}<div class="p0-detail-topline"><button type="button" data-p0-detail-back>← 返回事件列表</button><dl><div><dt>事件编号</dt><dd>${row.id}</dd></div><div><dt>风险等级</dt><dd>${row.level}</dd></div><div><dt>事件状态</dt><dd><span class="p0-event-status ${statusClass === "pass" ? "pass" : statusClass === "handled" ? "done" : "pending"}">${row.status}</span></dd></div></dl></div><section class="p0-detail-rule-banner ${statusClass}"><div><span>命中规则</span><strong>${ruleText}</strong></div><div><span>TG预警</span><strong>${row.tg}</strong></div></section><div class="p0-detail-command-row"><span>风控后台仅记录核验和处理结果，不直接修改生产资金。</span><div>${row.status === "待处理" ? `<button type="button" class="p0-primary-button" data-p0-process="${row.member}">处理</button>` : ""}<button type="button" class="p0-v2-reverify-button ${replayBusy ? "is-loading" : ""}" data-p0-reverify ${replayBusy ? "disabled" : ""}><i></i>${replayBusy ? "复验中…" : "重新复验风险"}</button></div></div>${replaySection}<div class="p0-detail-info-columns"><section class="p0-v2-detail-section"><header><strong>基础信息</strong></header><div class="p0-v2-info-stack">${info("会员名称", row.memberName)}${info("会员账号", memberLink)}${info("VIP等级", row.vip)}${info("所属站点", row.site)}${info("上级代理", row.agent)}${info("场馆", row.venue)}${info("游戏", row.game)}${historyInfo}${info("下分时间", row.downAt)}${info("场馆水位", row.watermark)}${info("游标是否覆盖", row.cursorCovered, row.cursorCovered !== "是")}</div></section><section class="p0-v2-detail-section"><header><strong>风险信息</strong></header><div class="p0-v2-info-stack">${info("上分时间", row.upAt)}${info("上分金额", `${row.up} CNY`)}${info("下分时间", row.downAt)}${info("游戏时长", duration)}${info("实际下分金额", `${row.down} CNY`)}${info("理论下分金额", `${row.theoretical} CNY`)}${info("投注笔数", row.bets)}${info("有效投注", `${row.turnover} CNY`)}${info("输赢", `${row.winLoss} CNY`)}${info("差额", `${row.diff} CNY`, row.diff !== "0.00")}</div></section></div><section class="p0-v2-detail-section"><header><strong>辅助信息</strong><span>证据与处理审计</span></header><div class="p0-v2-assist-grid"><div>${info("规则版本", row.rule === "无" ? "R-P0-01-v1.0（通过）" : "R-P0-01-v1.0")}${info("证据包", "上下分订单、场馆水位、游标、投注快照、钱包账本")}</div><div>${info("TG状态", row.tg)}${info("处理审计", row.status === "待处理" ? "尚未处理" : row.status === "风控通过" ? "系统自动通过" : `${row.handler} / ${row.handledAt}`)}</div></div></section></div>`;
+  }
+
+  function p0RiskV2Detail() {
+    const state = p0RiskV2EnsureState();
+    const data = p0RiskV2Data();
+    const status = state.eventStatus;
+    const actions = status === "待确认" ? [["claim", "认领事件"]] : status === "已认领" ? [["analyze", "开始分析"]] : status === "分析中" ? [["risk", "确认风险"], ["false", "标记误报"]] : ["已确认风险", "误报"].includes(status) ? [["close", "关闭事件"]] : [];
+    const audit = [["10:30:00", "接收上下分事件", "系统", "Outbox EVT-..."], ["10:30:03", "等待场馆水位", "Worker-03", state.watermarkReady ? "水位达到安全窗口" : "延迟队列重试"], ["10:31:12", "执行规则", "rule-engine", data.verdict], ["10:31:13", "生成风险事件", "system", state.outcome === "risk" ? "P0 / score 100" : "正常事实，不生成事件"]];
+    return `<div class="p0-risk-detail-view"><header><div><span>P0-01 · RC-${data.eventId.replace("EVT-", "")}</span><h2>${data.verdict}</h2><p>${data.member} · ${data.venue} · ${data.order}</p></div><div><b class="p0-risk-level">${state.outcome === "risk" ? "P0" : "正常"}</b><span class="p0-risk-status">${status}</span></div></header><div class="p0-risk-detail-actions">${actions.map(([id, label]) => `<button type="button" data-p0-status-action="${id}">${label}</button>`).join("")}<button type="button" class="secondary" data-p0-transfer>转交</button><button type="button" class="secondary" data-p0-note>添加备注</button></div><section class="p0-risk-detail-summary"><div><span>为什么命中</span><p>${state.outcome === "risk" ? data.rule : data.normalRule}</p></div><div><span>核验结果</span><p>应解释金额 ${data.expected}；实际下分 ${data.downAmount}；差额 ${data.difference}。</p></div><div><span>处理边界</span><p>去生产投注记录和账变页面核查；风控不直接修改余额。</p></div></section><div class="p0-risk-detail-columns"><section><header><strong>事件时间线</strong><span>不可覆盖快照</span></header><ol>${audit.map((row) => `<li><time>${row[0]}</time><div><strong>${row[1]}</strong><p>${row[2]} · ${row[3]}</p></div></li>`).join("")}</ol></section><section><header><strong>规则与证据</strong><span>一期固定规则 v1.0</span></header><dl><div><dt>规则</dt><dd>R-P0-01 下分金额必须可由投注和账本解释</dd></div><div><dt>评分</dt><dd>${state.outcome === "risk" ? "100 / P0" : "0 / 正常"}</dd></div><div><dt>同步水位</dt><dd>${state.watermarkReady ? data.watermarkAfter : data.watermarkBefore} · ${data.cursor}</dd></div><div><dt>投注快照</dt><dd>${data.betCount} 笔 / 有效投注 ${data.turnover} / 净输赢 ${data.netWin}</dd></div><div><dt>证据包</dt><dd>${data.evidence.join("；")}</dd></div></dl></section></div><section class="p0-risk-audit"><header><strong>处理审计</strong><span>生产处理单号需回填</span></header><table><thead><tr><th>时间</th><th>操作</th><th>处理人</th><th>说明</th></tr></thead><tbody>${audit.map((row) => `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td></tr>`).join("")}${status !== "待确认" ? `<tr><td>10:35:20</td><td>${status}</td><td>risk_mike</td><td>${status === "已关闭" ? "已回填生产处理单 PRD-260809-019" : "等待生产核查"}</td></tr>` : ""}</tbody></table></section></div>`;
+  }
+
+  function p0RiskV2Rules() {
+    const control = p0RiskV2ControlState();
+    const scenario = p0RiskV2ControlModel.scenarios.find((item) => item.id === p0RiskSimulatorState.selectedScenario) || p0RiskV2ControlModel.scenarios[0];
+    const scenarioRules = p0RiskV2ControlModel.rules.filter((rule) => scenario.rules.includes(rule.id));
+    const toggle = (checked, attribute, label) => `<label class="p0-v2-toggle" aria-label="${label}"><input type="checkbox" ${attribute} ${checked ? "checked" : ""}><i></i><b>${checked ? "开启" : "关闭"}</b></label>`;
+    return `<div class="p0-risk-rules-view p0-v2-control-view annotated" data-component-id="T01">${componentBadge("T01")}<header><div><span>风控配置</span><h2>场景与规则管理</h2><p>按场景维护规则开关；后续新增场景时在左侧追加，右侧仅展示当前场景的规则和检测方式。</p></div><div class="p0-v2-rule-summary"><strong>${p0RiskV2ControlModel.scenarios.length}</strong><span>场景</span><strong>${scenarioRules.length}</strong><span>当前规则</span></div></header><div class="p0-v2-config-shell"><aside class="p0-v2-scenario-list"><header><strong>场景列表</strong><span>${p0RiskV2ControlModel.scenarios.length} 个</span></header>${p0RiskV2ControlModel.scenarios.map((item) => { const itemControl = p0RiskSimulatorState.control.scenarios[item.id]; return `<article class="${item.id === scenario.id ? "active" : ""}"><button type="button" data-p0-scenario="${item.id}"><small>${item.code}</small><strong>${item.name}</strong><span>${item.rules.length} 条规则</span></button>${toggle(itemControl.scenarioEnabled, `data-p0-scenario-toggle="${item.id}"`, `${item.name}场景开关`)}</article>`; }).join("")}</aside><section class="p0-v2-scenario-workspace"><header><div><span>${scenario.code}</span><strong>${scenario.name}</strong><p>${scenario.description}</p></div><span class="p0-v2-scenario-state ${control.scenarioEnabled ? "on" : "off"}">${control.scenarioEnabled ? "场景运行中" : "场景已关闭"}</span></header><div class="p0-v2-rule-table"><div class="p0-v2-rule-head"><span>规则</span><span>检测方式</span></div>${scenarioRules.map((rule) => `<article class="${control.rules[rule.id] ? "enabled" : "disabled"}"><div class="p0-v2-rule-title">${toggle(control.rules[rule.id], `data-p0-rule-toggle="${rule.id}"`, `${rule.name}规则开关`)}<strong>${rule.name}</strong></div><p>${rule.formula}</p></article>`).join("")}</div></section></div></div>`;
+  }
+
+  function p0RiskV2TgRulesPanel() {
+    const firstAlert = `【P0资金风险】下分金额一致性异常\n站点：XY体育\n会员：member_10086（VIP6）\n事件：RC-20260811-000187\n场馆 / 游戏：DB电子 / 经典电子厅\n实际下分：86,000 CNY\n理论下分：10,000 CNY\n异常差额：76,000 CNY\n发生时间：2026-08-11 10:31:13\n状态：待处理\n详情：{风险事件详情链接}`;
+    const upgradeAlert = `【P0风险升级】同一会员新增关联事件\n会员：member_10086\n待处理风险：2条\n涉及场馆：DB电子、PG电子\n累计异常差额：82,000 CNY\n首次发生：2026-08-11 10:31:13\n最新发生：2026-08-11 10:36:22\n最新事件：RC-20260811-000191\n详情：{会员待处理风险列表链接}`;
+    return `<section class="p0-tg-rule-panel annotated" data-component-id="P02">${componentBadge("P02")}<header><div><span>TG通知</span><h2>推送模板与聚合规则</h2></div><span class="p0-v2-scenario-state on">一期模板写死</span></header><div class="p0-tg-template-grid"><article><header><strong>首次风险通知</strong><span>第一笔立即发送</span></header><pre>${firstAlert}</pre></article><article><header><strong>关联风险升级通知</strong><span>待处理期间聚合更新</span></header><pre>${upgradeAlert}</pre></article></div><div class="p0-tg-flow-rule"><div><strong>队列与事件</strong><p>每笔上下分独立入队、独立生成事件；同一会员按会员键串行消费，不合并订单和证据。</p></div><i>→</i><div><strong>首次命中</strong><p>风险事件先落库，再立即发送完整TG摘要。</p></div><i>→</i><div><strong>再次命中</strong><p>旧事件仍待处理时，保留新事件并更新一条风险升级摘要。</p></div><i>→</i><div><strong>处理后再命中</strong><p>开启新一轮告警，不合并到已结束的通知。</p></div></div></section>`;
+  }
+
+  function p0RiskV2Health() {
+    const state = p0RiskV2EnsureState();
+    const scenario = p0RiskV2ControlModel.scenarios.find((item) => item.id === state.selectedScenario) || p0RiskV2ControlModel.scenarios[0];
+    const scenarioEnabled = p0RiskV2ControlState().scenarioEnabled;
+    const queuePending = 0;
+    const independentService = (name, duty, status, failure = "") => ({ name, duty, status, heartbeat: status === "已停用" ? "-" : status === "异常" ? "8分钟前" : "12秒前", readiness: status === "已停用" ? "未检查" : status === "异常" ? "失败" : "通过", probe: status === "已停用" ? "未执行" : status === "异常" ? `失败：${failure}` : "通过", lastSuccess: status === "已停用" ? "-" : status === "异常" ? "2026-08-11 10:23:01" : "2026-08-11 10:31:13" });
+    const commonServiceRows = [
+      independentService("风控事件接入服务", "接收生产Outbox事件并完成验签、幂等和任务投递", "正常"),
+      independentService("TG通知服务", "发送风险预警并处理失败补发", state.tgFailure ? "异常" : "正常", "TG发送失败"),
+      independentService("风控健康监控服务", "采集独立服务、队列和数据源健康指标并生成系统告警", "正常")
+    ];
+    const scenarioServiceRows = [independentService("下分核验Worker", "消费下分核验任务；内部完成水位等待、证据读取、金额计算和风险结果生成", !scenarioEnabled ? "已停用" : state.healthIssue ? "异常" : "正常", "DB电子水位未推进")];
+    const queueStatus = state.queueAttempts > 2 ? "异常" : queuePending === 0 ? "空闲" : "正常";
+    const overallStatus = state.healthIssue || state.tgFailure || queueStatus === "异常" ? "异常" : "正常";
+    const healthTag = (status) => `<span class="p0-service-health-tag ${status === "异常" ? "danger" : status === "正常" ? "ok" : status === "空闲" ? "idle" : status === "已停用" ? "disabled" : "unknown"}">${status}</span>`;
+    const serviceTable = (rows) => `<div class="p0-risk-table-wrap"><table class="p0-service-health-table"><thead><tr><th>中台服务</th><th>运行状态</th><th>最后心跳</th><th>依赖检查</th><th>链路探测</th><th>最后成功时间</th></tr></thead><tbody>${rows.map((row) => `<tr><td><strong>${row.name}</strong><small>${row.duty}</small></td><td>${healthTag(row.status)}</td><td>${row.heartbeat}</td><td>${row.readiness}</td><td class="${row.probe.startsWith("失败") ? "danger-text" : ""}">${row.probe}</td><td>${row.lastSuccess}</td></tr>`).join("")}</tbody></table></div>`;
+    const collapsible = (type, title, status, expanded, rows) => `<section class="p0-health-collapsible"><button type="button" class="p0-health-summary-trigger" data-p0-health-expand="${type}" aria-expanded="${expanded}"><strong>${title}</strong>${healthTag(status)}<i aria-hidden="true"></i></button>${expanded ? serviceTable(rows) : ""}</section>`;
+    const scenarioStatus = !scenarioEnabled ? "已停用" : state.healthIssue ? "异常" : "正常";
+    return `<div class="p0-risk-health-view"><div class="p0-health-prototype-toggle"><span>原型状态</span><div><button type="button" data-p0-health-demo="issue" class="${state.healthIssue ? "active danger" : ""}">异常状态</button><button type="button" data-p0-health-demo="normal" class="${state.healthIssue ? "" : "active"}">正常状态</button></div></div><section class="p0-health-overview ${overallStatus === "异常" ? "danger" : "ok"}"><div><span>风控系统整体状态</span><strong>${overallStatus === "异常" ? "存在异常，部分核验延迟" : "运行正常"}</strong></div><dl><div><dt>最后自动检查</dt><dd>${state.healthLastChecked}</dd></div><div><dt>检查频率</dt><dd>服务30秒 / 场馆60秒</dd></div></dl><button type="button" class="p0-primary-button" data-p0-health-recheck>立即检查</button></section><section class="p0-health-scenario-overview annotated" data-component-id="P01">${componentBadge("P01")}<header><strong>场景健康</strong><label class="p0-v2-health-scenario-select">查看场景<select data-p0-health-scenario>${p0RiskV2ControlModel.scenarios.map((item) => `<option value="${item.id}" ${item.id === scenario.id ? "selected" : ""}>${item.name}</option>`).join("")}</select></label></header>${collapsible("scenario", "查看场景独立服务", scenarioStatus, state.healthScenarioExpanded, scenarioServiceRows)}${collapsible("common", "公共独立服务", state.tgFailure ? "异常" : "正常", state.healthCommonExpanded, commonServiceRows)}</section><section class="p0-health-runtime annotated" data-component-id="P02">${componentBadge("P02")}<header><div><strong>运行依赖</strong><span>队列没有任务时显示空闲，不等于异常</span></div></header><div class="p0-health-runtime-grid"><article><header><strong>任务队列</strong>${healthTag(queueStatus)}</header><p>${queueStatus === "空闲" ? "当前没有待处理事件；Worker心跳和链路探测均正常。" : queueStatus === "异常" ? "存在重试积压，最老任务等待超过5分钟。" : "任务正在正常进入并由Worker消费。"}</p><dl><div><dt>待消费</dt><dd>${queuePending}</dd></div><div><dt>重试</dt><dd>${state.queueAttempts}</dd></div><div><dt>死信</dt><dd>0</dd></div><div><dt>Worker心跳</dt><dd>12秒前</dd></div><div><dt>链路探测</dt><dd>通过</dd></div><div><dt>近24小时成功率</dt><dd>99.99%</dd></div></dl></article><article><header><strong>异常场馆水位</strong>${healthTag(state.healthIssue ? "异常" : "正常")}</header>${state.healthIssue ? `<div class="p0-health-venue-issue"><strong>DB电子</strong><span>同步延迟 8分12秒</span><p>影响：相关下分事件延迟核验；等待游标覆盖后自动继续。</p><small>当前游标 884201 · 最后成功 10:23:01</small></div>` : `<div class="p0-health-empty">当前没有异常场馆水位</div>`}</article></div></section></div>`;
+  }
+
+  function p0RiskSimulatorContent() {
+    p0RiskV2EnsureState();
+    p0RiskSimulatorState.view = "journey";
+    return `<main id="p0-risk-simulator-root" class="p0-risk-simulator">${p0RiskV2Header()}${p0RiskV3Journey()}</main>`;
+  }
+
+  function p0Risk680Content(page) {
+    const state = p0RiskV2EnsureState();
+    let body = "";
+    if (page.key === "risk-dashboard-680") body = p0RiskV2Dashboard();
+    else if (page.key === "risk-events-680") body = state.backendTab === "detail" && state.selectedEventId ? p0RiskV2CompactDetail() : p0RiskV2Events();
+    else if (page.key === "risk-config-680") body = `${p0RiskV2Rules()}${p0RiskV2TgRulesPanel()}`;
+    else body = p0RiskV2Health().replace(/<div class="p0-health-prototype-toggle">[\s\S]*?<\/button><\/div><\/div>/, "");
+    return `<main id="p0-risk-680-root" class="p0-risk-680">${body}</main>`;
+  }
+
+  function refreshP0RiskSimulator(page) {
+    const root = document.getElementById("p0-risk-680-root") || document.getElementById("p0-risk-simulator-root");
+    if (!root) return;
+    const requirementSurface = root.id === "p0-risk-680-root";
+    if (p0RiskAutoTimer) { window.clearTimeout(p0RiskAutoTimer); p0RiskAutoTimer = null; }
+    root.outerHTML = requirementSurface ? p0Risk680Content(page) : p0RiskSimulatorContent();
+    if (requirementSurface && p0RiskSimulatorState.backendTab === "detail") {
+      const canvas = document.querySelector(".risk-680-canvas");
+      const content = document.querySelector(".risk-680-app .risk-content");
+      if (canvas) { canvas.scrollLeft = 0; canvas.scrollTop = 0; }
+      if (content) { content.scrollLeft = 0; content.scrollTop = 0; }
+    }
+    bindP0RiskSimulatorBehavior(page);
+    bindComponentLinks();
+  }
+
+  function hydrateP0RiskQueueMotion(root, state) {
+    const queue = root.querySelector(".p0-v3-main-queue");
+    const inlet = root.querySelector(".p0-v3-queue-in");
+    const worker = root.querySelector(".p0-v3-workers");
+    if (!queue || !inlet || !worker) return;
+
+    const queuePool = ["EVT-000181", "EVT-000182", "EVT-000183", "EVT-000184", "EVT-000185", "EVT-000186", "EVT-000189", "EVT-000190", "EVT-000191"];
+    const incomingId = queuePool[(state.queueCycle + 5) % queuePool.length];
+    const outgoingId = queuePool[state.queueCycle % queuePool.length];
+    const eventType = (id) => Number(id.slice(-1)) % 2 ? "提款核验" : "账变核验";
+    const transitCard = (id, direction) => `<div class="p0-v3-transit-card ${direction}"><strong>${id.replace("EVT-", "")}</strong><small>${eventType(id)}</small></div>`;
+
+    inlet.innerHTML = `<b>正在进入</b>${transitCard(incomingId, "incoming")}<i>→</i>`;
+    const queueTitle = queue.querySelector("header strong");
+    const queueCount = queue.querySelector("header span");
+    const queueFooter = queue.querySelector("footer");
+    if (queueTitle) queueTitle.innerHTML = "主任务队列 <small>左进右出</small>";
+    if (queueCount) queueCount.textContent = "待消费 6";
+    if (queueFooter) queueFooter.innerHTML = "<span>本轮进入 <b>+1</b></span><span>本轮消费 <b>-1</b></span><span>队列总量不变</span>";
+
+    const bridge = queue.nextElementSibling;
+    if (bridge?.tagName === "I") {
+      bridge.outerHTML = `<div class="p0-v3-queue-out"><b>正在出队</b>${transitCard(outgoingId, "outgoing")}<i>→ Worker</i></div>`;
+    }
+    worker.classList.add("consuming");
+  }
+
+  function bindP0RiskSimulatorBehavior(page) {
+    const root = document.getElementById("p0-risk-680-root") || document.getElementById("p0-risk-simulator-root");
+    if (!root || root.dataset.bound === "true") return;
+    root.dataset.bound = "true";
+    const state = p0RiskV2EnsureState();
+    root.querySelectorAll(".p0-member-detail-link[data-member-account]").forEach((link) => link.addEventListener("click", () => {
+      sessionStorage.setItem("prototype-member-detail-account", link.dataset.memberAccount);
+    }));
+    const riskApp = document.querySelector(".risk-680-app");
+    if (riskApp) {
+      riskApp.classList.toggle("is-sidebar-collapsed", state.sidebarCollapsed === true);
+      document.querySelector("[data-risk-680-sidebar-toggle]")?.addEventListener("click", () => {
+        state.sidebarCollapsed = !riskApp.classList.contains("is-sidebar-collapsed");
+        riskApp.classList.toggle("is-sidebar-collapsed", state.sidebarCollapsed);
+      });
+      document.querySelector("[data-risk-680-menu-toggle]")?.addEventListener("click", (event) => {
+        const button = event.currentTarget;
+        const group = button.closest(".risk-680-menu-group");
+        const expanded = button.getAttribute("aria-expanded") !== "false";
+        button.setAttribute("aria-expanded", String(!expanded));
+        group?.classList.toggle("is-expanded", !expanded);
+      });
+      document.querySelector(".risk-680-top-icon")?.addEventListener("click", async () => {
+        const pane = document.querySelector(".prototype-pane");
+        if (!document.fullscreenElement) await pane?.requestFullscreen?.();
+        else await document.exitFullscreen?.();
+      });
+    }
+    hydrateP0RiskQueueMotion(root, state);
+    const healthVenueBlock = root.querySelector(".p0-v2-venue-health");
+    if (healthVenueBlock) {
+      const heading = healthVenueBlock.querySelector("header strong");
+      const caption = healthVenueBlock.querySelector("header span");
+      const body = healthVenueBlock.querySelector("tbody");
+      if (heading) heading.textContent = "异常场馆水位";
+      if (caption) caption.textContent = "仅列出异常项；正常时为空状态";
+      if (body && !body.children.length) body.innerHTML = '<tr><td colspan="4" class="p0-health-empty">当前没有异常水位场馆</td></tr>';
+    }
+    root.querySelectorAll("[data-p0-view]").forEach((button) => button.addEventListener("click", () => {
+      state.view = button.dataset.p0View;
+      state.autoPlaying = false;
+      if (button.hasAttribute("data-p0-open-detail")) state.backendTab = "detail";
+      refreshP0RiskSimulator(page);
+    }));
+    root.querySelectorAll("[data-p0-step]").forEach((button) => button.addEventListener("click", () => {
+      const targetStep = Number(button.dataset.p0Step);
+      state.step = targetStep > 2 && !state.watermarkReady ? 2 : targetStep;
+      refreshP0RiskSimulator(page);
+    }));
+    root.querySelector("[data-p0-prev]")?.addEventListener("click", () => { state.step = Math.max(0, state.step - 1); refreshP0RiskSimulator(page); });
+    root.querySelector("[data-p0-next]")?.addEventListener("click", () => {
+      if (state.step === 2 && !state.watermarkReady) { state.queueAttempts += 1; state.queueCycle += 1; refreshP0RiskSimulator(page); return; }
+      state.step = Math.min(5, state.step + 1);
+      state.queueCycle += 1;
+      refreshP0RiskSimulator(page);
+    });
+    root.querySelector("[data-p0-flow-reset]")?.addEventListener("click", () => { state.step = 0; state.watermarkReady = false; state.queueAttempts = 0; state.queueCycle = 0; state.autoPlaying = false; refreshP0RiskSimulator(page); });
+    root.querySelector("[data-p0-autoplay]")?.addEventListener("click", () => { state.autoPlaying = !state.autoPlaying; refreshP0RiskSimulator(page); });
+    root.querySelectorAll("[data-p0-outcome]").forEach((button) => button.addEventListener("click", () => {
+      state.outcome = button.dataset.p0Outcome;
+      state.autoPlaying = false;
+      state.step = 0;
+      state.eventStatus = "待处理";
+      state.watermarkReady = false;
+      state.tgFailure = false;
+      state.replayDone = false;
+      state.replayStatus = "idle";
+      state.replayCount = 0;
+      refreshP0RiskSimulator(page);
+    }));
+    root.querySelectorAll("[data-p0-service]").forEach((button) => button.addEventListener("click", () => { state.selectedService = button.dataset.p0Service; refreshP0RiskSimulator(page); }));
+    root.querySelectorAll("[data-p0-scenario-toggle]").forEach((input) => input.addEventListener("change", (event) => { const scenarioId = input.dataset.p0ScenarioToggle; state.control.scenarios[scenarioId].scenarioEnabled = event.target.checked; refreshP0RiskSimulator(page); }));
+    root.querySelectorAll("[data-p0-scenario]").forEach((button) => button.addEventListener("click", () => { state.selectedScenario = button.dataset.p0Scenario; refreshP0RiskSimulator(page); }));
+    root.querySelector("[data-p0-health-scenario]")?.addEventListener("change", (event) => { state.selectedScenario = event.target.value; refreshP0RiskSimulator(page); });
+    root.querySelectorAll("[data-p0-rule-toggle]").forEach((input) => input.addEventListener("change", (event) => { p0RiskV2ControlState().rules[input.dataset.p0RuleToggle] = event.target.checked; refreshP0RiskSimulator(page); }));
+    root.querySelector("[data-p0-advance-watermark]")?.addEventListener("click", () => { state.watermarkReady = true; state.queueAttempts += 1; state.queueCycle += 1; refreshP0RiskSimulator(page); });
+    root.querySelector("[data-p0-tg-failure]")?.addEventListener("change", (event) => { state.tgFailure = event.target.checked; refreshP0RiskSimulator(page); });
+    root.querySelector("[data-p0-tg-retry]")?.addEventListener("click", () => { state.tgFailure = false; refreshP0RiskSimulator(page); });
+    root.querySelectorAll("[data-p0-backend-tab]").forEach((button) => button.addEventListener("click", () => {
+      const target = button.dataset.p0BackendTab;
+      if (target === "events") {
+        const metric = button.querySelector("span")?.textContent.trim() || "";
+        state.eventFilterPreset = button.dataset.p0EventPreset || ({ "待处理风险": "pending", "今日新增风险": "today-p0", "今日已处理事件": "today-handled" }[metric] || "all");
+        state.selectedEventId = null;
+        state.historySelectedEvent = null;
+      }
+      if (root.id === "p0-risk-680-root") {
+        const pageKey = { dashboard: "risk-dashboard-680", events: "risk-events-680", rules: "risk-config-680", health: "risk-health-680" }[target];
+        if (pageKey) {
+          state.backendTab = target;
+          if (target !== "detail") state.historySelectedEvent = null;
+          window.location.hash = `#requirement/${encodeURIComponent("#680")}/page/${pageKey}`;
+        }
+        return;
+      }
+      state.backendTab = target;
+      state.view = "backend";
+      refreshP0RiskSimulator(page);
+    }));
+    root.querySelector(".p0-risk-list-filters > label:nth-child(2) > option")?.remove();
+    const eventFilterFields = root.querySelectorAll(".p0-risk-list-filters select");
+    const eventFilterKeys = ["scene", "level", "status", "site", "venue"];
+    const applyEventFilters = () => {
+      const values = Object.fromEntries([...eventFilterFields].map((field, index) => [eventFilterKeys[index], ["全部等级", "全部状态", "全部所属站点", "全部所属场馆", "下分后投注核验"].includes(field.value) ? "" : field.value]));
+      const member = root.querySelector("[data-p0-member-filter]")?.value.trim().toLowerCase() || "";
+      const start = root.querySelector("[data-p0-event-start]")?.value || "";
+      const end = root.querySelector("[data-p0-event-end]")?.value || "";
+      const rows = root.querySelectorAll(".p0-risk-event-table tbody tr");
+      let visible = 0;
+      rows.forEach((row) => {
+        const eventAt = row.dataset.eventAt?.replace(" ", "T") || "";
+        const matched = (!values.level || row.dataset.level === values.level) && (!values.status || row.dataset.status === values.status) && (!values.site || row.dataset.site === values.site) && (!values.venue || row.dataset.venue === values.venue) && (!member || (row.dataset.member || "").toLowerCase().includes(member)) && (!start || eventAt >= start) && (!end || eventAt <= end);
+        row.hidden = !matched;
+        if (matched) visible += 1;
+      });
+      const count = root.querySelector(".p0-event-list-panel > header > span");
+      if (count) count.textContent = `共 ${visible} 条`;
+      const footerCount = root.querySelector(".p0-risk-pagination > span");
+      if (footerCount) footerCount.textContent = `共 ${visible} 条`;
+    };
+    eventFilterFields.forEach((field) => field.addEventListener("change", applyEventFilters));
+    root.querySelector("[data-p0-member-filter]")?.addEventListener("input", applyEventFilters);
+    root.querySelectorAll("[data-p0-event-start], [data-p0-event-end]").forEach((field) => field.addEventListener("change", applyEventFilters));
+    root.querySelector("[data-p0-query]")?.addEventListener("click", applyEventFilters);
+    root.querySelector("[data-p0-reset]")?.addEventListener("click", () => {
+      eventFilterFields.forEach((field) => { field.selectedIndex = 0; });
+      const memberField = root.querySelector("[data-p0-member-filter]");
+      if (memberField) memberField.value = "";
+      root.querySelectorAll("[data-p0-event-start], [data-p0-event-end]").forEach((field) => { field.value = ""; });
+      state.eventFilterPreset = "all";
+      applyEventFilters();
+    });
+    if (root.querySelector(".p0-risk-event-table")) applyEventFilters();
+    root.querySelectorAll("[data-p0-event-detail], [data-p0-open-detail]").forEach((button) => button.addEventListener("click", () => {
+      state.selectedEventMember = button.dataset.p0EventDetail || "member_10086";
+      state.selectedEventId = button.dataset.p0EventId || p0RiskEventRows(state).find((row) => row.member === state.selectedEventMember)?.id;
+      state.eventStatus = button.dataset.p0EventStatus || p0RiskEventRows(state).find((row) => row.member === state.selectedEventMember)?.status || "待处理";
+      state.view = "backend";
+      state.backendTab = "detail";
+      if (root.id === "p0-risk-680-root" && page.key !== "risk-events-680") {
+        window.location.hash = `#requirement/${encodeURIComponent("#680")}/page/risk-events-680`;
+        return;
+      }
+      refreshP0RiskSimulator(page);
+    }));
+    root.querySelectorAll("[data-p0-history-risk]").forEach((button) => button.addEventListener("click", () => openP0HistoryRiskModal(page, button.dataset.p0HistoryRisk)));
+    root.querySelector("[data-p0-detail-back]")?.addEventListener("click", () => { state.backendTab = "events"; refreshP0RiskSimulator(page); });
+    root.querySelector("[data-p0-domain-select]")?.addEventListener("change", () => refreshP0RiskSimulator(page));
+    root.querySelector("[data-p0-health-toggle]")?.addEventListener("click", () => { state.healthIssue = !state.healthIssue; refreshP0RiskSimulator(page); });
+    root.querySelector("[data-p0-health-recheck]")?.addEventListener("click", () => openP0HealthRecheck(page));
+    root.querySelector("[data-p0-health-scene-toggle]")?.addEventListener("click", () => { state.healthSceneExpanded = !state.healthSceneExpanded; refreshP0RiskSimulator(page); });
+    root.querySelectorAll("[data-p0-health-expand]").forEach((button) => button.addEventListener("click", () => {
+      const key = button.dataset.p0HealthExpand === "common" ? "healthCommonExpanded" : "healthScenarioExpanded";
+      state[key] = !state[key];
+      refreshP0RiskSimulator(page);
+    }));
+    document.querySelectorAll("[data-p0-health-demo]").forEach((button) => { button.onclick = () => {
+      const issue = button.dataset.p0HealthDemo === "issue";
+      state.healthIssue = issue;
+      state.tgFailure = false;
+      state.queueAttempts = 0;
+      document.querySelectorAll("[data-p0-health-demo]").forEach((item) => item.classList.toggle("active", item.dataset.p0HealthDemo === button.dataset.p0HealthDemo));
+      refreshP0RiskSimulator(page);
+    }; });
+    root.querySelectorAll("[data-p0-process]").forEach((button) => button.addEventListener("click", () => openP0ProcessModal(page, button.dataset.p0Process)));
+    root.querySelector("[data-p0-replay]")?.addEventListener("click", () => { state.replayDone = true; state.replayStatus = "same"; state.replayCount += 1; refreshP0RiskSimulator(page); });
+    root.querySelector("[data-p0-reverify]")?.addEventListener("click", () => {
+      if (state.replayStatus === "running") return;
+      state.replayStatus = "running";
+      state.replayCount += 1;
+      refreshP0RiskSimulator(page);
+      window.setTimeout(() => {
+        state.replayStatus = state.outcome === "risk" && state.replayCount > 1 ? "changed" : "same";
+        state.replayDone = true;
+        refreshP0RiskSimulator(page);
+      }, 900);
+    });
+    root.querySelectorAll("[data-p0-status-action]").forEach((button) => button.addEventListener("click", () => {
+      state.eventStatus = { risk: "已确认风险", false: "误报", normal: "已确认正常" }[button.dataset.p0StatusAction] || state.eventStatus;
+      refreshP0RiskSimulator(page);
+    }));
+    root.querySelector("[data-p0-transfer]")?.addEventListener("click", () => modal("转交风险事件", "<div class=\"tag-form\"><label>转交给<select><option>P0资金值班组</option><option>财务核查组</option><option>场馆技术组</option></select></label><label>转交说明<textarea>请核对生产投注记录、场馆水位和钱包账变。</textarea></label></div>", "确认转交"));
+    root.querySelector("[data-p0-note]")?.addEventListener("click", () => modal("添加处理备注", "<div class=\"tag-form\"><label>处理备注<textarea>已进入生产后台核对，待回填处理单号。</textarea></label></div>", "保存备注"));
+    root.querySelector("[data-p0-query]")?.addEventListener("click", (event) => { event.currentTarget.textContent = "已查询"; });
+    root.querySelectorAll("[data-p0-rule-test]").forEach((button) => button.addEventListener("click", () => modal("规则试跑结果", "<p>近7天试跑 18,620 条下分事件：确定性规则命中 12 条，证据完整率 100%；阈值规则仅观察，不发送P0。</p>", "关闭")));
+    if (state.autoPlaying && state.view === "journey") {
+      p0RiskAutoTimer = window.setTimeout(() => {
+        if (state.step === 2 && !state.watermarkReady) {
+          state.watermarkReady = true;
+          state.queueAttempts += 1;
+        } else if (state.step < 5) {
+          state.step += 1;
+        } else {
+          state.autoPlaying = false;
+        }
+        state.queueCycle += 1;
+        refreshP0RiskSimulator(page);
+      }, 1800);
+    }
   }
 
   function simulatorRound(value) {
@@ -2344,6 +3578,7 @@
     if (page.mergedInto) return mergedRequirementContent(page);
     if (page.unchanged) return unchangedFinanceContent(page);
     if (page.key === "profit-simulator-498") return profitSimulatorContent(page);
+    if (page.key.endsWith("-680")) return p0Risk680Content(page);
     if (page.key.startsWith("control-") && page.key.endsWith("-498")) return control498Content(page);
     if (page.key.startsWith("agent-") && page.key.endsWith("-498")) return agentBackend498Content(page);
     if (page.key.endsWith("-509") || page.key.endsWith("-643")) return vipOptimizationContent(page);
@@ -2708,6 +3943,7 @@
     const vipAlgorithmMode = requirement.id === "#509" && page.key === "vip-algorithm-509";
     const profitSimulatorMode = requirement.id === "#498" && page.key === "profit-simulator-498";
     const control498Mode = requirement.id === "#498" && page.key.startsWith("control-");
+    const risk680Mode = requirement.id === "#680";
     const agent498Mode = requirement.id === "#498" && !profitSimulatorMode && !control498Mode;
     const agent498ActiveMenu = agent498Mode && page.key !== "agent-dashboard-498" ? activePageTab(page) : "";
     const displayPageName = agent498ActiveMenu || (agent498Mode ? agent498PageDisplayName(page) : page.name);
@@ -2724,9 +3960,9 @@
       ? `<div class="member-mobile-stage">${memberMobilePrototypeNav(page.key)}${renderedPageContent}</div>`
       : vipAlgorithmMode
         ? `<div class="vip-algorithm-stage">${renderedPageContent}</div>`
-      : `<div class="risk-app${memberModuleMode ? " member-module-mode" : ""}${member493Mode ? " member-493-mode" : ""}${memberDetailMode ? " member-detail-mode" : ""}${agent498Mode || control498Mode ? " agent-498-app" : ""}">${sidebar(requirement,page)}<section class="risk-main"><header class="risk-topbar"><div><span>${control498Mode ? `总控后台 / ${page.menuGroup}` : agent498Mode ? (page.key === "agent-dashboard-498" ? "代理后台" : `${page.menuGroup} / ${page.name}`) : moduleName} /</span><strong>${displayPageName}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header><div class="risk-content">${renderedPageContent}</div></section></div>`;
+      : `<div class="risk-app${memberModuleMode ? " member-module-mode production-admin-ui-488" : ""}${member493Mode ? " member-493-mode" : ""}${memberDetailMode ? " member-detail-mode" : ""}${agent498Mode || control498Mode ? " agent-498-app" : ""}${risk680Mode ? " risk-680-app" : ""}">${sidebar(requirement,page)}<section class="risk-main">${risk680Mode ? `<header class="risk-topbar risk-680-topbar"><button type="button" class="risk-680-sidebar-toggle" data-risk-680-sidebar-toggle aria-label="收起或展开侧栏"><i></i><i></i><i></i></button><nav aria-label="面包屑"><span>风控中心</span><b>/</b><strong>${displayPageName}</strong></nav><div class="risk-680-top-actions"><button type="button" class="risk-680-top-icon" aria-label="全屏预览" title="全屏预览"></button><span class="risk-680-avatar">M</span><strong>Mike</strong><i aria-hidden="true"></i></div></header>` : `<header class="risk-topbar"><div><span>${control498Mode ? `总控后台 / ${page.menuGroup}` : agent498Mode ? (page.key === "agent-dashboard-498" ? "代理后台" : `${page.menuGroup} / ${page.name}`) : moduleName} /</span><strong>${displayPageName}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header>`}<div class="risk-content">${renderedPageContent}</div></section></div>`;
     const permissionReview = agent498Mode ? agent498PermissionReviewControls() : "";
-    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav${["#509", "#643", "#498"].includes(requirement.id) ? ' class="prototype-endpoint-nav"' : ""} aria-label="当前原型页面">${prototypeEndpointSwitch(requirement, page)}</nav></header><div class="prototype-canvas${member509MobileMode ? " member-mobile-canvas" : ""}${vipAlgorithmMode ? " vip-algorithm-canvas" : ""}${profitSimulatorMode ? " profit-simulator-canvas" : ""}">${prototypeBody}</div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${agent498Mode ? escapeHtml(agent498IdentityConfig[agent498Identity].label) : page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><div><h2>${displayPageName}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll">${permissionReview}<div class="spec-top-notices">${topSpecNotices}</div><div class="questions-slot">${questionsBlock(page)}</div>${pageNoteBlock(page)}${pageLogic}${extraNotice}${adjustmentNotice}${exportNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${cardAnnotations.length} 项</span></div><div class="annotation-list">${cardAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"></div>`;
+    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav${["#509", "#643", "#498"].includes(requirement.id) ? ' class="prototype-endpoint-nav"' : ""} aria-label="当前原型页面">${prototypeEndpointSwitch(requirement, page)}</nav></header><div class="prototype-canvas${member509MobileMode ? " member-mobile-canvas" : ""}${vipAlgorithmMode ? " vip-algorithm-canvas" : ""}${profitSimulatorMode ? " profit-simulator-canvas" : ""}${risk680Mode ? " risk-680-canvas" : ""}">${prototypeBody}</div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${agent498Mode ? escapeHtml(agent498IdentityConfig[agent498Identity].label) : page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><div><h2>${displayPageName}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll">${permissionReview}<div class="spec-top-notices">${topSpecNotices}</div><div class="questions-slot">${questionsBlock(page)}</div>${pageNoteBlock(page)}${pageLogic}${extraNotice}${adjustmentNotice}${exportNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${cardAnnotations.length} 项</span></div><div class="annotation-list">${cardAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"${risk680Mode ? ' class="risk-680-modal-root"' : ""}></div>`;
     if (exportNotice) bindExportStandardLink(app, exportLinkId);
     if (page.key === "withdraw-monitor") renderMonitorView(false);
     addTopPaginators();
@@ -4015,6 +5251,7 @@
     bindVipOptimizationBehavior(page);
     bindProfitSimulatorBehavior(page);
     bindAgent498Behavior(page);
+    if (page.key.endsWith("-680")) bindP0RiskSimulatorBehavior(page);
     document.querySelectorAll(".member-detail-link").forEach((link) => link.addEventListener("click", (event) => {
       event.preventDefault();
       const targetId = { "withdraw-review": "B04", "hold-review": "B03", "review-history": "B01" }[page.key];
