@@ -326,6 +326,17 @@
   }
 
   function sidebar(requirement, page) {
+    if (requirement.id === "#695") {
+      const items = [
+        { name: "会员列表", unchanged: true },
+        { name: "账变记录", unchanged: true },
+        { key: "site-deposit-list-695", name: "充值列表" },
+        { key: "site-withdraw-list-695", name: "提现列表" }
+      ].map((item) => item.unchanged
+        ? `<div class="site-695-menu-item is-unchanged" aria-disabled="true"><span class="menu-dot"></span><span>${item.name}</span></div>`
+        : `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${item.key}" class="site-695-menu-item ${page.key === item.key ? "active" : ""}"><span class="menu-dot"></span><span>${item.name}</span></a>`).join("");
+      return `<aside class="risk-sidebar site-695-sidebar"><div class="site-695-brand"><span>S</span><strong>站点后台管理系统</strong></div><nav class="site-695-menu-tree"><section class="site-695-menu-group is-expanded"><button type="button" class="site-695-menu-parent" data-site-695-menu-toggle aria-expanded="true"><span class="site-695-parent-icon"></span><span>会员管理</span><i></i></button><div class="site-695-menu-children">${items}</div></section></nav><div class="risk-user"><span>MK</span><div><strong>Mike</strong><small>站点管理员</small></div></div></aside>`;
+    }
     if (requirement.id === "#680") {
       const menuItems = visiblePages(requirement).map((item, index) => {
         const active = item.key === page.key || (item.key === "risk-events-680" && p0RiskSimulatorState.backendTab === "detail");
@@ -3246,6 +3257,8 @@
   }
 
   function agent498DateControl(options = {}) {
+    const year = options.year || 2026;
+    const month = options.month || 7;
     const startDay = options.startDay || 1;
     const endDay = options.endDay || 31;
     const startTime = options.startTime || "00:00:00";
