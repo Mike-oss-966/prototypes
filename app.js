@@ -46,6 +46,7 @@
     { currency: "EB", protocol: "—", account: "EB••••966" }
   ];
   let agent498Identity = "TEAM_LEADER_MULTI";
+  let site695Identity = "SITE";
   let agent498ShowHidden = false;
   let agent498TeamIdentity = "NORMAL";
   let agent498QuickQueryMember = "";
@@ -62,6 +63,12 @@
     TEAM_LEADER_MULTI: { label: "团队负责人（多线）", account: "agent_mike", description: "可查看团队汇总、团队代理列表、团队冲正和场馆费用。", pages: ["agent-team-498", "agent-list-498", "agent-transfer-498", "agent-negative-profit-report-498", "agent-correction-report-498", "agent-venue-fee-detail-498"] },
     TEAM_LEADER_SINGLE: { label: "团队负责人（单线）", account: "single_leader", description: "具备团队负责人权限，但团队代理列表仅展示负责人本人。", pages: ["agent-team-498", "agent-list-498", "agent-transfer-498", "agent-negative-profit-report-498", "agent-correction-report-498", "agent-venue-fee-detail-498"] },
     TEAM_SUBLINE: { label: "团队副线", account: "subline_a", description: "只查看个人经营数据及自身负盈利贡献，不可查看团队管理功能。", pages: ["agent-negative-profit-report-498"] }
+  };
+  const site695IdentityConfig = {
+    SITE: { label: "站点", scope: "站点全部会员", successOnly: false },
+    NEGATIVE_MAIN: { label: "负盈利主线代理", scope: "团队全部会员", successOnly: true },
+    OTHER_AGENT: { label: "其他代理", scope: "当前代理权限范围内会员", successOnly: true },
+    RECRUITMENT: { label: "招商角色", scope: "站点全部会员", successOnly: false }
   };
   const exportExcelRules = [
     "导出表格的字段、顺序和字段含义必须与后台当前数据表逐列对应，不得遗漏、合并或省略",
@@ -335,7 +342,7 @@
       ].map((item) => item.unchanged
         ? `<div class="site-695-menu-item is-unchanged" aria-disabled="true"><span class="menu-dot"></span><span>${item.name}</span></div>`
         : `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${item.key}" class="site-695-menu-item ${page.key === item.key ? "active" : ""}"><span class="menu-dot"></span><span>${item.name}</span></a>`).join("");
-      return `<aside class="risk-sidebar site-695-sidebar"><div class="site-695-brand"><span>S</span><strong>站点后台管理系统</strong></div><nav class="site-695-menu-tree"><section class="site-695-menu-group is-expanded"><button type="button" class="site-695-menu-parent" data-site-695-menu-toggle aria-expanded="true"><span class="site-695-parent-icon"></span><span>会员管理</span><i></i></button><div class="site-695-menu-children">${items}</div></section></nav><div class="risk-user"><span>MK</span><div><strong>Mike</strong><small>站点管理员</small></div></div></aside>`;
+      return `<aside class="risk-sidebar site-695-sidebar"><div class="site-695-brand"><span>S</span><strong>站点后台管理系统</strong></div><nav class="site-695-menu-tree"><section class="site-695-menu-group is-expanded"><button type="button" class="site-695-menu-parent" data-site-695-menu-toggle aria-expanded="true"><span class="site-695-parent-icon"></span><span>会员管理</span><i></i></button><div class="site-695-menu-children">${items}</div></section></nav><div class="risk-user"><span>MK</span><div><strong>Mike</strong><small>${escapeHtml(site695IdentityConfig[site695Identity].label)}</small></div></div></aside>`;
     }
     if (requirement.id === "#680") {
       const menuItems = visiblePages(requirement).map((item, index) => {
@@ -3666,38 +3673,42 @@
 
   window.PROTOTYPE_SITE695_RECORDS = {
     deposit: [
-      ["member_10086", "DP202608130086", "EBPay", "CNY", 5000, "2026-08-13 16:28:06", "确认成功"],
-      ["member_10086", "DP202608130081", "代理代存", "CNY", 12000, "2026-08-13 15:58:42", "确认成功"],
-      ["member_10086", "DP202608130067", "TronPay", "USDT", 6800, "2026-08-13 14:52:17", "确认中"],
-      ["member_10086", "DP202608120134", "支付宝", "CNY", 3000, "2026-08-12 23:06:35", "确认失败"],
-      ["member_10086", "DP202608110105", "银行卡", "CNY", 20000, "2026-08-11 18:32:09", "确认成功"],
-      ["summer_728", "DP202608130072", "TronPay", "USDT", 12800, "2026-08-13 15:42:18", "确认中"],
-      ["member_205", "DP202608130055", "支付宝", "CNY", 2000, "2026-08-13 14:16:32", "待支付"],
-      ["ocean_917", "DP202608130041", "银行卡", "CNY", 30000, "2026-08-13 12:08:45", "确认成功"],
-      ["member_311", "DP202608120128", "EBPay", "CNY", 8800, "2026-08-12 22:36:10", "确认失败"],
-      ["lucky_520", "DP202608120096", "USDT", "USDT", 16660, "2026-08-12 19:24:06", "确认成功"],
-      ["member_422", "DP202608120073", "微信", "CNY", 1500, "2026-08-12 17:05:29", "确认成功"],
-      ["orange_168", "DP202608110116", "银行卡", "CNY", 50000, "2026-08-11 20:18:41", "确认中"],
-      ["member_536", "DP202608110082", "NEXUS", "CNY", 6800, "2026-08-11 13:46:08", "确认成功"],
-      ["river_888", "DP202608100039", "USDT", "USDT", 24600, "2026-08-10 09:12:54", "确认成功"]
+      ["member_10086", "DP202608130086", "EBPay", "CNY", 5000, "2026-08-13 16:28:06", "确认成功", { team: true, own: true }],
+      ["member_10086", "DP202608130081", "代理代存", "CNY", 12000, "2026-08-13 15:58:42", "确认成功", { team: true, own: true }],
+      ["member_10086", "DP202608120134", "支付宝", "CNY", 3000, "2026-08-12 23:06:35", "确认失败", { team: true, own: true }],
+      ["member_10086", "DP202608110105", "银行卡", "CNY", 20000, "2026-08-11 18:32:09", "确认成功", { team: true, own: true }],
+      ["member_205", "DP202608130055", "支付宝", "CNY", 2000, "2026-08-13 14:16:32", "待支付", { team: true, own: false }],
+      ["ocean_917", "DP202608130041", "银行卡", "CNY", 30000, "2026-08-13 12:08:45", "确认成功", { team: true, own: false }],
+      ["member_311", "DP202608120128", "EBPay", "CNY", 8800, "2026-08-12 22:36:10", "确认失败", { team: false, own: false }],
+      ["lucky_520", "DP202608120096", "USDT", "USDT", 16660, "2026-08-12 19:24:06", "确认成功", { team: false, own: false }],
+      ["member_422", "DP202608120073", "微信", "CNY", 1500, "2026-08-12 17:05:29", "确认成功", { team: true, own: false }],
+      ["member_536", "DP202608110082", "NEXUS", "CNY", 6800, "2026-08-11 13:46:08", "确认成功", { team: true, own: true }],
+      ["river_888", "DP202608100039", "USDT", "USDT", 24600, "2026-08-10 09:12:54", "确认成功", { team: false, own: false }]
     ],
     withdraw: [
-      ["member_10086", "WD202608130076", "USDT", "USDT", 12000, "2026-08-13 17:02:16", "审核中"],
-      ["member_10086", "WD202608130070", "支付宝", "CNY", 2600, "2026-08-13 16:12:45", "成功"],
-      ["member_10086", "WD202608120124", "USDT", "USDT", 7200, "2026-08-12 22:08:31", "转账中"],
-      ["member_10086", "WD202608120101", "支付宝", "CNY", 1800, "2026-08-12 19:27:54", "失败"],
-      ["member_10086", "WD202608110097", "USDT", "USDT", 9500, "2026-08-11 17:46:20", "成功"],
-      ["summer_728", "WD202608130062", "支付宝", "CNY", 3000, "2026-08-13 15:36:28", "转账中"],
-      ["member_205", "WD202608130048", "USDT", "USDT", 8500, "2026-08-13 13:50:06", "成功"],
-      ["ocean_917", "WD202608130031", "支付宝", "CNY", 20000, "2026-08-13 11:24:39", "拒绝"],
-      ["member_311", "WD202608120119", "USDT", "USDT", 6600, "2026-08-12 21:18:44", "失败"],
-      ["lucky_520", "WD202608120088", "支付宝", "CNY", 5000, "2026-08-12 18:42:17", "成功"],
-      ["member_422", "WD202608120057", "USDT", "USDT", 18000, "2026-08-12 16:11:23", "审核中"],
-      ["orange_168", "WD202608110103", "支付宝", "CNY", 2800, "2026-08-11 19:06:35", "成功"],
-      ["member_536", "WD202608110069", "USDT", "USDT", 10000, "2026-08-11 12:28:19", "转账中"],
-      ["river_888", "WD202608100026", "支付宝", "CNY", 4500, "2026-08-10 08:46:50", "成功"]
+      ["member_10086", "WD202608130076", "USDT", "USDT", 12000, "2026-08-13 17:02:16", "审核中", { team: true, own: true }],
+      ["member_10086", "WD202608130070", "支付宝", "CNY", 2600, "2026-08-13 16:12:45", "成功", { team: true, own: true }],
+      ["member_10086", "WD202608120101", "支付宝", "CNY", 1800, "2026-08-12 19:27:54", "失败", { team: true, own: true }],
+      ["member_10086", "WD202608110097", "USDT", "USDT", 9500, "2026-08-11 17:46:20", "成功", { team: true, own: true }],
+      ["member_205", "WD202608130048", "USDT", "USDT", 8500, "2026-08-13 13:50:06", "成功", { team: true, own: false }],
+      ["ocean_917", "WD202608130031", "支付宝", "CNY", 20000, "2026-08-13 11:24:39", "拒绝", { team: true, own: false }],
+      ["member_311", "WD202608120119", "USDT", "USDT", 6600, "2026-08-12 21:18:44", "失败", { team: false, own: false }],
+      ["lucky_520", "WD202608120088", "支付宝", "CNY", 5000, "2026-08-12 18:42:17", "成功", { team: false, own: false }],
+      ["member_422", "WD202608120057", "USDT", "USDT", 18000, "2026-08-12 16:11:23", "审核中", { team: true, own: false }],
+      ["orange_168", "WD202608110103", "支付宝", "CNY", 2800, "2026-08-11 19:06:35", "成功", { team: false, own: false }],
+      ["river_888", "WD202608100026", "支付宝", "CNY", 4500, "2026-08-10 08:46:50", "成功", { team: false, own: false }]
     ]
   };
+
+  function site695VisibleRows(kind) {
+    const config = site695IdentityConfig[site695Identity];
+    return window.PROTOTYPE_SITE695_RECORDS[kind].filter((row) => {
+      const ownership = row[7] || {};
+      const inScope = site695Identity === "NEGATIVE_MAIN" ? ownership.team : site695Identity === "OTHER_AGENT" ? ownership.own : true;
+      const success = kind === "deposit" ? row[6] === "确认成功" : row[6] === "成功";
+      return inScope && (!config.successOnly || success);
+    });
+  }
 
   function site695DateRange(label) {
     return `<div class="risk-field date-range-field site-695-date annotated" data-component-id="F02">${componentBadge("F02")}<label>${label}</label>${agent498DateControl({ year: 2026, month: 8, startDay: 13, endDay: 13, empty: true })}</div>`;
@@ -3734,8 +3745,15 @@
     const kind = deposit ? "deposit" : "withdraw";
     const timeLabel = deposit ? "充值时间" : "提款时间";
     const typeOptions = deposit ? ["全部支付类型", "代理代存", "支付宝", "微信", "银行卡", "USDT", "EBPay", "TronPay", "NEXUS"] : ["全部支付类型", "USDT", "支付宝"];
-    const statuses = deposit ? ["全部状态", "待支付", "确认中", "成功", "失败"] : ["全部状态", "审核中", "转账中", "成功", "拒绝", "失败"];
-    return `<section class="risk-filter-panel site-695-filter annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid"><div class="risk-field"><label>会员账号</label><input type="text" data-site-695-member placeholder="请输入会员账号" /></div><div class="risk-field"><label>支付类型</label><select data-site-695-type>${typeOptions.map((option) => `<option>${option}</option>`).join("")}</select></div><div class="risk-field"><label>状态</label><select data-site-695-status>${statuses.map((option) => `<option>${option}</option>`).join("")}</select></div>${site695DateRange(timeLabel)}<div class="risk-filter-actions"><button type="button" class="main-action primary-filter site-695-search">搜索</button><button type="button" class="secondary-action site-695-reset">重置</button></div></div></section><section class="site-695-list annotated" data-component-id="T01">${componentBadge("T01")}<div class="site-695-results" data-site-695-kind="${kind}">${site695TableView(kind, window.PROTOTYPE_SITE695_RECORDS[kind], false)}</div></section>`;
+    const statuses = deposit ? ["全部状态", "待支付", "成功", "失败"] : ["全部状态", "审核中", "成功", "拒绝", "失败"];
+    const statusFilter = site695IdentityConfig[site695Identity].successOnly ? "" : `<div class="risk-field"><label>状态</label><select data-site-695-status>${statuses.map((option) => `<option>${option}</option>`).join("")}</select></div>`;
+    return `<section class="risk-filter-panel site-695-filter annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid"><div class="risk-field"><label>会员账号</label><input type="text" data-site-695-member placeholder="请输入会员账号" /></div><div class="risk-field"><label>支付类型</label><select data-site-695-type>${typeOptions.map((option) => `<option>${option}</option>`).join("")}</select></div>${statusFilter}${site695DateRange(timeLabel)}<div class="risk-filter-actions"><button type="button" class="main-action primary-filter site-695-search">搜索</button><button type="button" class="secondary-action site-695-reset">重置</button></div></div></section><section class="site-695-list annotated" data-component-id="T01">${componentBadge("T01")}<div class="site-695-results" data-site-695-kind="${kind}">${site695TableView(kind, site695VisibleRows(kind))}</div></section>`;
+  }
+
+  function site695IdentityReviewControls() {
+    const options = Object.entries(site695IdentityConfig).map(([value, config]) => `<option value="${value}"${value === site695Identity ? " selected" : ""}>${escapeHtml(config.label)}</option>`).join("");
+    const config = site695IdentityConfig[site695Identity];
+    return `<section class="agent-498-permission-review site-695-identity-review"><header><div><strong>身份权限预览</strong><span>仅用于原型评审，不属于生产页面功能</span></div></header><div class="agent-498-review-fields"><label><span>当前身份</span><select id="site-695-identity">${options}</select></label></div><p>数据范围：${escapeHtml(config.scope)}；记录状态：${config.successOnly ? "仅成功" : "全部状态"}。</p></section>`;
   }
 
   function bindSite695Behavior(page) {
@@ -3751,23 +3769,23 @@
     const render = () => {
       const account = member.value.trim().toLowerCase();
       const selectedType = type.selectedIndex ? type.value : "";
-      const selectedStatus = status.selectedIndex ? status.value : "";
+      const selectedStatus = status?.selectedIndex ? status.value : "";
       const useTime = range.classList.contains("range-selected") && inputs.length === 2;
       const selectedRange = Array.from(range.querySelectorAll("span")).map((span) => span.textContent.trim());
       const start = useTime ? selectedRange[0] : "";
       const end = useTime ? selectedRange[1] : "";
       const displayStatus = (value) => kind === "deposit" ? ({ "确认成功": "成功", "确认失败": "失败" }[value] || value) : value;
-      const rows = window.PROTOTYPE_SITE695_RECORDS[kind].filter((row) => (!account || row[0].toLowerCase().includes(account)) && (!selectedType || row[2] === selectedType) && (!selectedStatus || displayStatus(row[6]) === selectedStatus) && (!useTime || (row[5] >= start && row[5] <= end)));
-      result.innerHTML = site695TableView(kind, rows, Boolean(account || selectedType || selectedStatus || useTime));
+      const rows = site695VisibleRows(kind).filter((row) => (!account || row[0].toLowerCase().includes(account)) && (!selectedType || row[2] === selectedType) && (!selectedStatus || displayStatus(row[6]) === selectedStatus) && (!useTime || (row[5] >= start && row[5] <= end)));
+      result.innerHTML = site695TableView(kind, rows);
     };
     panel.querySelector(".site-695-search")?.addEventListener("click", render);
     panel.querySelector(".site-695-reset")?.addEventListener("click", () => {
       member.value = "";
       type.selectedIndex = 0;
-      status.selectedIndex = 0;
+      if (status) status.selectedIndex = 0;
       range.classList.remove("range-selected");
       range.innerHTML = "<span>开始时间</span><b>至</b><span>结束时间</span>";
-      result.innerHTML = site695TableView(kind, window.PROTOTYPE_SITE695_RECORDS[kind], false);
+      result.innerHTML = site695TableView(kind, site695VisibleRows(kind));
     });
     panel.querySelector(".date-apply")?.addEventListener("click", () => range.classList.add("range-selected"));
     panel.querySelector(".site-695-date-clear")?.addEventListener("click", () => {
@@ -3781,6 +3799,11 @@
       const expanded = button.getAttribute("aria-expanded") === "true";
       button.setAttribute("aria-expanded", String(!expanded));
       group?.classList.toggle("is-expanded", !expanded);
+    });
+    document.getElementById("site-695-identity")?.addEventListener("change", (event) => {
+      site695Identity = event.target.value;
+      const requirement = requirements.find((item) => item.id === "#695");
+      detailView(requirement, page.key);
     });
   }
 
@@ -4174,8 +4197,8 @@
       : vipAlgorithmMode
         ? `<div class="vip-algorithm-stage">${renderedPageContent}</div>`
       : `<div class="risk-app${memberModuleMode ? " member-module-mode production-admin-ui-488" : ""}${member493Mode ? " member-493-mode" : ""}${memberDetailMode ? " member-detail-mode" : ""}${agent498Mode || control498Mode ? " agent-498-app" : ""}${risk680Mode ? " risk-680-app" : ""}${site695Mode ? " site-member-695-app production-site-ui-695" : ""}">${sidebar(requirement,page)}<section class="risk-main">${risk680Mode ? `<header class="risk-topbar risk-680-topbar"><button type="button" class="risk-680-sidebar-toggle" data-risk-680-sidebar-toggle aria-label="收起或展开侧栏"><i></i><i></i><i></i></button><nav aria-label="面包屑"><span>风控中心</span><b>/</b><strong>${displayPageName}</strong></nav><div class="risk-680-top-actions"><button type="button" class="risk-680-top-icon" aria-label="全屏预览" title="全屏预览"></button><span class="risk-680-avatar">M</span><strong>Mike</strong><i aria-hidden="true"></i></div></header>` : `<header class="risk-topbar"><div><span>${control498Mode ? `总控后台 / ${page.menuGroup}` : agent498Mode ? (page.key === "agent-dashboard-498" ? "代理后台" : `${page.menuGroup} / ${page.name}`) : moduleName} /</span><strong>${displayPageName}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header>`}<div class="risk-content">${renderedPageContent}</div></section></div>`;
-    const permissionReview = agent498Mode ? agent498PermissionReviewControls() : "";
-    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav${["#509", "#643"].includes(requirement.id) || isAgent498Requirement(requirement.id) ? ' class="prototype-endpoint-nav"' : ""} aria-label="当前原型页面">${prototypeEndpointSwitch(requirement, page)}</nav></header><div class="prototype-canvas${member509MobileMode ? " member-mobile-canvas" : ""}${vipAlgorithmMode ? " vip-algorithm-canvas" : ""}${profitSimulatorMode ? " profit-simulator-canvas" : ""}${risk680Mode ? " risk-680-canvas" : ""}">${prototypeBody}</div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${agent498Mode ? escapeHtml(agent498IdentityConfig[agent498Identity].label) : page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><div><h2>${displayPageName}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll">${permissionReview}<div class="spec-top-notices">${topSpecNotices}</div><div class="questions-slot">${questionsBlock(page)}</div>${pageNoteBlock(page)}${pageLogic}${extraNotice}${adjustmentNotice}${exportNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${cardAnnotations.length} 项</span></div><div class="annotation-list">${cardAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"${memberModuleMode ? ' class="production-admin-ui-488"' : risk680Mode ? ' class="risk-680-modal-root"' : ""}></div>`;
+    const permissionReview = agent498Mode ? agent498PermissionReviewControls() : site695Mode ? site695IdentityReviewControls() : "";
+    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav${["#509", "#643"].includes(requirement.id) || isAgent498Requirement(requirement.id) ? ' class="prototype-endpoint-nav"' : ""} aria-label="当前原型页面">${prototypeEndpointSwitch(requirement, page)}</nav></header><div class="prototype-canvas${member509MobileMode ? " member-mobile-canvas" : ""}${vipAlgorithmMode ? " vip-algorithm-canvas" : ""}${profitSimulatorMode ? " profit-simulator-canvas" : ""}${risk680Mode ? " risk-680-canvas" : ""}">${prototypeBody}</div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${agent498Mode ? escapeHtml(agent498IdentityConfig[agent498Identity].label) : site695Mode ? escapeHtml(site695IdentityConfig[site695Identity].label) : page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><div><h2>${displayPageName}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll">${permissionReview}<div class="spec-top-notices">${topSpecNotices}</div><div class="questions-slot">${questionsBlock(page)}</div>${pageNoteBlock(page)}${pageLogic}${extraNotice}${adjustmentNotice}${exportNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${cardAnnotations.length} 项</span></div><div class="annotation-list">${cardAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"${memberModuleMode ? ' class="production-admin-ui-488"' : risk680Mode ? ' class="risk-680-modal-root"' : ""}></div>`;
     if (exportNotice) bindExportStandardLink(app, exportLinkId);
     if (page.key === "withdraw-monitor") renderMonitorView(false);
     addTopPaginators();
