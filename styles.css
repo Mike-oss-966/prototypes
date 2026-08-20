@@ -2517,6 +2517,73 @@ td { border-top: 1px solid #e8ece9; padding: 18px; font-size: 13px; vertical-ali
 .member-account-form-tip { margin: -19px 2px 18px; color: #a0a7b2; font-size: 11px; }
 .member-account-submit { width: 100%; height: 72px; color: #fff; background: linear-gradient(180deg,#4a95f4 0%,#2f7de9 100%); border: 0; border-radius: 38px; font-size: 18px; font-weight: 700; cursor: pointer; box-shadow: 0 5px 12px rgba(47,125,233,.12); }
 .member-account-submit:disabled { color: #fff; background: #a9c4ef; box-shadow: none; cursor: not-allowed; }
+.member-qn-withdrawal { position: relative; color: #151b22; background: #fff; }
+.member-qn-withdrawal-page { min-height: 758px; box-sizing: border-box; padding: 0 16px 22px; background: #fff; }
+.member-qn-balance-card { min-height: 156px; box-sizing: border-box; padding: 20px 20px 15px; color: #fff; background: linear-gradient(145deg,#479dff 0%,#2f7df2 100%); border-radius: 16px; box-shadow: 0 10px 18px rgba(40,123,232,.25); }
+.member-qn-balance-card > header { display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
+.member-qn-balance-card > header > div { display: flex; align-items: center; gap: 10px; }
+.member-qn-balance-card > header button { height: 30px; padding: 0 10px; color: #fff; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.48); border-radius: 16px; font-size: 12px; }
+.member-qn-balance-card > header i { font-size: 18px; font-style: normal; }
+.member-qn-balance-card > strong { display: block; margin-top: 4px; font-size: 28px; line-height: 1.25; }
+.member-qn-balance-detail { display: grid; grid-template-columns: 1fr 1fr; margin-top: 13px; padding-top: 11px; border-top: 1px solid rgba(255,255,255,.3); }
+.member-qn-balance-detail p { display: grid; gap: 3px; margin: 0; }
+.member-qn-balance-detail p + p { padding-left: 20px; border-left: 1px solid rgba(255,255,255,.3); }
+.member-qn-balance-detail span { font-size: 11px; opacity: .86; }
+.member-qn-balance-detail b { font-size: 17px; }
+.member-qn-form-section { position: relative; padding-top: 19px; }
+.member-qn-form-section > .component-badge { top: 11px; right: -7px; }
+.member-qn-section-title { display: flex; align-items: center; justify-content: space-between; min-height: 26px; }
+.member-qn-section-title h2 { position: relative; margin: 0; padding-left: 10px; color: #1e2530; font-size: 14px; font-weight: 800; letter-spacing: 0; }
+.member-qn-section-title h2::before { content: ""; position: absolute; left: 0; top: 2px; width: 3px; height: 15px; background: #2e8ef1; border-radius: 2px; }
+.member-qn-methods { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px; margin-top: 10px; }
+.member-qn-method { position: relative; height: 45px; display: flex; align-items: center; gap: 6px; min-width: 0; padding: 0 8px; color: #4d5663; background: #fff; border: 1px solid #dce2ea; border-radius: 10px; font-size: 11px; white-space: nowrap; }
+.member-qn-method:disabled { opacity: 1; cursor: default; }
+.member-qn-method > span { flex: 0 0 23px; width: 23px; height: 23px; display: grid; place-items: center; color: #fff; background: #3bb78f; border-radius: 50%; font-size: 11px; font-weight: 800; }
+.member-qn-method.alipay > span { background: #248cf0; }
+.member-qn-method.combined > span { background: #668de5; }
+.member-qn-method.qian-neng > span { background: linear-gradient(135deg,#4bc7de,#2d87e8); }
+.member-qn-method b { overflow: hidden; font-weight: 500; text-overflow: ellipsis; }
+.member-qn-method.active { color: #287edb; border-color: #2f8bf0; box-shadow: 0 1px 3px rgba(47,139,240,.13); }
+.member-qn-method.active i { position: absolute; right: -1px; bottom: -1px; width: 17px; height: 17px; display: grid; place-items: center; color: #fff; background: #2f8bf0; border-radius: 9px 0 9px 0; font-size: 10px; font-style: normal; }
+.member-qn-section-title.account-title { margin-top: 17px; }
+.member-qn-section-title a { display: inline-flex; align-items: center; color: #202832; font-size: 12px; text-decoration: none; }
+.member-qn-section-title a span { width: 19px; height: 19px; display: grid; place-items: center; margin-right: 4px; color: #fff; background: #2e8ef1; border-radius: 50%; font-size: 17px; line-height: 1; }
+.member-qn-account-row { width: 100%; min-height: 60px; display: grid; grid-template-columns: 35px minmax(0,1fr) 14px; align-items: center; gap: 10px; box-sizing: border-box; margin-top: 10px; padding: 9px 13px; color: #252d38; background: #f3f6fc; border: 1px solid #dfe6f0; border-radius: 11px; text-align: left; cursor: pointer; }
+.member-qn-account-logo { width: 34px; height: 34px; display: grid; place-items: center; color: #fff; background: linear-gradient(145deg,#4bc7de,#2d87e8); border-radius: 50%; font-weight: 800; }
+.member-qn-account-row > span:nth-child(2) { min-width: 0; display: grid; gap: 2px; }
+.member-qn-account-row strong { font-size: 14px; }
+.member-qn-account-row small { overflow: hidden; color: #8a93a0; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.member-qn-account-row > b { color: #aeb6c1; font-size: 24px; font-weight: 400; }
+.member-qn-section-title.amount-title { margin-top: 15px; }
+.member-qn-available { margin: 5px 0 9px; color: #6d7580; font-size: 11px; }
+.member-qn-amount-input { height: 53px; display: grid; grid-template-columns: 24px minmax(0,1fr); align-items: center; box-sizing: border-box; padding: 0 17px; color: #333a45; background: #f3f6fc; border: 1px solid #dfe6f0; border-radius: 10px; }
+.member-qn-amount-input > span { font-size: 16px; }
+.member-qn-amount-input input { min-width: 0; height: 38px; padding: 0; color: #252d38; background: transparent; border: 0; outline: 0; font-size: 14px; }
+.member-qn-amount-input input::placeholder { color: #aab2bf; }
+.member-qn-fee-line { display: flex; align-items: center; gap: 7px; margin-top: 9px; color: #8b929d; font-size: 10px; white-space: nowrap; }
+.member-qn-fee-line > span:first-child i { width: 12px; height: 12px; display: inline-grid; place-items: center; color: #fff; background: #ffa24c; border-radius: 50%; font-size: 8px; font-style: normal; }
+.member-qn-fee-line b { color: #f05d58; font-weight: 500; }
+.member-qn-fee-line button { margin-left: auto; padding: 0; color: #287edb; background: transparent; border: 0; font-size: 10px; }
+.member-qn-minimum { margin: 8px 0 0; color: #8b929d; font-size: 10px; }
+.member-qn-section-title.password-title { margin-top: 15px; }
+.member-qn-password { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 8px; margin-top: 9px; }
+.member-qn-password input { width: 100%; height: 46px; box-sizing: border-box; padding: 0; color: #26303d; background: #fff; border: 1px solid #dce3ec; border-radius: 10px; outline: 0; font-size: 23px; text-align: center; }
+.member-qn-password input:focus { border-color: #2f8bf0; box-shadow: 0 0 0 2px rgba(47,139,240,.1); }
+.member-qn-submit { width: 100%; height: 48px; margin-top: 16px; color: #fff; background: #2f8bf0; border: 0; border-radius: 24px; font-size: 16px; }
+.member-qn-submit:disabled { background: #a7cdf8; cursor: not-allowed; }
+.member-qn-account-sheet[hidden] { display: none; }
+.member-qn-account-sheet { position: absolute; z-index: 20; inset: 0; display: flex; align-items: flex-end; }
+.member-qn-sheet-backdrop { position: absolute; inset: 0; padding: 0; background: rgba(0,0,0,.66); border: 0; }
+.member-qn-account-sheet > section { position: relative; z-index: 1; width: 100%; min-height: 190px; box-sizing: border-box; padding: 0 8px 18px; background: #f7f9fd; border-radius: 13px 13px 0 0; box-shadow: 0 -8px 24px rgba(18,27,38,.2); }
+.member-qn-account-sheet > section > header { height: 58px; display: grid; grid-template-columns: 55px minmax(0,1fr) 55px; align-items: center; }
+.member-qn-account-sheet > section > header h2 { margin: 0; color: #202733; font-size: 17px; text-align: center; }
+.member-qn-account-sheet > section > header button { padding: 0; color: #27313e; background: transparent; border: 0; font-size: 14px; text-align: left; }
+.member-qn-account-sheet > section > header button:last-child { justify-self: end; width: 38px; height: 38px; font-size: 27px; text-align: center; }
+.member-qn-sheet-account { width: 100%; min-height: 68px; display: grid; grid-template-columns: 36px minmax(0,1fr) 26px; align-items: center; gap: 10px; box-sizing: border-box; padding: 10px 13px; color: #222a36; background: #fff; border: 1px solid #e1e6ee; border-radius: 9px; text-align: left; }
+.member-qn-sheet-account > span:nth-child(2) { min-width: 0; display: grid; gap: 3px; }
+.member-qn-sheet-account strong { font-size: 14px; }
+.member-qn-sheet-account small { overflow: hidden; color: #7f8997; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.member-qn-sheet-account i { color: #2f8bf0; font-size: 20px; font-style: normal; font-weight: 800; text-align: center; }
 #modal-root:has(.member-account-delete-dialog) .modal-backdrop { right: 0; padding: 20px 24px; background: rgba(0,0,0,.5); }
 #modal-root:has(.member-account-delete-dialog) .risk-modal { width: min(342px,100%); overflow: hidden; border: 0; border-radius: 18px; box-shadow: 0 12px 35px rgba(20,25,32,.2); }
 #modal-root:has(.member-account-delete-dialog) .risk-modal header { min-height: 59px; justify-content: center; padding: 0 20px; border-bottom: 0; }

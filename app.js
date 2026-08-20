@@ -1485,14 +1485,14 @@
     "member-vip-center-509", "member-electronic-rebate-509", "member-center-509",
     "member-vip-center-643", "member-vip-detail-643", "member-vip-rules-643", "member-settings-643", "member-profile-643"
   ];
-  const member739MobileKeys = ["member-withdraw-accounts-739"];
+  const member739MobileKeys = ["member-withdraw-accounts-739", "member-withdrawal-739"];
 
   function memberMobilePrototypeNav(activeKey) {
     const qianNengRequirement = activeKey.endsWith("-739");
     const phaseTwo = activeKey.endsWith("-643");
     const requirementId = qianNengRequirement ? "#739" : phaseTwo ? "#643" : "#509";
     const pages = qianNengRequirement
-      ? [["member-withdraw-accounts-739", "提现账户管理"]]
+      ? [["member-withdraw-accounts-739", "提现账户管理"], ["member-withdrawal-739", "取款"]]
       : phaseTwo
       ? [["member-vip-center-643", "VIP页面"], ["member-settings-643", "设置"], ["member-profile-643", "个人资料"]]
       : [["member-vip-center-509", "VIP页面"], ["member-electronic-rebate-509", "电子返水明细"], ["member-center-509", "个人中心"]];
@@ -1690,7 +1690,8 @@
     return mobileVipFrame(`${memberVipMobileHeader(title)}<main class="member-account-form-page${annotation}">${badge}<section class="member-account-form-field"><label for="member-739-account-address">账户信息</label><div class="member-account-input"><span class="member-account-input-icon wallet" aria-hidden="true"></span><input id="member-739-account-address" type="text" value="${address}" maxlength="18" placeholder="请输入钱能钱包地址" autocomplete="off" /></div></section><button type="button" class="member-account-submit" data-member-739-submit disabled>确定</button></main>`, "member-withdraw-accounts member-withdraw-form-screen");
   }
 
-  function member739Content() {
+  function member739Content(page) {
+    if (page?.key === "member-withdrawal-739") return member739WithdrawalContent();
     const tabs = ["支付宝", "虚拟币", "EBPay", "钱能钱包", "银行卡"];
     const productionAccounts = {
       支付宝: { name: "麦*", account: "hhh****hj" },
@@ -1709,6 +1710,51 @@
     const productionView = existing ? `<section class="member-account-saved-wrap unchanged-production"><article class="member-account-card"><span class="member-account-card-logo">支</span><div><strong>${escapeHtml(existing.name)}</strong><small>${escapeHtml(existing.account)}</small></div><footer><button type="button" class="member-account-card-action" aria-label="编辑账户"><span class="member-account-action-icon edit" aria-hidden="true"></span></button><button type="button" class="member-account-card-action" aria-label="删除账户"><span class="member-account-action-icon delete" aria-hidden="true"></span></button></footer></article><button type="button" class="member-account-add-bar"><span aria-hidden="true">＋</span>添加${escapeHtml(activeTab)}账户</button></section>` : `<section class="member-account-empty unchanged-production"><div class="member-account-empty-art" aria-hidden="true"><span class="member-account-empty-paper"><i></i><i></i><i></i></span></div><p>您尚未绑定${escapeHtml(activeTab)}取款账户，请<button type="button" class="member-account-add-link">点击添加</button></p></section>`;
     const accountView = activeTab === "钱能钱包" ? (member739AccountState === "saved" ? qianNengSaved : qianNengEmpty) : productionView;
     return mobileVipFrame(`${memberVipMobileHeader("提现账户管理")}<main class="member-withdraw-account-page"><nav class="member-account-tabs" aria-label="提现账户类型">${tabsHtml}</nav><section class="member-account-content">${accountView}</section></main>`, "member-withdraw-accounts");
+  }
+
+  function member739WithdrawalContent() {
+    const methods = [
+      ["USDT提现", "U", "usdt"],
+      ["支付宝提现", "支", "alipay"],
+      ["综合提现", "综", "combined"],
+      ["钱能钱包提现", "钱", "qian-neng"]
+    ];
+    const accountHref = `#requirement/${encodeURIComponent("#739")}/page/member-withdraw-accounts-739`;
+    const maskedAddress = `${member739AccountAddress.slice(0, 6)}****${member739AccountAddress.slice(-4)}`;
+    const methodItems = methods.map(([label, icon, className]) => {
+      const active = className === "qian-neng";
+      return `<button type="button" class="member-qn-method ${className}${active ? " active" : ""}"${active ? ' aria-pressed="true"' : ' disabled aria-disabled="true"'}><span aria-hidden="true">${icon}</span><b>${label}</b>${active ? '<i aria-hidden="true">✓</i>' : ""}</button>`;
+    }).join("");
+    const passwordInputs = Array.from({ length: 6 }, (_, index) => `<input type="password" inputmode="numeric" maxlength="1" autocomplete="off" aria-label="资金密码第${index + 1}位" data-member-739-password="${index}" />`).join("");
+    return mobileVipFrame(`${memberVipMobileHeader("提现")}
+      <main class="member-qn-withdrawal-page">
+        <section class="member-qn-balance-card">
+          <header><span>中心钱包</span><div><button type="button" aria-label="一键回收">◎ 一键回收</button><i aria-hidden="true">⌄</i></div></header>
+          <strong>¥4,998.00</strong>
+          <div class="member-qn-balance-detail"><p><span>锁定钱包</span><b>¥4,998.00</b></p><p><span>福利中心 ›</span><b>¥0.00</b></p></div>
+        </section>
+        <section class="member-qn-form-section annotated" data-component-id="P01">${componentBadge("P01")}
+          <div class="member-qn-section-title"><h2>提现方式</h2></div>
+          <div class="member-qn-methods" aria-label="提现方式">${methodItems}</div>
+          <div class="member-qn-section-title account-title"><h2>提现账户</h2><a href="${accountHref}"><span aria-hidden="true">＋</span>添加账户</a></div>
+          <button type="button" class="member-qn-account-row" data-member-739-account-picker aria-haspopup="dialog"><span class="member-qn-account-logo" aria-hidden="true">钱</span><span><strong>钱能钱包</strong><small>${escapeHtml(maskedAddress)}</small></span><b aria-hidden="true">›</b></button>
+          <div class="member-qn-section-title amount-title"><h2>提现金额（CNY）</h2></div>
+          <p class="member-qn-available">可提现：¥4,998.00</p>
+          <label class="member-qn-amount-input"><span>¥</span><input type="text" inputmode="decimal" autocomplete="off" placeholder="单笔最大额度4,998.00 CNY" data-member-739-withdraw-amount /></label>
+          <div class="member-qn-fee-line"><span><i aria-hidden="true">!</i> 手续费：5.00 CNY</span><span>实际到账：<b data-member-739-actual>0.00 CNY</b></span><button type="button">详情说明</button></div>
+          <p class="member-qn-minimum">最低提现额度：10.00 CNY</p>
+          <div class="member-qn-section-title password-title"><h2>资金密码</h2></div>
+          <div class="member-qn-password" aria-label="请输入6位资金密码">${passwordInputs}</div>
+          <button type="button" class="member-qn-submit" data-member-739-withdraw-submit disabled>立即提现</button>
+        </section>
+        <div class="member-qn-account-sheet" data-member-739-account-sheet hidden>
+          <button type="button" class="member-qn-sheet-backdrop" data-member-739-account-sheet-close aria-label="关闭选择提现账号"></button>
+          <section role="dialog" aria-modal="true" aria-labelledby="member-qn-account-sheet-title">
+            <header><button type="button">编辑</button><h2 id="member-qn-account-sheet-title">选择提现账号</h2><button type="button" data-member-739-account-sheet-close aria-label="关闭">×</button></header>
+            <button type="button" class="member-qn-sheet-account" data-member-739-account-select><span class="member-qn-account-logo" aria-hidden="true">钱</span><span><strong>钱能钱包</strong><small>${escapeHtml(maskedAddress)}</small></span><i aria-hidden="true">✓</i></button>
+          </section>
+        </div>
+      </main>`, "member-withdraw-accounts member-qn-withdrawal");
   }
 
   function vipAlgorithm509Content() {
@@ -5270,6 +5316,54 @@
   }
 
   function bindMember739Behavior(page) {
+    if (page.key === "member-withdrawal-739") {
+      const amountInput = document.querySelector("[data-member-739-withdraw-amount]");
+      const passwordInputs = Array.from(document.querySelectorAll("[data-member-739-password]"));
+      const actualAmount = document.querySelector("[data-member-739-actual]");
+      const submit = document.querySelector("[data-member-739-withdraw-submit]");
+      const syncWithdrawal = () => {
+        const amount = Number(amountInput?.value || 0);
+        const passwordComplete = passwordInputs.every((input) => /^\d$/.test(input.value));
+        if (actualAmount) actualAmount.textContent = `${Math.max(amount - 5, 0).toFixed(2)} CNY`;
+        if (submit) submit.disabled = amount < 10 || amount > 4998 || !passwordComplete;
+      };
+      amountInput?.addEventListener("input", () => {
+        const normalized = amountInput.value.replace(/[^\d.]/g, "").replace(/(\.\d{2}).+$/, "$1");
+        const decimalIndex = normalized.indexOf(".");
+        amountInput.value = decimalIndex < 0 ? normalized : `${normalized.slice(0, decimalIndex + 1)}${normalized.slice(decimalIndex + 1).replace(/\./g, "")}`;
+        syncWithdrawal();
+      });
+      passwordInputs.forEach((input, index) => {
+        input.addEventListener("input", () => {
+          input.value = input.value.replace(/\D/g, "").slice(-1);
+          if (input.value && passwordInputs[index + 1]) passwordInputs[index + 1].focus();
+          syncWithdrawal();
+        });
+        input.addEventListener("keydown", (event) => {
+          if (event.key === "Backspace" && !input.value && passwordInputs[index - 1]) passwordInputs[index - 1].focus();
+        });
+      });
+      submit?.addEventListener("click", () => {
+        if (submit.disabled) return;
+        submit.textContent = "已提交提现申请";
+        submit.disabled = true;
+      });
+      const accountSheet = document.querySelector("[data-member-739-account-sheet]");
+      const closeAccountSheet = () => {
+        if (!accountSheet) return;
+        accountSheet.hidden = true;
+        document.querySelector("[data-member-739-account-picker]")?.focus();
+      };
+      document.querySelector("[data-member-739-account-picker]")?.addEventListener("click", () => {
+        if (!accountSheet) return;
+        accountSheet.hidden = false;
+        accountSheet.querySelector("[data-member-739-account-select]")?.focus();
+      });
+      accountSheet?.querySelectorAll("[data-member-739-account-sheet-close]").forEach((button) => button.addEventListener("click", closeAccountSheet));
+      accountSheet?.querySelector("[data-member-739-account-select]")?.addEventListener("click", closeAccountSheet);
+      syncWithdrawal();
+      return;
+    }
     if (page.key !== "member-withdraw-accounts-739") return;
     document.querySelectorAll("[data-member-739-state]").forEach((button) => {
       if (button.dataset.member739StateBound) return;
