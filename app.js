@@ -347,6 +347,13 @@
   }
 
   function sidebar(requirement, page) {
+    if (requirement.id === "#776") {
+      const items = [
+        { key: "agent-finance-management-776", name: "财务管理" },
+        { key: "agent-withdraw-records-776", name: "提现记录" }
+      ].map((item) => `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${item.key}" class="site-695-menu-item ${page.key === item.key ? "active" : ""}"><span class="menu-dot"></span><span>${item.name}</span></a>`).join("");
+      return `<aside class="risk-sidebar site-695-sidebar agent-776-sidebar"><div class="site-695-brand"><span>A</span><strong>代理后台管理系统</strong></div><nav class="site-695-menu-tree"><section class="site-695-menu-group is-expanded"><button type="button" class="site-695-menu-parent" data-agent-776-menu-toggle aria-expanded="true"><span class="site-695-parent-icon"></span><span>财务中心</span><i></i></button><div class="site-695-menu-children">${items}</div></section></nav><div class="risk-user"><span>AG</span><div><strong>agent_mike</strong><small>代理</small></div></div></aside>`;
+    }
     if (requirement.id === "#736") {
       return `<aside class="risk-sidebar site-695-sidebar site-agent-736-sidebar"><div class="site-695-brand"><span>A</span><strong>站点/代理后台</strong></div><nav class="site-695-menu-tree"><div class="site-695-menu-parent site-agent-736-menu-single" aria-current="page"><span class="site-695-parent-icon"></span><span>财务中心</span></div></nav><div class="risk-user"><span>AG</span><div><strong>agent_mike</strong><small>站点/代理管理员</small></div></div></aside>`;
     }
@@ -3947,12 +3954,81 @@
     });
   }
 
+  window.PROTOTYPE_AGENT776_WITHDRAWALS = [
+    { time: "2026-08-21 16:18:42", channel: "钱能钱包", account: "QW8H9K2P4M6T7X3Z1A", amount: 12800, arrived: 12760, status: "成功" },
+    { time: "2026-08-21 15:06:19", channel: "EBPay", account: "eb_agent_1001", amount: 5000, arrived: 4985, status: "成功" },
+    { time: "2026-08-21 13:42:08", channel: "USDT", account: "TJ9K••••••••••4N8Q", amount: 20000, arrived: 0, status: "失败" },
+    { time: "2026-08-21 11:25:33", channel: "支付宝", account: "138****8899 / 张*", amount: 3800, arrived: 3790, status: "成功" },
+    { time: "2026-08-20 20:18:54", channel: "USDT", account: "TK6F••••••••••8D2R", amount: 15600, arrived: 15490, status: "成功" },
+    { time: "2026-08-20 18:09:27", channel: "钱能钱包", account: "QN5C8R2M9V4L7K6P3X", amount: 6600, arrived: 0, status: "失败" },
+    { time: "2026-08-20 14:37:05", channel: "EBPay", account: "eb_finance_668", amount: 9000, arrived: 8973, status: "成功" },
+    { time: "2026-08-19 22:11:46", channel: "支付宝", account: "186****5208 / 李*", amount: 2600, arrived: 2590, status: "成功" },
+    { time: "2026-08-19 17:53:12", channel: "USDT", account: "TM3R••••••••••1K7P", amount: 32000, arrived: 31780, status: "成功" },
+    { time: "2026-08-18 10:28:39", channel: "EBPay", account: "eb_agent_1001", amount: 4500, arrived: 0, status: "失败" }
+  ];
+
+  function agent776WithdrawTable(rows) {
+    const totalAmount = rows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+    const totalArrived = rows.reduce((sum, row) => sum + Number(row.arrived || 0), 0);
+    const money = (value) => Number(value).toLocaleString("zh-CN", { minimumFractionDigits: 2 });
+    const body = rows.length
+      ? rows.map((row) => `<tr><td>${escapeHtml(row.time)}</td><td>${escapeHtml(row.channel)}</td><td class="agent-776-account">${escapeHtml(row.account)}</td><td class="agent-776-money">${money(row.amount)}</td><td class="agent-776-money">${money(row.arrived)}</td><td>${site695StatusTag(row.status)}</td></tr>`).join("")
+      : '<tr><td colspan="6"><div class="site-695-empty">暂无符合条件的数据</div></td></tr>';
+    const summary = `<tfoot><tr class="agent-776-total-row"><td><strong>总计</strong></td><td colspan="2"></td><td class="agent-776-money"><strong>${money(totalAmount)}</strong></td><td class="agent-776-money"><strong>${money(totalArrived)}</strong></td><td></td></tr></tfoot>`;
+    return `<div class="risk-table-wrap"><table class="risk-table agent-776-table"><thead><tr><th>提现时间</th><th>提现渠道</th><th>提现账号</th><th>提现金额（CNY）</th><th>到账金额（CNY）</th><th>状态</th></tr></thead><tbody>${body}</tbody>${summary}</table></div>${site695Pagination(rows.length)}`;
+  }
+
+  function agent776WithdrawRecordsContent() {
+    const channels = ["全部", "USDT", "支付宝", "EBPay", "钱能钱包"];
+    const statuses = ["全部", "成功", "失败"];
+    return `<section class="risk-filter-panel agent-776-filter annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid"><div class="risk-field"><label>提现渠道</label><select data-agent-776-channel>${channels.map((item) => `<option>${item}</option>`).join("")}</select></div><div class="risk-field"><label>状态</label><select data-agent-776-status>${statuses.map((item) => `<option>${item}</option>`).join("")}</select></div>${site695DateRange("提现时间")}<div class="risk-filter-actions"><button type="button" class="main-action primary-filter agent-776-search">搜索</button><button type="button" class="secondary-action agent-776-reset">重置</button></div></div></section><section class="site-695-list agent-776-list annotated" data-component-id="T01">${componentBadge("T01")}<header class="agent-776-list-heading"><div><h2>提现记录</h2><span>共 <b data-agent-776-count>${window.PROTOTYPE_AGENT776_WITHDRAWALS.length}</b> 条</span></div></header><div class="agent-776-results">${agent776WithdrawTable(window.PROTOTYPE_AGENT776_WITHDRAWALS)}</div></section>`;
+  }
+
+  function bindAgent776Behavior(page) {
+    document.querySelector("[data-agent-776-menu-toggle]")?.addEventListener("click", (event) => {
+      const button = event.currentTarget;
+      const group = button.closest(".site-695-menu-group");
+      const expanded = button.getAttribute("aria-expanded") === "true";
+      button.setAttribute("aria-expanded", String(!expanded));
+      group?.classList.toggle("is-expanded", !expanded);
+    });
+    if (page.key === "agent-finance-management-776") {
+      return;
+    }
+    const panel = document.querySelector(".agent-776-filter");
+    const result = document.querySelector(".agent-776-results");
+    if (!panel || !result) return;
+    const channel = panel.querySelector("[data-agent-776-channel]");
+    const status = panel.querySelector("[data-agent-776-status]");
+    const range = panel.querySelector(".risk-range");
+    const render = () => {
+      const selectedChannel = channel.selectedIndex ? channel.value : "";
+      const selectedStatus = status.selectedIndex ? status.value : "";
+      const useTime = range.classList.contains("range-selected");
+      const selectedRange = Array.from(range.querySelectorAll("span")).map((span) => span.textContent.trim());
+      const rows = window.PROTOTYPE_AGENT776_WITHDRAWALS.filter((row) => (!selectedChannel || row.channel === selectedChannel) && (!selectedStatus || row.status === selectedStatus) && (!useTime || (row.time >= selectedRange[0] && row.time <= selectedRange[1])));
+      result.innerHTML = agent776WithdrawTable(rows);
+      const count = document.querySelector("[data-agent-776-count]");
+      if (count) count.textContent = String(rows.length);
+    };
+    panel.querySelector(".agent-776-search")?.addEventListener("click", render);
+    panel.querySelector(".agent-776-reset")?.addEventListener("click", () => {
+      channel.selectedIndex = 0;
+      status.selectedIndex = 0;
+      range.classList.remove("range-selected");
+      range.innerHTML = "<span>开始时间</span><b>至</b><span>结束时间</span>";
+      render();
+    });
+  }
+
   function pageContent(page) {
     if (page.mergedInto) return mergedRequirementContent(page);
     if (page.unchanged) return unchangedFinanceContent(page);
     if (page.key === "profit-simulator-498") return profitSimulatorContent(page);
     if (page.key.endsWith("-680")) return p0Risk680Content(page);
     if (page.key.endsWith("-695")) return siteMember695Content(page);
+    if (page.key === "agent-finance-management-776") return '<section class="reserved-area unchanged-page agent-776-unchanged"><div><strong>和生产一致，无任何修改</strong></div></section>';
+    if (page.key === "agent-withdraw-records-776") return agent776WithdrawRecordsContent(page);
     if (page.key.startsWith("control-") && page.key.endsWith("-498")) return control498Content(page);
     if (page.key.startsWith("agent-") && page.key.endsWith("-498")) return agentBackend498Content(page);
     if (page.key.endsWith("-509") || page.key.endsWith("-643")) return vipOptimizationContent(page);
@@ -4196,6 +4272,9 @@
   }
 
   function productionComparisonNotice(requirement, page) {
+    if (requirement.id === "#776" && page.key === "agent-finance-management-776") {
+      return '<section class="comparison-spec-note"><span>对比说明</span><p>财务管理与生产保持一致，无任何修改。</p></section>';
+    }
     const showForMember488 = requirement.id === "#488";
     const showForMember493 = requirement.id === "#493" && page.key === "account-adjustment-record-493";
     const activeAgentTab = activePageTab(page);
@@ -4329,6 +4408,7 @@
     const risk680Mode = requirement.id === "#680";
     const site695Mode = requirement.id === "#695";
     const siteAgent736Mode = requirement.id === "#736";
+    const agent776Mode = requirement.id === "#776";
     const agent498Mode = isAgent498Requirement(requirement.id) && !profitSimulatorMode && !control498Mode;
     const publicAgent498Mode = requirement.id === "#498" && agent498Mode;
     const agent498ActiveMenu = agent498Mode && page.key !== "agent-dashboard-498" ? activePageTab(page) : "";
@@ -4338,7 +4418,8 @@
     const scopeAnnotation = page.key === "member-logs-488" ? currentAnnotations.find((annotation) => annotation.id === "P01" && annotation.tab === "会员日志") : null;
     const exportLinkId = exportAnnotation?.id || "B99";
     const cardAnnotations = currentAnnotations.filter((annotation) => annotation !== exportAnnotation && annotation !== scopeAnnotation);
-    const exportNotice = renderedPageContent.includes("导出") ? exportStandardNotice(exportAnnotation) : "";
+    const suppressUnchangedExportNotice = requirement.id === "#776" && page.key === "agent-finance-management-776";
+    const exportNotice = renderedPageContent.includes("导出") && !suppressUnchangedExportNotice ? exportStandardNotice(exportAnnotation) : "";
     const topSpecNotices = `${productionComparisonNotice(requirement, page)}${scopeSpecNotice(scopeAnnotation)}`;
     const prototypeBody = profitSimulatorMode
       ? `<div class="profit-simulator-stage">${renderedPageContent}</div>`
@@ -4504,7 +4585,7 @@
         }
         const quickButton = event.target.closest("[data-range-days]");
         if (!quickButton) return;
-        const end = field.closest(".site-member-695-app") ? new Date(2026, 7, 13) : new Date(2026, 6, 31);
+        const end = currentRequirementId === "#776" ? new Date(2026, 7, 21) : field.closest(".site-member-695-app") ? new Date(2026, 7, 13) : new Date(2026, 6, 31);
         let start = new Date(end);
         const range = quickButton.dataset.rangeDays;
         if (range === "1") {
@@ -6021,6 +6102,7 @@
     bindProfitSimulatorBehavior(page);
     bindAgent498Behavior(page);
     bindSiteAgent736Behavior(page);
+    if (page.key.endsWith("-776")) { bindAgent776Behavior(page); bindAgent498DatePickers(); }
     if (page.key.endsWith("-695")) { bindSite695Behavior(page); bindAgent498DatePickers(); }
     if (page.key.endsWith("-680")) bindP0RiskSimulatorBehavior(page);
     document.querySelectorAll(".member-detail-link").forEach((link) => link.addEventListener("click", (event) => {

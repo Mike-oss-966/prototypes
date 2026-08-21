@@ -4196,6 +4196,50 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .site-member-695-app .full-pagination input { border-color: var(--site695-border); border-radius: 4px; }
 .site-member-695-app .full-pagination button.active { color: #fff; background: var(--site695-primary); border-color: var(--site695-primary); }
 
+/* #776 代理后台提现记录：复用生产代理后台 Element UI 基线。 */
+.agent-776-app .agent-776-filter { margin-bottom: 16px; }
+.agent-776-unchanged { min-height: 180px; margin: 0; }
+.agent-776-unchanged strong { color: var(--site695-regular); font-size: 14px; font-weight: 400; }
+.agent-776-app .agent-776-list {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--site695-border-light);
+  border-radius: 4px;
+}
+.agent-776-list > .component-badge { top: 8px; right: 8px; }
+.agent-776-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--site695-border-light);
+}
+.agent-776-list-heading > div { display: flex; align-items: baseline; gap: 10px; }
+.agent-776-list-heading h2 { margin: 0; color: var(--site695-text); font-size: 15px; font-weight: 500; }
+.agent-776-list-heading span { color: var(--site695-secondary); font-size: 12px; }
+.agent-776-list-heading b { color: var(--site695-regular); font-weight: 500; }
+.agent-776-app .agent-776-results .risk-table-wrap { overflow-x: auto; overflow-y: hidden; border: 0; }
+.agent-776-table { width: 100%; min-width: 700px; table-layout: fixed; border-collapse: collapse; }
+.agent-776-table th,
+.agent-776-table td { height: 48px; padding: 9px 12px; text-align: center; vertical-align: middle; white-space: nowrap; }
+.agent-776-table th:nth-child(1) { width: 23%; }
+.agent-776-table th:nth-child(2) { width: 12%; }
+.agent-776-table th:nth-child(3) { width: 23%; }
+.agent-776-table th:nth-child(4),
+.agent-776-table th:nth-child(5) { width: 15%; }
+.agent-776-table th:nth-child(6) { width: 12%; }
+.agent-776-account { color: var(--site695-regular); font-family: Consolas, "Microsoft YaHei", sans-serif; }
+.agent-776-money { color: var(--site695-text) !important; font-weight: 600; }
+.agent-776-total-row td { height: 44px; color: var(--site695-regular); background: #f0f9eb; border-top: 1px solid #e1f3d8; border-bottom: 1px solid #e1f3d8; }
+.agent-776-total-row td strong { color: var(--site695-text); font-weight: 500; }
+.agent-776-total-row td.agent-776-money strong { color: #67c23a; font-weight: 600; }
+.agent-776-results .full-pagination { min-height: 54px; padding: 10px 14px; border-top: 1px solid var(--site695-border-light); }
+
+@media (max-width: 760px) {
+  .agent-776-list-heading { padding: 0 12px; }
+}
+
 /* #736 站点/代理后台余额提现：对齐生产提款申请页面。 */
 .site-agent-736-page {
   min-width: 0;
