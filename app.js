@@ -5,9 +5,9 @@
   const isLocalPrototype = ["127.0.0.1", "localhost"].includes(window.location.hostname);
   const siteOptions = ["XY体育", "拉布布", "WC体育", "CS体育", "YY体育", "NS体育", "DW体育"];
   const cooperationContacts828 = [
-    { id: 1, name: "运营小飞机", username: "mike_ops", description: "工作日 10:00-22:00", sort: 100, enabled: true },
-    { id: 2, name: "财务值班", username: "finance_support", description: "充值、提款问题咨询", sort: 90, enabled: true },
-    { id: 3, name: "夜间客服", username: "night_support", description: "每日 22:00-10:00", sort: 80, enabled: false }
+    { id: 1, name: "运营客服", softwareName: "Telegram", account: "mike_ops", description: "工作日 10:00-22:00", sort: 100, enabled: true },
+    { id: 2, name: "财务值班", softwareName: "WhatsApp", account: "+852 6238 9012", description: "充值、提款问题咨询", sort: 90, enabled: true },
+    { id: 3, name: "夜间客服", softwareName: "LINE", account: "night_support", description: "每日 22:00-10:00", sort: 80, enabled: false }
   ];
   let cooperationContactSequence828 = cooperationContacts828.length + 1;
   const rebateVenueCatalog = Array.isArray(window.PROTOTYPE_VENUE_GAMES) ? window.PROTOTYPE_VENUE_GAMES : [];
@@ -4746,11 +4746,11 @@
     const componentId = options.componentId || "T01";
     const showHeading = options.showHeading !== false;
     const rows = [...cooperationContacts828].sort((left, right) => Number(right.sort) - Number(left.sort));
-    const body = rows.length ? rows.map((contact, index) => `<tr><td>${index + 1}</td><td><strong>${escapeHtml(contact.name)}</strong></td><td class="control-828-telegram">@${escapeHtml(contact.username)}</td><td>${escapeHtml(contact.description || "—")}</td><td class="control-828-sort">${escapeHtml(contact.sort)}</td><td><label class="switch-row control-828-contact-switch"><input type="checkbox" data-828-contact-toggle="${contact.id}" ${contact.enabled ? "checked" : ""} /><span class="switch-track"></span><b>${contact.enabled ? "显示" : "隐藏"}</b></label></td><td class="control-828-actions"><button type="button" class="link-action control-828-edit" data-828-contact-edit="${contact.id}">编辑</button><button type="button" class="link-action control-828-delete" data-828-contact-delete="${contact.id}">删除</button></td></tr>`).join("") : '<tr><td colspan="7"><div class="site-695-empty">暂无已配置的联系方式</div></td></tr>';
+    const body = rows.length ? rows.map((contact, index) => `<tr><td>${index + 1}</td><td><strong>${escapeHtml(contact.name)}</strong></td><td>${escapeHtml(contact.softwareName)}</td><td class="control-828-contact-account">${escapeHtml(contact.account)}</td><td>${escapeHtml(contact.description || "—")}</td><td class="control-828-sort">${escapeHtml(contact.sort)}</td><td><label class="switch-row control-828-contact-switch"><input type="checkbox" data-828-contact-toggle="${contact.id}" ${contact.enabled ? "checked" : ""} /><span class="switch-track"></span><b>${contact.enabled ? "显示" : "隐藏"}</b></label></td><td class="control-828-actions"><button type="button" class="link-action control-828-edit" data-828-contact-edit="${contact.id}">编辑</button><button type="button" class="link-action control-828-delete" data-828-contact-delete="${contact.id}">删除</button></td></tr>`).join("") : '<tr><td colspan="8"><div class="site-695-empty">暂无已配置的联系方式</div></td></tr>';
     const heading = showHeading
       ? `<header class="control-828-card-heading"><div><h2>合营联系方式</h2><span>当前已配置 ${rows.length} 条</span></div><button type="button" class="main-action control-828-add annotated" data-component-id="B01"><span class="component-badge">B01</span>新增联系方式</button></header>`
       : `<div class="control-828-contact-toolbar"><button type="button" class="main-action control-828-add annotated" data-component-id="B01"><span class="component-badge">B01</span>新增联系方式</button></div>`;
-    return `<section class="site-828-contact-card annotated control-828-contact-section" data-component-id="${componentId}"><div class="component-badge">${componentId}</div>${heading}<div class="control-828-table-note"><span>展示规则</span><strong>最多同时显示两个联系方式</strong><em>排序数字越大，排名越在左边靠前</em></div><div class="risk-table-wrap"><table class="risk-table control-828-contact-table"><thead><tr><th>序号</th><th>联系名称</th><th>Telegram用户名</th><th>联系说明</th><th>排序</th><th>是否显示</th><th>操作</th></tr></thead><tbody>${body}</tbody></table></div></section>`;
+    return `<section class="site-828-contact-card annotated control-828-contact-section" data-component-id="${componentId}"><div class="component-badge">${componentId}</div>${heading}<div class="control-828-table-note"><span>展示规则</span><strong>最多同时显示两个联系方式</strong><em>排序数字越大，排名越在左边靠前</em></div><div class="risk-table-wrap"><table class="risk-table control-828-contact-table"><thead><tr><th>序号</th><th>联系名称</th><th>联系软件名称</th><th>联系账号</th><th>联系说明</th><th>排序</th><th>是否显示</th><th>操作</th></tr></thead><tbody>${body}</tbody></table></div></section>`;
   }
 
   function siteCooperation828Content() {
@@ -6921,23 +6921,34 @@
   function open828ContactModal(page, contactId = null) {
     const contact = contactId == null ? null : cooperationContacts828.find((item) => item.id === Number(contactId));
     const title = contact ? "编辑联系方式" : "新增联系方式";
-    const body = `<form class="control-828-contact-form" data-828-contact-form><label><span>联系名称</span><input type="text" data-828-contact-name value="${escapeHtml(contact?.name || "")}" placeholder="请输入联系名称" /></label><label><span>Telegram用户名</span><input type="text" data-828-contact-username value="${escapeHtml(contact?.username || "")}" placeholder="请输入Telegram用户名" /><small>无需填写‘@’符号</small></label><label><span>联系说明</span><input type="text" data-828-contact-description value="${escapeHtml(contact?.description || "")}" placeholder="例如营业时间" /></label><label><span>排序</span><input type="number" data-828-contact-sort value="${escapeHtml(contact?.sort ?? "")}" min="0" step="1" placeholder="请输入排序数字" /><small>数字越大排名越在左边靠前</small></label></form>`;
+    const body = `<form class="control-828-contact-form" data-828-contact-form><label><span>联系名称</span><input type="text" data-828-contact-name value="${escapeHtml(contact?.name || "")}" placeholder="请输入联系名称" /></label><label><span>联系软件名称</span><input type="text" data-828-contact-software value="${escapeHtml(contact?.softwareName || "")}" maxlength="12" placeholder="请输入联系软件名称" /><small>中文最多6个字，英文最多12个字母</small></label><label><span>联系账号</span><input type="text" data-828-contact-account value="${escapeHtml(contact?.account || "")}" placeholder="请输入联系账号" /></label><label><span>联系说明</span><input type="text" data-828-contact-description value="${escapeHtml(contact?.description || "")}" placeholder="例如营业时间" /></label><label><span>排序</span><input type="number" data-828-contact-sort value="${escapeHtml(contact?.sort ?? "")}" min="0" step="1" placeholder="请输入排序数字" /><small>数字越大排名越在左边靠前</small></label></form>`;
     modal(title, body, contact ? "保存修改" : "保存");
     const root = document.getElementById("modal-root");
     const form = root?.querySelector("[data-828-contact-form]");
     const confirm = root?.querySelector(".modal-confirm");
     confirm?.addEventListener("click", () => {
       const name = form?.querySelector("[data-828-contact-name]")?.value.trim() || "";
-      const username = (form?.querySelector("[data-828-contact-username]")?.value.trim() || "").replace(/^@+/, "");
+      const softwareName = form?.querySelector("[data-828-contact-software]")?.value.trim() || "";
+      const account = form?.querySelector("[data-828-contact-account]")?.value.trim() || "";
       const description = form?.querySelector("[data-828-contact-description]")?.value.trim() || "";
       const sortValue = form?.querySelector("[data-828-contact-sort]")?.value.trim() || "";
       const sort = Number(sortValue);
-      if (!name || !username || !description || !sortValue || !Number.isFinite(sort) || sort < 0) {
-        modal("保存失败", "请完整填写联系名称、Telegram用户名、联系说明和有效的排序数字。", "关闭");
+      const softwareNameLength = Array.from(softwareName).reduce((total, character) => total + (/^[\u3400-\u9fff]$/.test(character) ? 2 : 1), 0);
+      if (!name || !softwareName || !account) {
+        modal("保存失败", "请完整填写联系名称、联系软件名称和联系账号。", "关闭");
         return;
       }
-      if (contact) Object.assign(contact, { name, username, description, sort });
-      else cooperationContacts828.push({ id: cooperationContactSequence828++, name, username, description, sort, enabled: false });
+      if (softwareNameLength > 12) {
+        modal("保存失败", "联系软件名称中文最多6个字，英文最多12个字母。", "关闭");
+        return;
+      }
+      if (sortValue && (!Number.isFinite(sort) || sort < 0)) {
+        modal("保存失败", "请输入有效的排序数字。", "关闭");
+        return;
+      }
+      const normalizedSort = sortValue ? sort : 0;
+      if (contact) Object.assign(contact, { name, softwareName, account, description, sort: normalizedSort });
+      else cooperationContacts828.push({ id: cooperationContactSequence828++, name, softwareName, account, description, sort: normalizedSort, enabled: false });
       refresh828Page(page.key);
     });
   }
