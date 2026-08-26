@@ -4,6 +4,12 @@
   const localTools = window.PROTOTYPE_DATA.localTools || [];
   const isLocalPrototype = ["127.0.0.1", "localhost"].includes(window.location.hostname);
   const siteOptions = ["XY体育", "拉布布", "WC体育", "CS体育", "YY体育", "NS体育", "DW体育"];
+  const cooperationContacts828 = [
+    { id: 1, name: "运营小飞机", username: "mike_ops", description: "工作日 10:00-22:00", sort: 100, enabled: true },
+    { id: 2, name: "财务值班", username: "finance_support", description: "充值、提款问题咨询", sort: 90, enabled: true },
+    { id: 3, name: "夜间客服", username: "night_support", description: "每日 22:00-10:00", sort: 80, enabled: false }
+  ];
+  let cooperationContactSequence828 = cooperationContacts828.length + 1;
   const rebateVenueCatalog = Array.isArray(window.PROTOTYPE_VENUE_GAMES) ? window.PROTOTYPE_VENUE_GAMES : [];
   const bonusTypeOptions = ["VIP晋升礼金", "VIP周礼金", "VIP月礼金", "VIP生日礼金", "签到奖励", "推广首充奖励", "推广存款奖励", "推广投注返佣", "活动任务奖励", "指定会员红包", "活动彩金", "新人首充彩金", "余额宝利息"];
   const memberCustomTagOptions = [
@@ -36,7 +42,24 @@
   }));
   const loginState = { searched: false, sortKey: "", sortDirection: 1, dedupKeys: [] };
   const transactionState = { searched: false };
-  const financeTabState = {};
+  const financeTabState = { "control-site-config-828": "合营联系方式" };
+  const risk784TabState = {};
+  const risk784State = {
+    tab: "处理列表",
+    status: "全部",
+    type: "全部类型",
+    rule: "全部规则",
+    configType: "全部类型",
+    site: [...siteOptions],
+    member: "",
+    warningNo: "",
+    start: "",
+    end: "",
+    rules: {},
+    siteRules: {}
+  };
+  const risk784RuleDefaults = {};
+  const risk784EventState = new Map();
   const agent498SubViewState = {};
   let agent498ProfileTab = "基本资料";
   let agent498ProfileUnlocked = false;
@@ -82,7 +105,7 @@
   let autoUnlockHours = 24;
   let currentRequirementId = "";
   let currentPageKey = "";
-  const p0RiskRequirementIds = new Set(["#680", "#705", "#750"]);
+  const p0RiskRequirementIds = new Set(["#680", "#705"]);
   function isP0RiskRequirement(requirementId) {
     return p0RiskRequirementIds.has(requirementId);
   }
@@ -91,7 +114,7 @@
   }
   function p0RiskRequirementMode(requirementId = currentRequirementId) {
     if (requirementId === "#680") return "venue-out";
-    if (requirementId === "#705") return "wallet-balance";
+    if (requirementId === "#705") return "all";
     return "all";
   }
   function p0RiskVisibleScenarios(requirementId = currentRequirementId) {
@@ -291,9 +314,9 @@
     annotation.summaryHighlights?.forEach((term) => { summaryText = summaryText.replaceAll(escapeHtml(term), `<strong class="summary-danger">${escapeHtml(term)}</strong>`); });
     const summary = annotation.summary ? `<p class="annotation-summary${annotation.summaryTone === "danger" ? " annotation-summary-danger" : ""}">${summaryText}</p>` : "";
     const rules = [...annotation.rules];
-    if (annotation.name.includes("筛选") || annotation.name.includes("输入处理")) rules.push("筛选按钮的可点击面积大于其他按钮一倍，可参考原型");
-    if (annotation.type === "数据表格") rules.push("表格仅在内容超出对应可视区域时显示滚动条：横向滚动条高度、纵向滚动条宽度均保持15px；内容可完整显示时对应滚动条隐藏");
-    if (annotation.name.includes("导出") || annotation.type.includes("导出")) exportExcelRules.forEach((rule) => { if (!rules.includes(rule)) rules.push(rule); });
+    if (currentRequirementId !== "#828" && (annotation.name.includes("筛选") || annotation.name.includes("输入处理"))) rules.push("筛选按钮的可点击面积大于其他按钮一倍，可参考原型");
+    if (currentRequirementId !== "#828" && annotation.type === "数据表格") rules.push("表格仅在内容超出对应可视区域时显示滚动条：横向滚动条高度、纵向滚动条宽度均保持15px；内容可完整显示时对应滚动条隐藏");
+    if (currentRequirementId !== "#828" && (annotation.name.includes("导出") || annotation.type.includes("导出"))) exportExcelRules.forEach((rule) => { if (!rules.includes(rule)) rules.push(rule); });
     const ruleHtml = rules.map((rule, index) => {
       let text = escapeHtml(rule);
       annotation.ruleHighlights?.forEach((term) => { text = text.replaceAll(escapeHtml(term), `<strong class="rule-highlight">${escapeHtml(term)}</strong>`); });
@@ -364,6 +387,8 @@
   function activePageTab(page) {
     return page.key.endsWith("-498")
       ? agent498ActiveTab(page)
+      : page.key.endsWith("-784")
+      ? risk784TabState[page.key] || page.tabs?.[0]
       : financeTabState[page.key] || page.tabs?.[0];
   }
 
@@ -396,6 +421,26 @@
         ? `<div class="site-695-menu-item is-unchanged" aria-disabled="true"><span class="menu-dot"></span><span>${item.name}</span></div>`
         : `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${item.key}" class="site-695-menu-item ${page.key === item.key ? "active" : ""}"><span class="menu-dot"></span><span>${item.name}</span></a>`).join("");
       return `<aside class="risk-sidebar site-695-sidebar"><div class="site-695-brand"><span>S</span><strong>站点后台管理系统</strong></div><nav class="site-695-menu-tree"><section class="site-695-menu-group is-expanded"><button type="button" class="site-695-menu-parent" data-site-695-menu-toggle aria-expanded="true"><span class="site-695-parent-icon"></span><span>会员管理</span><i></i></button><div class="site-695-menu-children">${items}</div></section></nav><div class="risk-user"><span>MK</span><div><strong>Mike</strong><small>${escapeHtml(site695IdentityConfig[site695Identity].label)}</small></div></div></aside>`;
+    }
+    if (requirement.id === "#828" && page.key.startsWith("site-")) {
+      return `<aside class="risk-sidebar site-695-sidebar site-828-sidebar"><div class="site-695-brand"><span>S</span><strong>站点后台管理系统</strong></div><nav class="site-695-menu-tree"><div class="site-695-menu-parent site-828-menu-single" aria-current="page"><span class="site-695-parent-icon"></span><span>合营配置</span></div></nav><div class="risk-user"><span>MK</span><div><strong>Mike</strong><small>站点管理员</small></div></div></aside>`;
+    }
+    if (requirement.id === "#828" && page.key.startsWith("control-")) {
+      const active = page.key === "control-site-list-828" || page.key === "control-site-config-828";
+      return `<aside class="risk-sidebar risk-784-sidebar control-828-sidebar"><div class="risk-brand"><span>C</span><div><strong>总控后台管理系统</strong><small>站点管理</small></div></div><nav class="risk-784-menu-tree"><section class="risk-784-menu-group${active ? " is-expanded" : ""}"><button type="button" class="risk-784-menu-parent" data-control-828-menu-toggle aria-expanded="${active ? "true" : "false"}"><span class="menu-symbol">■</span><span class="menu-name">站点管理</span><span class="risk-784-menu-arrow" aria-hidden="true"></span></button><div class="risk-784-menu-children"><a href="#requirement/${encodeURIComponent(requirement.id)}/page/control-site-list-828" class="risk-784-menu-item ${page.key === "control-site-list-828" ? "active" : ""}"><span class="risk784-menu-symbol" aria-hidden="true"></span><span>站点列表</span></a></div></section></nav><div class="risk-user"><span>MK</span><div><strong>Mike</strong><small>总控管理员</small></div></div></aside>`;
+    }
+    if (requirement.id === "#784") {
+      const items = [
+        ["risk-withdraw-784", "风控提款审核"],
+        ["risk-config-784", "风控配置"],
+        ["risk-library-784", "风控名单库"],
+        ["risk-hit-records-784", "风险命中记录"],
+        ["risk-exception-agent-784", "异常代理"],
+        ["risk-login-log-784", "会员登录日志"],
+        ["risk-transaction-query-784", "流水查询"],
+        ["risk-warning-784", "风控预警"]
+      ].map(([key, name], index) => `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${key}" class="risk-784-menu-item ${page.key === key ? "active" : ""}"><span class="menu-symbol risk-784-menu-symbol icon-${index + 1}" aria-hidden="true"></span><span class="menu-name">${name}</span></a>`).join("");
+      return `<aside class="risk-sidebar risk-784-sidebar"><div class="risk-brand"><span>R</span><div><strong>总控后台管理系统</strong><small>风控管理</small></div></div><div class="risk-menu-label">功能导航</div><nav class="risk-784-menu-tree"><section class="risk-784-menu-group is-expanded"><button type="button" class="risk-784-menu-parent" data-risk-784-menu-toggle aria-expanded="true"><span class="menu-symbol">■</span><span class="menu-name">风控管理</span><span class="risk-784-menu-arrow" aria-hidden="true"></span></button><div class="risk-784-menu-children">${items}</div></section></nav><div class="risk-user"><span>MK</span><div><strong>Mike</strong><small>总控管理员</small></div></div></aside>`;
     }
     if (isP0RiskRequirement(requirement.id)) {
       const p0Suffix = p0RiskRequirementSuffix(requirement.id);
@@ -4374,8 +4419,375 @@
     });
   }
 
+  const risk784WarningRows = [
+    { no: "WA202608220001", site: "XY体育", member: "member_10086", type: "套利行为", rule: "同平台多账号", count: 3, detail: "同姓名+同设备号启用会员数=3；同姓名+相同IP启用会员数=2", hitAt: "2026-08-22 14:31:06", handledAt: "—", remark: "—", handler: "—", status: "待处理" },
+    { no: "WA202608220002", site: "WC体育", member: "summer_728", type: "基本信息", rule: "地区信息异常", count: 1, detail: "手机号归属地、登录IP、银行卡开户地址分别位于3个省/直辖市", hitAt: "2026-08-22 13:48:22", handledAt: "2026-08-22 14:10:31", remark: "已转人工核对资料", handler: "mike.finance", status: "已处理" },
+    { no: "WA202608220003", site: "拉布布", member: "player_2026", type: "套利行为", rule: "彩票对打", count: 1, detail: "4小时对冲投注额占比=83.6%；对冲局数=12局", hitAt: "2026-08-22 12:16:40", handledAt: "—", remark: "—", handler: "—", status: "待处理" },
+    { no: "WA202608220004", site: "CS体育", member: "member_22017", type: "盈利类", rule: "当天高盈利倍数", count: 2, detail: "当天盈利=18,600 CNY；当天存款=5,200 CNY；盈利倍数=3.58", hitAt: "2026-08-22 11:02:18", handledAt: "2026-08-22 11:30:08", remark: "已核对订单，保留观察", handler: "risk_mike", status: "已处理" },
+    { no: "WA202608220005", site: "YY体育", member: "vip_user_77", type: "基本信息", rule: "虚拟币提款地址变动", count: 1, detail: "新增提款地址；0天内修改手机号；VIP等级=6", hitAt: "2026-08-22 10:44:09", handledAt: "—", remark: "—", handler: "—", status: "待处理" },
+    { no: "WA202608220006", site: "NS体育", member: "lottery_889", type: "套利行为", rule: "异常联赛", count: 1, detail: "联赛=7777；投注金额=8,800 CNY；VIP等级=2", hitAt: "2026-08-22 09:20:03", handledAt: "2026-08-22 09:46:11", remark: "确认业务方配置，正常关闭", handler: "mike.finance", status: "已处理" },
+    { no: "WA202608210021", site: "DW体育", member: "device_link_08", type: "套利行为", rule: "同设备领彩套利", count: 5, detail: "相同设备号关联领彩会员=4；彩金金额均≥1元", hitAt: "2026-08-21 22:18:49", handledAt: "—", remark: "—", handler: "—", status: "待处理" },
+    { no: "WA202608210022", site: "XY体育", member: "profit_451", type: "盈利类", rule: "彩票高盈利", count: 1, detail: "最近提款成功后彩票盈利=2,680 CNY", hitAt: "2026-08-21 20:04:15", handledAt: "2026-08-21 20:30:44", remark: "已完成历史订单核查", handler: "risk_mike", status: "已处理" },
+    { no: "WA202608210023", site: "WC体育", member: "same_card_02", type: "套利行为", rule: "会员领彩-银行卡多平台", count: 2, detail: "相同银行卡关联首存领彩会员=3；涉及站点=2", hitAt: "2026-08-21 18:40:52", handledAt: "—", remark: "—", handler: "—", status: "待处理" },
+    { no: "WA202608210024", site: "CS体育", member: "abnormal_bet_12", type: "基本信息", rule: "异常注单占比高", count: 1, detail: "30天取消/无效注单=42；占总注单=61.8%", hitAt: "2026-08-21 16:22:31", handledAt: "—", remark: "—", handler: "—", status: "待处理" },
+    { no: "WA202608210025", site: "拉布布", member: "manual_review_4", type: "基本信息", rule: "场馆转账异常", count: 7, detail: "3秒内同额场馆转入=6笔；期间无投注", hitAt: "2026-08-21 14:10:18", handledAt: "2026-08-21 14:55:07", remark: "核对场馆流水后已处理", handler: "risk_mike", status: "已处理" },
+    { no: "WA202608210026", site: "YY体育", member: "vip_zero_03", type: "盈利类", rule: "累计大额盈利", count: 1, detail: "VIP3盈利率=58.4%；最近存款后盈利=1,260 CNY", hitAt: "2026-08-21 12:02:06", handledAt: "—", remark: "—", handler: "—", status: "待处理" }
+  ];
+
+  function isRisk784Requirement(requirementId = currentRequirementId) {
+    return requirementId === "#784";
+  }
+
+  function risk784Rules() {
+    return requirements.find((item) => item.id === "#784")?.warningRules || [];
+  }
+
+  function risk784RuleKey(rule, index) {
+    return `${index}-${rule.name}`;
+  }
+
+  function risk784CleanRuleLine(line) {
+    return String(line || "").trim().replace(/^\d+\s*[、.．)）]\s*/, "").trim();
+  }
+
+  function risk784RuleNumberParts(rule) {
+    const parts = [];
+    const numberPattern = /\d+(?:\.\d+)?/g;
+    String(rule.logic || "").split(/\n+/).map(risk784CleanRuleLine).filter(Boolean).forEach((line) => {
+      line.replace(numberPattern, (value) => {
+        parts.push(value);
+        return value;
+      });
+    });
+    return parts;
+  }
+
+  function risk784Methods(rule, index) {
+    const key = risk784RuleKey(rule, index);
+    const config = risk784RuleDefaults[key] || { frequencies: [] };
+    const lines = String(rule.logic || "").split(/\n+/).map(risk784CleanRuleLine).filter(Boolean);
+    const frequencies = config.frequencies?.length ? config.frequencies : (rule.frequency || []);
+    return lines.map((logic, methodIndex) => ({
+      logic,
+      frequency: frequencies[methodIndex] || frequencies[frequencies.length - 1] || "每次预警"
+    }));
+  }
+
+  function risk784EnsureState() {
+    risk784Rules().forEach((rule, index) => {
+      const key = risk784RuleKey(rule, index);
+      if (typeof risk784State.rules[key] !== "boolean") risk784State.rules[key] = true;
+      if (!Array.isArray(risk784State.siteRules[key])) risk784State.siteRules[key] = [...siteOptions];
+      if (!risk784RuleDefaults[key]) {
+        const values = risk784RuleNumberParts(rule);
+        risk784RuleDefaults[key] = {
+          values: values.map((value) => Number(value)),
+          frequencies: [...(rule.frequency || [])]
+        };
+      }
+    });
+  }
+
+  function risk784CurrentEvent(row) {
+    return { ...row, ...(risk784EventState.get(row.no) || {}) };
+  }
+
+  function risk784StatusTag(status) {
+    const className = status === "待处理" ? "risk784-status-pending" : "risk784-status-done";
+    return `<span class="risk784-status ${className}">${escapeHtml(status)}</span>`;
+  }
+
+  function risk784FilterRows() {
+    const ruleNames = risk784Rules().filter((rule) => risk784State.type === "全部类型" || rule.type === risk784State.type).map((rule) => rule.name);
+    return risk784WarningRows.map(risk784CurrentEvent).filter((row) => {
+      const sitesMatch = risk784State.site.length === siteOptions.length || risk784State.site.includes(row.site);
+      return sitesMatch
+        && (risk784State.status === "全部" || row.status === risk784State.status)
+        && (risk784State.type === "全部类型" || row.type === risk784State.type)
+        && (risk784State.rule === "全部规则" || row.rule === risk784State.rule)
+        && (!risk784State.member || row.member.toLowerCase().includes(risk784State.member.toLowerCase()))
+        && (!risk784State.warningNo || row.no.toLowerCase().includes(risk784State.warningNo.toLowerCase()))
+        && (!ruleNames.length || ruleNames.includes(row.rule))
+        && (!risk784State.start || row.hitAt >= risk784State.start.replace("T", " "))
+        && (!risk784State.end || row.hitAt <= risk784State.end.replace("T", " "));
+    }).sort((left, right) => right.hitAt.localeCompare(left.hitAt));
+  }
+
+  function risk784DateRange() {
+    const start = risk784State.start ? risk784State.start.replace("T", " ") : "开始时间";
+    const end = risk784State.end ? risk784State.end.replace("T", " ") : "结束时间";
+    return `<div class="risk-field risk784-date-field date-range-field"><label>命中时间</label><button type="button" class="risk-range" data-date-trigger><span>${start}</span><b>至</b><span>${end}</span></button><div class="date-picker-popover risk784-date-popover" hidden><div><label>开始时间<input type="datetime-local" step="1" value="${risk784State.start}" data-risk784-start-input /></label><label>结束时间<input type="datetime-local" step="1" value="${risk784State.end}" data-risk784-end-input /></label></div><footer><button type="button" class="secondary-action date-close">取消</button><button type="button" class="main-action date-apply" data-risk784-date-apply>确定</button></footer></div></div>`;
+  }
+
+  function risk784SitePicker() {
+    const allSelected = risk784State.site.length === siteOptions.length;
+    return `<div class="risk-field risk784-site-field"><label>所属站点</label><details class="risk784-site-picker"><summary>${allSelected ? "全部站点" : `已选${risk784State.site.length}个站点`}</summary><div class="risk784-site-options"><label><input type="checkbox" data-risk784-site-all ${allSelected ? "checked" : ""} />全选站点</label>${siteOptions.map((site) => `<label><input type="checkbox" value="${site}" data-risk784-site ${risk784State.site.includes(site) ? "checked" : ""} />${site}</label>`).join("")}</div></details></div>`;
+  }
+
+  function risk784TypeOptions(selected = "全部类型") {
+    return ["全部类型", "套利行为", "基本信息", "盈利类"].map((type) => `<option value="${type}" ${selected === type ? "selected" : ""}>${type}</option>`).join("");
+  }
+
+  function risk784RuleOptions(type, selected = "全部规则") {
+    const rules = risk784Rules().filter((rule) => type === "全部类型" || rule.type === type);
+    return [`<option value="全部规则" ${selected === "全部规则" ? "selected" : ""}>全部规则</option>`, ...rules.map((rule) => `<option value="${escapeHtml(rule.name)}" ${selected === rule.name ? "selected" : ""}>${escapeHtml(rule.name)}</option>`)].join("");
+  }
+
+  function risk784WarningTabs(page) {
+    const active = activePageTab(page) || page.tabs[0];
+    const componentId = active === "处理列表" ? "N01" : "N02";
+    return `<nav class="inner-tabs risk784-tabs annotated" data-component-id="${componentId}">${componentBadge(componentId)}${page.tabs.map((tab) => `<button type="button" class="risk784-tab ${tab === active ? "active" : ""}" data-risk784-tab="${escapeHtml(tab)}">${escapeHtml(tab)}</button>`).join("")}</nav>`;
+  }
+
+  function risk784ProcessingContent(page) {
+    risk784EnsureState();
+    const rows = risk784FilterRows();
+    const rowHtml = rows.map((row, index) => `<tr data-risk784-row data-status="${escapeHtml(row.status)}" data-site="${escapeHtml(row.site)}" data-type="${escapeHtml(row.type)}" data-rule="${escapeHtml(row.rule)}" data-member="${escapeHtml(row.member)}" data-warning-no="${escapeHtml(row.no)}" data-hit-at="${escapeHtml(row.hitAt)}"><td>${index + 1}</td><td><code>${escapeHtml(row.no)}</code></td><td>${escapeHtml(row.site)}</td><td>${escapeHtml(row.member)}</td><td>${escapeHtml(row.type)}</td><td>${escapeHtml(row.rule)}</td><td class="risk784-count">${row.count}</td><td class="risk784-detail-cell">${escapeHtml(row.detail)}</td><td>${escapeHtml(row.hitAt)}</td><td>${escapeHtml(row.handledAt)}</td><td class="risk784-remark-cell">${escapeHtml(row.remark)}</td><td class="risk784-actions"><button type="button" class="link-action" data-risk784-event-action="${row.status === "待处理" ? "process" : "detail"}" data-warning-no="${escapeHtml(row.no)}">${row.status === "待处理" ? "处理" : "详情"}</button></td></tr>`).join("");
+    return `<section class="risk-filter-panel risk784-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid risk784-filter-grid"><div class="risk-field"><label>处理状态</label><select data-risk784-status><option value="全部" ${risk784State.status === "全部" ? "selected" : ""}>全部</option><option value="待处理" ${risk784State.status === "待处理" ? "selected" : ""}>待处理</option><option value="已处理" ${risk784State.status === "已处理" ? "selected" : ""}>已处理</option></select></div><div class="risk-field"><label>会员账号</label><input type="text" data-risk784-member value="${escapeHtml(risk784State.member)}" placeholder="请输入会员账号" /></div>${risk784SitePicker()}<div class="risk-field"><label>预警类型</label><select data-risk784-type>${risk784TypeOptions(risk784State.type)}</select></div><div class="risk-field"><label>预警规则</label><select data-risk784-rule>${risk784RuleOptions(risk784State.type, risk784State.rule)}</select></div><div class="risk-field"><label>预警单号</label><input type="text" data-risk784-warning-no value="${escapeHtml(risk784State.warningNo)}" placeholder="请输入预警单号" /></div>${risk784DateRange()}<div class="risk-filter-actions"><button type="button" class="main-action" data-risk784-search>筛选</button><button type="button" class="secondary-action" data-risk784-reset>重置</button></div></div></section><section class="risk-list-card risk784-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>处理列表</h2><span>共 ${rows.length} 条</span></div><span class="risk784-sort-note">默认按命中时间倒序</span></div><div class="risk-table-wrap risk784-table-wrap"><table class="risk-table risk784-warning-table"><thead><tr><th>序号</th><th>预警单号</th><th>所属站点</th><th>会员账号</th><th>命中类型</th><th>命中规则</th><th>命中次数</th><th>预警明细</th><th>命中时间</th><th>处理时间</th><th>处理备注</th><th>操作</th></tr></thead><tbody>${rowHtml || `<tr><td colspan="12" class="empty-state">暂无符合条件的预警记录</td></tr>`}</tbody></table></div>${pagination(20, rows.length || 0)}</section>`;
+  }
+
+  function risk784ConfigTypeFilter() {
+    return `<div class="risk784-config-toolbar"><label>预警类型<select data-risk784-config-type>${risk784TypeOptions(risk784State.configType)}</select></label><span>共 ${risk784Rules().filter((rule) => risk784State.configType === "全部类型" || rule.type === risk784State.configType).length} 条规则</span></div>`;
+  }
+
+  function risk784ConfigTable(page) {
+    risk784EnsureState();
+    const rules = risk784Rules().map((rule, index) => ({ rule, index })).filter(({ rule }) => risk784State.configType === "全部类型" || rule.type === risk784State.configType);
+    const ruleRows = rules.map(({ rule, index }) => {
+      const key = risk784RuleKey(rule, index);
+      const methods = risk784Methods(rule, index);
+      const enabled = risk784State.rules[key];
+      const sites = risk784State.siteRules[key] || siteOptions;
+      const matchedRows = risk784WarningRows.filter((row) => row.rule === rule.name);
+      const memberCount = new Set(matchedRows.map((row) => row.member)).size;
+      const siteCount = new Set(matchedRows.map((row) => row.site)).size;
+      return `<tr data-risk784-config-row><td>${index + 1}</td><td>${escapeHtml(rule.type)}</td><td><strong class="risk784-rule-name">${escapeHtml(rule.name)}</strong><div class="risk784-method-list">${methods.map((method, methodIndex) => `<div><span>${methodIndex + 1}. ${escapeHtml(method.logic)}</span><select data-risk784-frequency data-rule-key="${escapeHtml(key)}" data-method-index="${methodIndex}"><option ${method.frequency === "每次预警" ? "selected" : ""}>每次预警</option><option ${method.frequency === "每日预警一次" ? "selected" : ""}>每日预警一次</option><option ${method.frequency === "预警一次" ? "selected" : ""}>预警一次</option></select></div>`).join("")}</div></td><td class="risk784-note-cell">${escapeHtml(rule.note)}</td><td><label class="switch-row risk784-rule-switch"><input type="checkbox" data-risk784-rule-toggle="${escapeHtml(key)}" ${enabled ? "checked" : ""} /><span class="switch-track"></span><b>${enabled ? "启用" : "关闭"}</b></label></td><td><button type="button" class="link-action risk784-site-config" data-rule-key="${escapeHtml(key)}">${sites.length === siteOptions.length ? "全部站点" : `${sites.length}个站点`}</button></td><td><button type="button" class="link-action risk784-hit-link" data-hit-kind="member" data-rule-key="${escapeHtml(key)}">${memberCount} 个会员</button></td><td><button type="button" class="link-action risk784-hit-link" data-hit-kind="site" data-rule-key="${escapeHtml(key)}">${siteCount} 个站点</button></td><td class="risk784-rule-actions"><button type="button" class="link-action risk784-edit-rule" data-rule-key="${escapeHtml(key)}">编辑</button></td></tr>`;
+    }).join("");
+    return `<section class="risk-list-card risk784-config-card annotated" data-component-id="T02">${componentBadge("T02")}${risk784ConfigTypeFilter()}<div class="risk-list-heading"><div><h2>预警规则配置</h2><span>规则逻辑固定，示例数值可在编辑弹窗中配置</span></div></div><div class="risk-table-wrap risk784-config-table-wrap"><table class="risk-table risk784-config-table"><thead><tr><th>序号</th><th>预警类型</th><th>预警规则 / 判别方式 / 预警频次</th><th>规则判定要求</th><th>规则状态</th><th>生效站点</th><th>命中会员</th><th>命中站点</th><th>操作</th></tr></thead><tbody>${ruleRows}</tbody></table></div>${pagination(20, rules.length)}</section>`;
+  }
+
+  function risk784RuleContent(rule, index) {
+    const key = risk784RuleKey(rule, index);
+    const config = risk784RuleDefaults[key] || { values: [], frequencies: [] };
+    const methods = risk784Methods(rule, index);
+    const values = config.values || [];
+    let valueIndex = 0;
+    const numberPattern = /\d+(?:\.\d+)?/g;
+    const logicLines = String(rule.logic || "").split(/\n+/).map(risk784CleanRuleLine).filter(Boolean);
+    const inlineLogic = logicLines.map((line, lineIndex) => {
+      let cursor = 0;
+      const parts = [];
+      line.replace(numberPattern, (value, offset) => {
+        parts.push(escapeHtml(line.slice(cursor, offset)));
+        const currentValue = values[valueIndex] ?? Number(value);
+        parts.push(`<input type="number" step="any" data-risk784-inline-value data-risk784-threshold value="${currentValue}" aria-label="数值参数${valueIndex + 1}" />`);
+        valueIndex += 1;
+        cursor = offset + value.length;
+        return value;
+      });
+      parts.push(escapeHtml(line.slice(cursor)));
+      return `<div class="risk784-inline-rule-line">${logicLines.length > 1 ? `<span class="risk784-inline-line-no">${lineIndex + 1}</span>` : ""}<span>${parts.join("")}</span></div>`;
+    }).join("");
+    return `<div class="risk784-rule-edit-form"><div class="risk784-rule-context"><span>预警类型</span><strong>${escapeHtml(rule.type)}</strong><span>预警规则</span><strong>${escapeHtml(rule.name)}</strong></div><section class="risk784-inline-rule-section"><header><strong>规则内容</strong><small>固定文字不可修改，数值直接在对应位置配置；当前为示例值，上线前由管理员配置</small></header><div class="risk784-inline-rule-editor">${inlineLogic || `<span class="risk784-no-threshold">此规则没有可单独维护的数字参数</span>`}</div></section><label>规则判定要求<textarea readonly>${escapeHtml(rule.note)}</textarea></label><section><header><strong>预警频次</strong><small>每种判别方式独立选择</small></header><div class="risk784-frequency-editor">${methods.map((method, methodIndex) => `<label><span>${methodIndex + 1}. ${escapeHtml(method.logic)}</span><select data-risk784-edit-frequency><option ${method.frequency === "每次预警" ? "selected" : ""}>每次预警</option><option ${method.frequency === "每日预警一次" ? "selected" : ""}>每日预警一次</option><option ${method.frequency === "预警一次" ? "selected" : ""}>预警一次</option></select></label>`).join("")}</div></section></div>`;
+  }
+
+  function risk784RelationRows(rule, kind) {
+    const matched = risk784WarningRows.filter((row) => row.rule === rule.name);
+    const source = matched.length ? matched : [
+      { member: "member_10086", site: "XY体育", hitAt: "2026-08-22 14:31:06", count: 1, status: "待处理" },
+      { member: "summer_728", site: "WC体育", hitAt: "2026-08-21 18:40:52", count: 1, status: "已处理" }
+    ];
+    if (kind === "member") {
+      const dedup = new Map();
+      source.forEach((row) => {
+        const current = dedup.get(row.member);
+        if (!current) dedup.set(row.member, { ...row, sites: new Set([row.site]), count: row.count || 1, first: row.hitAt, latest: row.hitAt });
+        else {
+          current.sites.add(row.site);
+          current.count += row.count || 1;
+          current.first = current.first > row.hitAt ? row.hitAt : current.first;
+          current.latest = current.latest < row.hitAt ? row.hitAt : current.latest;
+        }
+      });
+      return [...dedup.values()].map((row) => ({ ...row, site: [...row.sites].join("、") })).sort((left, right) => right.latest.localeCompare(left.latest));
+    }
+    const dedup = new Map();
+    source.forEach((row) => { const current = dedup.get(row.site); if (!current) dedup.set(row.site, { site: row.site, members: new Set([row.member]), count: row.count || 1, first: row.hitAt, latest: row.hitAt }); else { current.members.add(row.member); current.count += row.count || 1; current.first = current.first > row.hitAt ? row.hitAt : current.first; current.latest = current.latest < row.hitAt ? row.hitAt : current.latest; } });
+    return [...dedup.values()].sort((left, right) => right.latest.localeCompare(left.latest));
+  }
+
+  function risk784RelationModal(rule, index, kind) {
+    const rows = risk784RelationRows(rule, kind);
+    const title = kind === "member" ? "命中会员" : "命中站点";
+    const table = kind === "member" ? `<table class="risk-table risk784-relation-table"><thead><tr><th>会员账号</th><th>所属站点</th><th>首次命中时间</th><th>最近命中时间</th><th>命中次数</th><th>处理状态</th></tr></thead><tbody>${rows.map((row) => `<tr data-risk784-relation-row data-hit-at="${row.latest}"><td>${escapeHtml(row.member)}</td><td>${escapeHtml(row.site)}</td><td>${escapeHtml(row.first)}</td><td>${escapeHtml(row.latest)}</td><td>${row.count || 1}</td><td>${risk784StatusTag(row.status || "待处理")}</td></tr>`).join("")}</tbody></table>` : `<table class="risk-table risk784-relation-table"><thead><tr><th>所属站点</th><th>会员数量</th><th>命中次数</th><th>首次命中时间</th><th>最近命中时间</th></tr></thead><tbody>${rows.map((row) => `<tr data-risk784-relation-row data-hit-at="${row.latest}"><td>${escapeHtml(row.site)}</td><td>${row.members.size}</td><td>${row.count}</td><td>${escapeHtml(row.first)}</td><td>${escapeHtml(row.latest)}</td></tr>`).join("")}</tbody></table>`;
+    modal(`${title} · ${rule.name}`, `<div class="risk784-relation-modal"><div class="risk784-relation-summary"><span>预警规则</span><strong>${escapeHtml(rule.name)}</strong><span>展示范围</span><strong>全部历史数据</strong></div><div class="risk784-modal-date-filter"><label>命中时间<input type="datetime-local" data-risk784-relation-start /></label><b>至</b><label><span>&nbsp;</span><input type="datetime-local" data-risk784-relation-end /></label></div><div class="risk-table-wrap">${table}</div>${pagination(20, rows.length)}</div>`, "关闭");
+    const root = document.getElementById("modal-root");
+    const filter = () => { const start = root.querySelector("[data-risk784-relation-start]")?.value || ""; const end = root.querySelector("[data-risk784-relation-end]")?.value || ""; root.querySelectorAll("[data-risk784-relation-row]").forEach((row) => { const value = row.dataset.hitAt.replace(" ", "T"); row.hidden = Boolean((start && value < start) || (end && value > end)); }); };
+    root.querySelectorAll("[data-risk784-relation-start], [data-risk784-relation-end]").forEach((input) => input.addEventListener("change", filter));
+  }
+
+  function risk784ProcessModal(row, page) {
+    modal("处理预警", `<div class="risk784-process-form"><dl><div><dt>预警单号</dt><dd>${escapeHtml(row.no)}</dd></div><div><dt>所属站点</dt><dd>${escapeHtml(row.site)}</dd></div><div><dt>会员账号</dt><dd>${escapeHtml(row.member)}</dd></div><div><dt>预警类型</dt><dd>${escapeHtml(row.type)}</dd></div><div><dt>预警规则</dt><dd>${escapeHtml(row.rule)}</dd></div><div><dt>命中次数</dt><dd>${row.count}</dd></div></dl><section class="risk784-process-detail"><strong>预警明细</strong><p>${escapeHtml(row.detail)}</p></section><label class="modal-field">处理备注<span class="risk784-required">必填</span><textarea data-risk784-remark placeholder="请输入处理备注"></textarea><small class="risk784-form-error" hidden>处理备注不能为空</small></label></div>`, "确认处理");
+    const confirm = document.querySelector("#modal-root .modal-confirm");
+    const dialog = confirm?.closest(".risk-modal");
+    confirm?.addEventListener("click", (event) => {
+      const remark = dialog?.querySelector("[data-risk784-remark]")?.value.trim() || "";
+      if (!remark) { event.preventDefault(); event.stopImmediatePropagation(); const error = dialog?.querySelector(".risk784-form-error"); if (error) error.hidden = false; return; }
+      risk784EventState.set(row.no, { status: "已处理", handler: "mike.finance", handledAt: "2026-08-22 18:22:10", remark });
+      window.setTimeout(() => refreshRisk784(page), 0);
+    }, true);
+  }
+
+  function risk784RuleEditModal(rule, index, page) {
+    const key = risk784RuleKey(rule, index);
+    risk784EnsureState();
+    modal("编辑预警规则", risk784RuleContent(rule, index), "保存");
+    const confirm = document.querySelector("#modal-root .modal-confirm");
+    const dialog = confirm?.closest(".risk-modal");
+    confirm?.addEventListener("click", (event) => {
+      const values = [...(dialog?.querySelectorAll("[data-risk784-inline-value]") || [])].map((input) => Number(input.value));
+      if (values.some((value) => !Number.isFinite(value) || value < 0)) { event.preventDefault(); event.stopImmediatePropagation(); return; }
+      const frequencies = [...(dialog?.querySelectorAll("[data-risk784-edit-frequency]") || [])].map((select) => select.value);
+      risk784RuleDefaults[key] = { values, frequencies };
+      window.setTimeout(() => refreshRisk784(page), 0);
+    }, true);
+  }
+
+  function risk784SiteConfigModal(rule, index, page) {
+    const key = risk784RuleKey(rule, index);
+    risk784EnsureState();
+    const selected = risk784State.siteRules[key] || siteOptions;
+    modal("配置生效站点", `<div class="risk784-site-config-form"><p>规则：<strong>${escapeHtml(rule.name)}</strong></p><label class="risk784-site-all"><input type="checkbox" data-risk784-config-site-all ${selected.length === siteOptions.length ? "checked" : ""} />全选站点</label><div>${siteOptions.map((site) => `<label><input type="checkbox" data-risk784-config-site value="${site}" ${selected.includes(site) ? "checked" : ""} />${site}</label>`).join("")}</div></div>`, "保存");
+    const root = document.getElementById("modal-root");
+    root.querySelector("[data-risk784-config-site-all]")?.addEventListener("change", (event) => root.querySelectorAll("[data-risk784-config-site]").forEach((input) => { input.checked = event.target.checked; }));
+    const confirm = root.querySelector(".modal-confirm");
+    confirm?.addEventListener("click", () => { risk784State.siteRules[key] = [...root.querySelectorAll("[data-risk784-config-site]:checked")].map((input) => input.value); window.setTimeout(() => refreshRisk784(page), 0); }, true);
+  }
+
+  function risk784ExistingContent(page) {
+    const active = activePageTab(page) || page.tabs?.[0];
+    return `<div class="risk-page-heading"><div><p>风控管理</p><h1>${escapeHtml(page.name)}</h1></div></div>${page.tabs ? `<nav class="inner-tabs risk784-existing-tabs">${page.tabs.map((tab) => `<button type="button" class="risk784-tab ${tab === active ? "active" : ""}" data-risk784-tab="${escapeHtml(tab)}">${escapeHtml(tab)}</button>`).join("")}</nav>` : ""}<section class="reserved-area unchanged-page risk784-unchanged"><div><strong>和生产一致，无任何修改</strong><span>页面层级、字段、权限、数据和交互全部沿用生产总控后台现状。</span></div></section>`;
+  }
+
+  function risk784WarningContent(page) {
+    const active = activePageTab(page) || page.tabs[0];
+    return `<div class="risk-page-heading risk784-page-heading"><div><p>风控管理</p><h1>风控预警</h1></div><span class="page-status">规则检测与预警处理</span></div>${risk784WarningTabs(page)}${active === "处理列表" ? risk784ProcessingContent(page) : risk784ConfigTable(page)}`;
+  }
+
+  function risk784RefreshPage() {
+    render();
+  }
+
+  function refreshRisk784(page) {
+    risk784RefreshPage(page);
+  }
+
+  function bindRisk784Behavior(page) {
+    if (!isRisk784Requirement(currentRequirementId)) return;
+    if (!document.body.dataset.risk784ActionBound) {
+      document.body.dataset.risk784ActionBound = "true";
+      document.addEventListener("click", (event) => {
+        const target = event.target?.nodeType === 1 ? event.target : event.target?.parentElement;
+        const button = target?.closest?.(".risk784-edit-rule,.risk784-site-config,.risk784-hit-link");
+        if (!button) return;
+        const currentPage = requirements.find((item) => item.id === "#784")?.pages.find((item) => item.key === currentPageKey);
+        const index = Number(button.dataset.ruleKey.split("-")[0]);
+        const rule = risk784Rules()[index];
+        if (!currentPage || !rule) return;
+        if (button.classList.contains("risk784-edit-rule")) risk784RuleEditModal(rule, index, currentPage);
+        else if (button.classList.contains("risk784-site-config")) risk784SiteConfigModal(rule, index, currentPage);
+        else risk784RelationModal(rule, index, button.dataset.hitKind);
+      });
+    }
+    document.querySelectorAll("[data-risk-784-menu-toggle]").forEach((button) => button.addEventListener("click", () => { const group = button.closest(".risk-784-menu-group"); const expanded = button.getAttribute("aria-expanded") !== "false"; button.setAttribute("aria-expanded", String(!expanded)); group?.classList.toggle("is-expanded", !expanded); }));
+    document.querySelectorAll("[data-risk784-tab]").forEach((button) => button.addEventListener("click", () => { const currentPage = requirements.find((item) => item.id === "#784")?.pages.find((item) => item.key === currentPageKey); if (currentPage) risk784TabState[currentPage.key] = button.dataset.risk784Tab; refreshRisk784(page); }));
+    if (page.key !== "risk-warning-784" || activePageTab(page) !== "处理列表") {
+      if (page.key === "risk-warning-784" && activePageTab(page) === "预警规则配置") bindRisk784ConfigBehavior(page);
+      return;
+    }
+    bindRisk784ProcessingBehavior(page);
+  }
+
+  function bindRisk784ProcessingBehavior(page) {
+    const root = document.querySelector(".risk784-page-heading")?.parentElement || document;
+    const type = root.querySelector("[data-risk784-type]");
+    const rule = root.querySelector("[data-risk784-rule]");
+    type?.addEventListener("change", () => { risk784State.type = type.value; risk784State.rule = "全部规则"; refreshRisk784(page); });
+    rule?.addEventListener("change", () => { risk784State.rule = rule.value; });
+    root.querySelector("[data-risk784-status]")?.addEventListener("change", (event) => { risk784State.status = event.target.value; });
+    root.querySelector("[data-risk784-member]")?.addEventListener("input", (event) => { risk784State.member = event.target.value.trim(); });
+    root.querySelector("[data-risk784-warning-no]")?.addEventListener("input", (event) => { risk784State.warningNo = event.target.value.trim(); });
+    const syncSites = () => {
+      risk784State.site = [...root.querySelectorAll("[data-risk784-site]:checked")].map((input) => input.value);
+      const all = root.querySelector("[data-risk784-site-all]");
+      if (all) {
+        all.checked = risk784State.site.length === siteOptions.length;
+        all.indeterminate = risk784State.site.length > 0 && risk784State.site.length < siteOptions.length;
+      }
+      const summary = root.querySelector(".risk784-site-picker summary");
+      if (summary) summary.firstChild.textContent = risk784State.site.length === siteOptions.length ? "全部站点" : `已选${risk784State.site.length}个站点`;
+    };
+    root.querySelector("[data-risk784-site-all]")?.addEventListener("change", (event) => { root.querySelectorAll("[data-risk784-site]").forEach((input) => { input.checked = event.target.checked; }); syncSites(); });
+    root.querySelectorAll("[data-risk784-site]").forEach((input) => input.addEventListener("change", syncSites));
+    root.querySelector("[data-risk784-date-apply]")?.addEventListener("click", () => { risk784State.start = root.querySelector("[data-risk784-start-input]")?.value || ""; risk784State.end = root.querySelector("[data-risk784-end-input]")?.value || ""; });
+    root.querySelector("[data-risk784-search]")?.addEventListener("click", () => { risk784State.member = root.querySelector("[data-risk784-member]")?.value.trim() || ""; risk784State.warningNo = root.querySelector("[data-risk784-warning-no]")?.value.trim() || ""; refreshRisk784(page); });
+    root.querySelector("[data-risk784-reset]")?.addEventListener("click", () => { Object.assign(risk784State, { status: "全部", type: "全部类型", rule: "全部规则", site: [...siteOptions], member: "", warningNo: "", start: "", end: "" }); refreshRisk784(page); });
+    root.querySelectorAll("[data-risk784-event-action]").forEach((button) => button.addEventListener("click", () => { const row = risk784CurrentEvent(risk784WarningRows.find((item) => item.no === button.dataset.warningNo)); if (button.dataset.risk784EventAction === "process") risk784ProcessModal(row, page); else modal("预警详情", `<div class="risk784-event-detail"><dl><div><dt>预警单号</dt><dd>${escapeHtml(row.no)}</dd></div><div><dt>所属站点</dt><dd>${escapeHtml(row.site)}</dd></div><div><dt>会员账号</dt><dd>${escapeHtml(row.member)}</dd></div><div><dt>命中类型</dt><dd>${escapeHtml(row.type)}</dd></div><div><dt>命中规则</dt><dd>${escapeHtml(row.rule)}</dd></div><div><dt>命中次数</dt><dd>${row.count}</dd></div><div><dt>命中时间</dt><dd>${escapeHtml(row.hitAt)}</dd></div><div><dt>处理人/处理时间</dt><dd>${escapeHtml(row.handler)} / ${escapeHtml(row.handledAt)}</dd></div></dl><p><strong>预警明细</strong>${escapeHtml(row.detail)}</p><p><strong>处理备注</strong>${escapeHtml(row.remark)}</p></div>`, "关闭"); }));
+  }
+
+  function bindRisk784ConfigBehavior(page) {
+    const root = document.querySelector(".risk784-config-card")?.parentElement || document;
+    root.querySelector("[data-risk784-config-type]")?.addEventListener("change", (event) => { risk784State.configType = event.target.value; refreshRisk784(page); });
+    root.querySelectorAll("[data-risk784-rule-toggle]").forEach((input) => input.addEventListener("change", (event) => { risk784State.rules[input.dataset.risk784RuleToggle] = event.target.checked; refreshRisk784(page); }));
+    root.querySelectorAll("[data-risk784-frequency]").forEach((select) => select.addEventListener("change", () => { const key = select.dataset.ruleKey; const methodIndex = Number(select.dataset.methodIndex); risk784EnsureState(); const config = risk784RuleDefaults[key] || { values: [], frequencies: [] }; const frequencies = risk784Methods(risk784Rules().find((rule, index) => risk784RuleKey(rule, index) === key), Number(key.split("-")[0])).map((method) => method.frequency); frequencies[methodIndex] = select.value; config.frequencies = frequencies; risk784RuleDefaults[key] = config; refreshRisk784(page); }));
+  }
+
+  function cooperationContactTable828(contextLabel = "当前站点", options = {}) {
+    const componentId = options.componentId || "T01";
+    const showHeading = options.showHeading !== false;
+    const rows = [...cooperationContacts828].sort((left, right) => Number(right.sort) - Number(left.sort));
+    const body = rows.length ? rows.map((contact, index) => `<tr><td>${index + 1}</td><td><strong>${escapeHtml(contact.name)}</strong></td><td class="control-828-telegram">@${escapeHtml(contact.username)}</td><td>${escapeHtml(contact.description || "—")}</td><td class="control-828-sort">${escapeHtml(contact.sort)}</td><td><label class="switch-row control-828-contact-switch"><input type="checkbox" data-828-contact-toggle="${contact.id}" ${contact.enabled ? "checked" : ""} /><span class="switch-track"></span><b>${contact.enabled ? "显示" : "隐藏"}</b></label></td><td class="control-828-actions"><button type="button" class="link-action control-828-edit" data-828-contact-edit="${contact.id}">编辑</button><button type="button" class="link-action control-828-delete" data-828-contact-delete="${contact.id}">删除</button></td></tr>`).join("") : '<tr><td colspan="7"><div class="site-695-empty">暂无已配置的联系方式</div></td></tr>';
+    const heading = showHeading
+      ? `<header class="control-828-card-heading"><div><h2>合营联系方式</h2><span>当前已配置 ${rows.length} 条</span></div><button type="button" class="main-action control-828-add annotated" data-component-id="B01"><span class="component-badge">B01</span>新增联系方式</button></header>`
+      : `<div class="control-828-contact-toolbar"><button type="button" class="main-action control-828-add annotated" data-component-id="B01"><span class="component-badge">B01</span>新增联系方式</button></div>`;
+    return `<section class="site-828-contact-card annotated control-828-contact-section" data-component-id="${componentId}"><div class="component-badge">${componentId}</div>${heading}<div class="control-828-table-note"><span>展示规则</span><strong>最多同时显示两个联系方式</strong><em>排序数字越大，排名越在左边靠前</em></div><div class="risk-table-wrap"><table class="risk-table control-828-contact-table"><thead><tr><th>序号</th><th>联系名称</th><th>Telegram用户名</th><th>联系说明</th><th>排序</th><th>是否显示</th><th>操作</th></tr></thead><tbody>${body}</tbody></table></div></section>`;
+  }
+
+  function siteCooperation828Content() {
+    return `<div class="risk-page-heading"><div><h1>合营配置</h1></div></div>${cooperationContactTable828("当前站点")}`;
+  }
+
+  function controlSiteList828Content() {
+    const rows = [
+      ["1", "XY001", "XY体育", "XY Sports", "xy_admin", "正常", "开放中", "2026-07-02"],
+      ["2", "LBB002", "拉布布", "LaBuBu", "labubu_admin", "正常", "开放中", "2026-07-08"],
+      ["3", "WC003", "WC体育", "WC Sports", "wc_admin", "正常", "开放中", "2026-07-11"]
+    ];
+    const body = rows.map((row) => `<tr>${row.map((cell, index) => `<td>${index === 5 ? `<span class="result-tag approved">${cell}</span>` : index === 6 ? `<span class="result-tag approved">${cell}</span>` : escapeHtml(cell)}</td>`).join("")}<td class="control-828-operation"><button type="button" class="link-action control-828-muted-action">修改</button><button type="button" class="link-action control-828-muted-action">关闭</button><a class="main-action control-828-config-action" href="#requirement/${encodeURIComponent("#828")}/page/control-site-config-828">配置</a><button type="button" class="link-action control-828-muted-action">删除</button></td></tr>`).join("");
+    return `<div class="risk-page-heading control-828-page-heading"><div><p>站点管理</p><h1>站点列表</h1></div></div><section class="control-828-production-banner"><strong>此页面与生产一致，点击配置后的页面有修改</strong><span>本原型仅突出可进入修改范围的配置按钮。</span></section><section class="risk-filter-panel control-828-muted-panel"><div class="risk-filter-grid"><div class="risk-field"><label>站点编码</label><input type="text" placeholder="请输入站点编码" /></div><div class="risk-field"><label>站点名称</label><input type="text" placeholder="请输入站点中文名称" /></div><div class="risk-field"><label>站点管理员账号</label><input type="text" placeholder="请输入站点管理员账号" /></div><div class="risk-field"><label>站点状态</label><select><option>全部</option><option>正常</option><option>停用</option></select></div><div class="risk-filter-actions"><button type="button" class="secondary-action control-828-muted-action">搜索</button><button type="button" class="secondary-action control-828-muted-action">重置</button></div></div></section><section class="risk-list-card control-828-muted-table"><div class="risk-list-heading"><div><h2>站点列表</h2><span>共 3 条</span></div></div><div class="risk-table-wrap"><table class="risk-table control-828-site-table"><thead><tr><th>站点ID</th><th>站点编码</th><th>站点名称</th><th>站点英文名称</th><th>站点管理员账号</th><th>站点状态</th><th>访问状态</th><th>申请时间</th><th>操作</th></tr></thead><tbody>${body}</tbody></table></div>${pagination(20, 3)}</section>`;
+  }
+
+  function controlSiteConfig828Content(page) {
+    const tabs = page.tabs || [];
+    const activeTab = financeTabState[page.key] || tabs.at(-1) || "合营联系方式";
+    const tabButtons = tabs.map((tab) => `<button type="button" class="control-828-config-tab ${activeTab === tab ? "active" : ""}" data-control-828-tab="${escapeHtml(tab)}">${escapeHtml(tab)}</button>`).join("");
+    const content = activeTab === "合营联系方式"
+      ? cooperationContactTable828("XY体育", { componentId: "T02", showHeading: false })
+      : `<section class="reserved-area unchanged-page compact control-828-unchanged"><div><strong>与生产一致，无需修改</strong><span>当前Tab的菜单、字段、数据和交互均沿用生产现状。</span></div></section>`;
+    return `<section class="control-828-config-shell"><header class="control-828-config-header"><strong>站点配置 - XY体育</strong><a class="link-action" href="#requirement/${encodeURIComponent("#828")}/page/control-site-list-828">返回列表</a></header><nav class="control-828-config-tabs" aria-label="站点配置菜单">${tabButtons}</nav><div class="control-828-config-body">${content}</div></section>`;
+  }
+
   function pageContent(page) {
     if (page.mergedInto) return mergedRequirementContent(page);
+    if (currentRequirementId === "#828") {
+      if (page.key === "site-cooperation-config-828") return siteCooperation828Content();
+      if (page.key === "control-site-list-828") return controlSiteList828Content();
+      if (page.key === "control-site-config-828") return controlSiteConfig828Content(page);
+    }
+    if (isRisk784Requirement(currentRequirementId)) {
+      if (page.key === "risk-warning-784") return risk784WarningContent(page);
+      return risk784ExistingContent(page);
+    }
     if (page.unchanged) return unchangedFinanceContent(page);
     if (page.key === "profit-simulator-498") return profitSimulatorContent(page);
     if (isP0RiskRequirement(currentRequirementId) && page.key.startsWith("risk-")) return p0Risk680Content(page);
@@ -4566,7 +4978,7 @@
       else if (!pageKey.includes("bet-records") && next === "订单号") next = "单号";
 
       const siteSpecific = requirementId === "#427" && pageKey === "site-transactions";
-      if (!siteSpecific && ["站点", "站点名称"].includes(next)) next = "所属站点";
+      if (!siteSpecific && requirementId !== "#828" && ["站点", "站点名称"].includes(next)) next = "所属站点";
       if (siteSpecific && next === "所属站点" && element.tagName === "TH") next = "站点名称";
 
       if (requirementId === "#406" && ["withdraw-review", "hold-review", "review-history"].includes(pageKey) && next === "申请时间") next = "提款申请时间";
@@ -4720,6 +5132,10 @@
   }
 
   function prototypeEndpointSwitch(requirement, page) {
+    if (requirement.id === "#828") {
+      const siteActive = page.key.startsWith("site-");
+      return `<div class="prototype-endpoint-switch"><a href="#requirement/${encodeURIComponent(requirement.id)}/page/site-cooperation-config-828" class="${siteActive ? "active" : ""}">站点后台</a><a href="#requirement/${encodeURIComponent(requirement.id)}/page/control-site-list-828" class="${siteActive ? "" : "active"}">总控后台</a></div><span class="current-page-label">${escapeHtml(page.name)}</span>`;
+    }
     if (isAgent498Requirement(requirement.id)) {
       if (requirement.id === "#498") {
         return `<a class="current-page-label" href="#requirement/${encodeURIComponent(requirement.id)}/page/agent-dashboard-498">代理后台改造</a>`;
@@ -4747,6 +5163,7 @@
     }
     currentRequirementId = requirement.id;
     currentPageKey = page.key;
+    if (requirement.id === "#828" && page.key === "control-site-config-828" && !financeTabState[page.key]) financeTabState[page.key] = "合营联系方式";
     if (page.key !== requestedPageKey) window.history.replaceState(null, "", `#requirement/${encodeURIComponent(requirement.id)}/page/${page.key}`);
     if (page.key === "member-login-log") loginState.searched = false;
     if (page.key === "transaction-query") transactionState.searched = false;
@@ -4765,9 +5182,12 @@
     const profitSimulatorMode = isAgent498Requirement(requirement.id) && page.key === "profit-simulator-498";
     const control498Mode = isAgent498Requirement(requirement.id) && page.key.startsWith("control-");
     const risk680Mode = isP0RiskRequirement(requirement.id);
+    const risk784Mode = isRisk784Requirement(requirement.id);
     const site695Mode = requirement.id === "#695";
     const siteAgent736Mode = requirement.id === "#736";
     const agent776Mode = requirement.id === "#776";
+    const site828Mode = requirement.id === "#828" && page.key.startsWith("site-");
+    const control828Mode = requirement.id === "#828" && page.key.startsWith("control-");
     const agent498Mode = isAgent498Requirement(requirement.id) && !profitSimulatorMode && !control498Mode;
     const publicAgent498Mode = requirement.id === "#498" && agent498Mode;
     const agent498ActiveMenu = agent498Mode && page.key !== "agent-dashboard-498" ? activePageTab(page) : "";
@@ -4786,16 +5206,17 @@
       ? `<div class="member-mobile-stage">${memberMobilePrototypeNav(page.key)}${renderedPageContent}</div>`
       : vipAlgorithmMode
         ? `<div class="vip-algorithm-stage">${renderedPageContent}</div>`
-      : `<div class="risk-app${memberModuleMode ? " member-module-mode production-admin-ui-488" : ""}${member493Mode ? " member-493-mode" : ""}${memberDetailMode ? " member-detail-mode" : ""}${agent498Mode || control498Mode ? ` agent-498-app${publicAgent498Mode ? " production-admin-ui-488" : ""}` : ""}${risk680Mode ? " risk-680-app" : ""}${site695Mode || siteAgent736Mode || agent776Mode ? " site-member-695-app production-site-ui-695" : ""}${agent776Mode ? " agent-776-app" : ""}">${sidebar(requirement,page)}<section class="risk-main">${risk680Mode ? `<header class="risk-topbar risk-680-topbar"><button type="button" class="risk-680-sidebar-toggle" data-risk-680-sidebar-toggle aria-label="收起或展开侧栏"><i></i><i></i><i></i></button><nav aria-label="面包屑"><span>风控中心</span><b>/</b><strong>${displayPageName}</strong></nav><div class="risk-680-top-actions"><button type="button" class="risk-680-top-icon" aria-label="全屏预览" title="全屏预览"></button><span class="risk-680-avatar">M</span><strong>Mike</strong><i aria-hidden="true"></i></div></header>` : `<header class="risk-topbar"><div>${publicAgent498Mode ? '<button type="button" class="agent-498-sidebar-toggle" aria-label="收起或展开侧栏" title="收起或展开侧栏"><span></span><span></span><span></span></button>' : ""}<span>${control498Mode ? `总控后台 / ${page.menuGroup}` : agent498Mode ? (requirement.id === "#498" ? `${agent498PortalLabel()} / ${agent498Portal === "AGENT" ? page.menuGroup : "会员管理"}` : page.key === "agent-dashboard-498" ? "代理后台" : `${page.menuGroup} / ${page.name}`) : moduleName} /</span><strong>${displayPageName}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header>`}<div class="risk-content">${renderedPageContent}</div></section></div>`;
+      : `<div class="risk-app${memberModuleMode ? " member-module-mode production-admin-ui-488" : ""}${member493Mode ? " member-493-mode" : ""}${memberDetailMode ? " member-detail-mode" : ""}${agent498Mode || control498Mode ? ` agent-498-app${publicAgent498Mode ? " production-admin-ui-488" : ""}` : ""}${risk680Mode ? " risk-680-app" : ""}${risk784Mode ? " risk-784-app production-admin-ui-488" : ""}${site695Mode || siteAgent736Mode || agent776Mode || site828Mode ? " site-member-695-app production-site-ui-695" : ""}${control828Mode ? " production-admin-ui-488 control-828-app" : ""}${site828Mode ? " site-828-app" : ""}${agent776Mode ? " agent-776-app" : ""}">${sidebar(requirement,page)}<section class="risk-main">${risk680Mode ? `<header class="risk-topbar risk-680-topbar"><button type="button" class="risk-680-sidebar-toggle" data-risk-680-sidebar-toggle aria-label="收起或展开侧栏"><i></i><i></i><i></i></button><nav aria-label="面包屑"><span>风控中心</span><b>/</b><strong>${displayPageName}</strong></nav><div class="risk-680-top-actions"><button type="button" class="risk-680-top-icon" aria-label="全屏预览" title="全屏预览"></button><span class="risk-680-avatar">M</span><strong>Mike</strong><i aria-hidden="true"></i></div></header>` : `<header class="risk-topbar"><div>${publicAgent498Mode ? '<button type="button" class="agent-498-sidebar-toggle" aria-label="收起或展开侧栏" title="收起或展开侧栏"><span></span><span></span><span></span>' : ""}<span>${control498Mode ? `总控后台 / ${page.menuGroup}` : agent498Mode ? (requirement.id === "#498" ? `${agent498PortalLabel()} / ${agent498Portal === "AGENT" ? page.menuGroup : "会员管理"}` : page.key === "agent-dashboard-498" ? "代理后台" : `${page.menuGroup} / ${page.name}`) : moduleName} /</span><strong>${displayPageName}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header>`}<div class="risk-content">${renderedPageContent}</div></section></div>`;
     const permissionReview = agent498Mode ? agent498PermissionReviewControls() : site695Mode ? site695IdentityReviewControls() : "";
     const agent498Role = requirement.id === "#498" && agent498Portal !== "AGENT" ? (agent498Portal === "CONTROL" ? "总控管理员" : "站点管理员") : agent498IdentityConfig[agent498Identity]?.label;
-    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav${["#509", "#643"].includes(requirement.id) || isAgent498Requirement(requirement.id) ? ' class="prototype-endpoint-nav"' : ""} aria-label="当前原型页面">${prototypeEndpointSwitch(requirement, page)}</nav></header><div class="prototype-canvas${memberMobileMode ? " member-mobile-canvas" : ""}${vipAlgorithmMode ? " vip-algorithm-canvas" : ""}${profitSimulatorMode ? " profit-simulator-canvas" : ""}${risk680Mode ? " risk-680-canvas" : ""}">${prototypeBody}</div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${agent498Mode ? escapeHtml(agent498Role) : site695Mode ? escapeHtml(site695IdentityConfig[site695Identity].label) : page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><div><h2>${displayPageName}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll">${permissionReview}<div class="spec-top-notices">${topSpecNotices}</div><div class="questions-slot">${questionsBlock(page)}</div>${pageNoteBlock(page)}${pageLogic}${extraNotice}${adjustmentNotice}${exportNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${cardAnnotations.length} 项</span></div><div class="annotation-list">${cardAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"${memberModuleMode || publicAgent498Mode ? ' class="production-admin-ui-488"' : risk680Mode ? ' class="risk-680-modal-root"' : ""}></div>`;
+    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav${["#509", "#643", "#828"].includes(requirement.id) || isAgent498Requirement(requirement.id) ? ' class="prototype-endpoint-nav"' : ""} aria-label="当前原型页面">${prototypeEndpointSwitch(requirement, page)}</nav></header><div class="prototype-canvas${memberMobileMode ? " member-mobile-canvas" : ""}${vipAlgorithmMode ? " vip-algorithm-canvas" : ""}${profitSimulatorMode ? " profit-simulator-canvas" : ""}${risk680Mode ? " risk-680-canvas" : ""}${risk784Mode ? " risk-784-canvas" : ""}">${prototypeBody}</div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${agent498Mode ? escapeHtml(agent498Role) : site695Mode ? escapeHtml(site695IdentityConfig[site695Identity].label) : page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><div><h2>${displayPageName}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll">${permissionReview}<div class="spec-top-notices">${topSpecNotices}</div><div class="questions-slot">${questionsBlock(page)}</div>${pageNoteBlock(page)}${pageLogic}${extraNotice}${adjustmentNotice}${exportNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${cardAnnotations.length} 项</span></div><div class="annotation-list">${cardAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"${memberModuleMode || publicAgent498Mode || risk784Mode || requirement.id === "#828" ? ' class="production-admin-ui-488"' : risk680Mode ? ' class="risk-680-modal-root"' : ""}></div>`;
     if (exportNotice) bindExportStandardLink(app, exportLinkId);
     if (page.key === "withdraw-monitor") renderMonitorView(false);
     addTopPaginators();
     bindComponentLinks();
     bindPageBehavior(page);
     bindDatePickers();
+    bindRisk784Behavior(page);
     if (agent498Mode || control498Mode) bindAgent498DatePickers();
     normalizeTableCurrencyUnits(app);
     applyTableRowLimits(app);
@@ -4980,6 +5401,7 @@
 
   function normalizeGlobalFilterFields(root = document) {
     root.querySelectorAll(".risk-filter-panel").forEach((panel) => {
+      if (panel.closest(".control-828-app")) return;
       Array.from(panel.querySelectorAll(".risk-field")).forEach((field) => {
         const label = field.querySelector(":scope > label")?.textContent.trim();
         if (!["所属站点", "站点", "站点名称"].includes(label) || field.classList.contains("site-multi-field")) return;
@@ -6491,6 +6913,74 @@
     document.querySelectorAll(".control-overflow-image").forEach((button) => button.addEventListener("click", () => modal("申请附图", '<div class="agent-overflow-image-placeholder">部长级别以上同意截图</div>', "关闭")));
   }
 
+  function refresh828Page(pageKey = currentPageKey) {
+    const requirement = requirements.find((item) => item.id === "#828");
+    if (requirement) detailView(requirement, pageKey);
+  }
+
+  function open828ContactModal(page, contactId = null) {
+    const contact = contactId == null ? null : cooperationContacts828.find((item) => item.id === Number(contactId));
+    const title = contact ? "编辑联系方式" : "新增联系方式";
+    const body = `<form class="control-828-contact-form" data-828-contact-form><label><span>联系名称</span><input type="text" data-828-contact-name value="${escapeHtml(contact?.name || "")}" placeholder="请输入联系名称" /></label><label><span>Telegram用户名</span><input type="text" data-828-contact-username value="${escapeHtml(contact?.username || "")}" placeholder="请输入Telegram用户名" /><small>无需填写‘@’符号</small></label><label><span>联系说明</span><input type="text" data-828-contact-description value="${escapeHtml(contact?.description || "")}" placeholder="例如营业时间" /></label><label><span>排序</span><input type="number" data-828-contact-sort value="${escapeHtml(contact?.sort ?? "")}" min="0" step="1" placeholder="请输入排序数字" /><small>数字越大排名越在左边靠前</small></label></form>`;
+    modal(title, body, contact ? "保存修改" : "保存");
+    const root = document.getElementById("modal-root");
+    const form = root?.querySelector("[data-828-contact-form]");
+    const confirm = root?.querySelector(".modal-confirm");
+    confirm?.addEventListener("click", () => {
+      const name = form?.querySelector("[data-828-contact-name]")?.value.trim() || "";
+      const username = (form?.querySelector("[data-828-contact-username]")?.value.trim() || "").replace(/^@+/, "");
+      const description = form?.querySelector("[data-828-contact-description]")?.value.trim() || "";
+      const sortValue = form?.querySelector("[data-828-contact-sort]")?.value.trim() || "";
+      const sort = Number(sortValue);
+      if (!name || !username || !description || !sortValue || !Number.isFinite(sort) || sort < 0) {
+        modal("保存失败", "请完整填写联系名称、Telegram用户名、联系说明和有效的排序数字。", "关闭");
+        return;
+      }
+      if (contact) Object.assign(contact, { name, username, description, sort });
+      else cooperationContacts828.push({ id: cooperationContactSequence828++, name, username, description, sort, enabled: false });
+      refresh828Page(page.key);
+    });
+  }
+
+  function bind828Behavior(page) {
+    if (currentRequirementId !== "#828") return;
+    document.querySelector("[data-control-828-menu-toggle]")?.addEventListener("click", (event) => {
+      const button = event.currentTarget;
+      const group = button.closest(".risk-784-menu-group");
+      const expanded = button.getAttribute("aria-expanded") === "true";
+      button.setAttribute("aria-expanded", String(!expanded));
+      group?.classList.toggle("is-expanded", !expanded);
+    });
+    document.querySelectorAll("[data-control-828-tab]").forEach((button) => button.addEventListener("click", () => {
+      financeTabState[page.key] = button.getAttribute("data-control-828-tab");
+      refresh828Page(page.key);
+    }));
+    document.querySelectorAll("[data-828-contact-toggle]").forEach((input) => input.addEventListener("change", (event) => {
+      const contact = cooperationContacts828.find((item) => item.id === Number(input.dataset["828ContactToggle"]));
+      if (!contact) return;
+      if (event.target.checked && cooperationContacts828.filter((item) => item.enabled && item.id !== contact.id).length >= 2) {
+        event.target.checked = false;
+        modal("无法开启联系方式", "最多只能展示两个联系方式，请先关闭一个已显示的联系方式。", "关闭");
+        return;
+      }
+      contact.enabled = event.target.checked;
+      refresh828Page(page.key);
+    }));
+    document.querySelectorAll("[data-828-contact-edit]").forEach((button) => button.addEventListener("click", () => open828ContactModal(page, button.dataset["828ContactEdit"])));
+    document.querySelectorAll("[data-828-contact-delete]").forEach((button) => button.addEventListener("click", () => {
+      const id = Number(button.dataset["828ContactDelete"]);
+      const contact = cooperationContacts828.find((item) => item.id === id);
+      if (!contact) return;
+      modal("删除联系方式", `<p>确认删除联系方式【${escapeHtml(contact.name)}】？删除后不会再展示在合营板块。</p>`, "确认删除");
+      document.querySelector("#modal-root .modal-confirm")?.addEventListener("click", () => {
+        const index = cooperationContacts828.findIndex((item) => item.id === id);
+        if (index >= 0) cooperationContacts828.splice(index, 1);
+        refresh828Page(page.key);
+      });
+    }));
+    document.querySelectorAll("[data-component-id='B01'].control-828-add").forEach((button) => button.addEventListener("click", () => open828ContactModal(page)));
+  }
+
   function bindPageBehavior(page) {
     document.querySelectorAll("input[type='text']").forEach((input)=>input.addEventListener("blur",()=>{input.value=input.value.trim();}));
     const toggle = document.getElementById("spec-claim-toggle");
@@ -6525,6 +7015,7 @@
     bindProfitSimulatorBehavior(page);
     bindAgent498Behavior(page);
     bindSiteAgent736Behavior(page);
+    bind828Behavior(page);
     if (page.key.endsWith("-776")) { bindAgent776Behavior(page); bindAgent498DatePickers(); }
     if (page.key.endsWith("-695")) { bindSite695Behavior(page); bindAgent498DatePickers(); }
     if (isP0RiskRequirement(currentRequirementId) && page.key.startsWith("risk-")) bindP0RiskSimulatorBehavior(page);
