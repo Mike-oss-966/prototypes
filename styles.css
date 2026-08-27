@@ -4866,6 +4866,83 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
   .risk784-site-config-form > div { grid-template-columns: 1fr; }
 }
 
+/* #830 大客户TG通知：复用生产总控风控配置视觉，仅突出新增类型与TG开关。 */
+.annotation-card.template-annotation { padding: 14px 12px; }
+.annotation-template { max-width: 100%; margin: 12px 0 0; padding: 12px; overflow: auto; color: #35413a; background: #f5f7f6; border: 1px solid #dce2de; border-radius: 4px; font: 11px/1.65 Consolas, "Microsoft YaHei", monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.risk-830-app { min-width: 1220px; }
+.risk-830-app .risk-content { background: #f0f2f5; }
+.production-admin-ui-488 .risk-784-sidebar nav span.risk-784-menu-item { min-height: 50px; display: grid; grid-template-columns: 15px minmax(0,1fr); align-items: center; gap: 14px; padding: 0 20px 0 40px; color: #bfcbd9; background: #1f2d3d; border: 0; font-size: 14px; }
+.risk830-context-menu { opacity: .35; filter: grayscale(1); cursor: default; }
+.risk830-page-heading { margin-bottom: 14px !important; }
+.risk830-page-heading h1 { font-family: "Helvetica Neue", Helvetica, "Microsoft YaHei", sans-serif !important; font-weight: 500 !important; }
+.risk830-tabs { margin-bottom: 14px; }
+.risk830-type-card { margin-top: 0 !important; padding-top: 8px; overflow: visible !important; border-radius: 8px; }
+.risk830-production-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 0 16px 8px; }
+.risk830-query-field { display: flex; align-items: center; gap: 8px; }
+.risk830-query-field label { width: 70px; flex: 0 0 70px; color: var(--p488-regular); text-align: right; font-size: 13px; }
+.risk830-query-field input,.risk830-query-field select { box-sizing: border-box; width: 280px; height: 32px; padding: 0 10px; color: var(--p488-regular); background: #fff; border: 1px solid var(--p488-border); border-radius: 4px; font-family: inherit; font-size: 12px; }
+.risk830-query-small select { width: 180px; }
+.risk830-query-field input:hover,.risk830-query-field select:hover { border-color: #c0c4cc; }
+.risk830-query-field input:focus,.risk830-query-field select:focus { outline: none; border-color: var(--p488-primary); }
+.risk830-query-actions { display: flex; align-items: center; gap: 8px; }
+.risk830-query-actions .main-action,.risk830-query-actions .secondary-action,.risk830-toolbar .main-action,.risk830-toolbar .secondary-action { min-height: 28px; padding: 0 12px; font-size: 12px; }
+.risk830-query-actions .main-action { min-width: 66px; }
+.risk830-toolbar { display: flex; gap: 8px; padding: 8px 16px; border-top: 1px solid #f5f7fa; }
+.risk830-reference-control { opacity: .3; filter: grayscale(1); }
+.risk830-reference-control:focus-within,.risk830-reference-control:hover { opacity: .5; }
+.risk830-table-wrap { max-height: 560px; overflow: auto !important; border-top: 1px solid var(--p488-border-light); }
+.risk830-type-table { width: 100%; min-width: 1660px; table-layout: auto; }
+.risk830-type-table th,.risk830-type-table td { vertical-align: middle; text-align: center; }
+.risk830-type-table th:nth-child(1),.risk830-type-table td:nth-child(1) { width: 70px; }
+.risk830-type-table th:nth-child(2),.risk830-type-table td:nth-child(2) { min-width: 170px; }
+.risk830-type-table th:nth-child(3),.risk830-type-table td:nth-child(3) { min-width: 195px; }
+.risk830-type-table th:nth-child(4),.risk830-type-table td:nth-child(4),.risk830-type-table th:nth-child(5),.risk830-type-table td:nth-child(5) { min-width: 110px; }
+.risk830-type-table th:nth-child(6),.risk830-type-table td:nth-child(6) { min-width: 320px; white-space: normal; line-height: 1.5; }
+.risk830-type-table th:nth-child(7),.risk830-type-table td:nth-child(7),.risk830-type-table th:nth-child(8),.risk830-type-table td:nth-child(8) { min-width: 170px; }
+.risk830-type-table th:nth-child(9),.risk830-type-table td:nth-child(9) { min-width: 110px; }
+.risk830-type-table th:last-child,.risk830-type-table td:last-child { position: static; min-width: 120px; background: inherit; box-shadow: none; }
+.risk830-type-table td:nth-child(2) strong { color: var(--p488-text); font-weight: 500; }
+.risk830-type-table code { color: #606266; background: transparent; font-family: Consolas, monospace; font-size: 12px; }
+.risk830-new-tag { display: inline-block; margin-left: 7px; padding: 2px 6px; color: #409eff; background: #ecf5ff; border: 1px solid #b3d8ff; border-radius: 3px; font-size: 11px; white-space: nowrap; }
+.risk830-reference-row { opacity: .22; filter: grayscale(1); }
+.risk830-reference-row:hover { opacity: .35; }
+.risk830-switch { position: relative; min-width: 84px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0; color: inherit; background: transparent; border: 0; font: inherit; cursor: pointer; }
+.risk830-switch .switch-track { flex: 0 0 36px; background: #dfe5ef; }
+.risk830-switch[aria-checked="true"] .switch-track { background: #2f6df6; }
+.risk830-switch b { min-width: 36px; color: #606266; font-weight: 400; }
+.risk830-switch.is-disabled,.risk830-switch:disabled { cursor: not-allowed; }
+.risk830-switch.is-disabled > :not(.component-badge) { opacity: .45; }
+.risk830-tg-heading { position: relative; }
+.risk830-tg-heading > .component-badge { top: -8px; right: 2px; }
+.risk830-tg-switch > .component-badge { top: -10px; right: -5px; }
+.risk830-not-applicable { color: #909399; }
+.risk830-actions { white-space: nowrap; }
+.risk830-actions button:disabled { color: #c0c4cc; cursor: default; }
+.risk830-delete-reference { margin-left: 8px; color: #c0c4cc !important; }
+.risk830-unchanged { min-height: 280px; margin-top: 0; opacity: .3; filter: grayscale(1); }
+.risk830-edit-form { display: grid; gap: 18px; }
+.risk830-edit-form > label { display: grid; grid-template-columns: 92px minmax(0,1fr); align-items: center; gap: 10px; color: var(--p488-regular); }
+.risk830-edit-form input,.risk830-edit-form select,.risk830-edit-form textarea { box-sizing: border-box; width: 100%; min-height: 36px; padding: 8px 10px; color: var(--p488-regular); background: #fff; border: 1px solid var(--p488-border); border-radius: 4px; font-family: inherit; font-size: 13px; line-height: 1.5; }
+.risk830-edit-form textarea { resize: vertical; }
+.risk830-edit-form input:focus,.risk830-edit-form select:focus,.risk830-edit-form textarea:focus { outline: none; border-color: var(--p488-primary); }
+.risk830-edit-form > p { margin: 0 0 0 102px; padding: 9px 10px; color: #909399; background: #f5f7fa; border: 1px solid var(--p488-border-light); line-height: 1.5; }
+.risk830-confirm-message { display: grid; gap: 10px; }
+.risk830-confirm-message strong { color: var(--p488-text); font-weight: 500; }
+.risk830-confirm-message p { margin: 0; color: var(--p488-regular); line-height: 1.6; }
+#modal-root.production-admin-ui-488 .risk-modal:has(.risk830-edit-form) { width: min(620px, 100%); }
+
+@media (max-width: 760px) {
+  .risk-830-app { min-width: 0; }
+  .risk830-production-filter { display: grid; grid-template-columns: 1fr; }
+  .risk830-query-field { display: grid; grid-template-columns: 80px minmax(0,1fr); }
+  .risk830-query-field label { width: auto; }
+  .risk830-query-field input,.risk830-query-field select,.risk830-query-small select { width: 100%; }
+  .risk830-query-actions { padding-left: 88px; }
+  .risk830-type-table { min-width: 1620px; }
+  .risk830-edit-form > label { grid-template-columns: 1fr; gap: 6px; }
+  .risk830-edit-form > p { margin-left: 0; }
+}
+
 /* #828 合营联系方式：沿用生产站点和总控后台的 Element UI 基线。 */
 .site-828-menu-single { cursor: default; }
 .site-828-app { grid-template-columns: 260px minmax(0, 1fr); }

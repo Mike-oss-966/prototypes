@@ -60,6 +60,16 @@
   };
   const risk784RuleDefaults = {};
   const risk784EventState = new Map();
+  const risk830State = { activeTab: "风控类型", status: "全部", typeName: "", typeCode: "" };
+  const risk830TypeRows = [
+    { id: 108, typeName: "大额充值通知", typeCode: "LARGE_DEPOSIT_NOTICE", typeDesc: "单笔成功充值达到站点配置阈值时命中", enabled: true, tgEnabled: true, componentId: "B02", createdAt: "2026-08-27 10:20:06", updatedAt: "2026-08-27 10:20:06", operator: "Mike", isNew: true },
+    { id: 109, typeName: "大额投注通知", typeCode: "LARGE_BET_NOTICE", typeDesc: "单笔投注达到站点配置阈值时命中", enabled: true, tgEnabled: true, componentId: "B03", createdAt: "2026-08-27 10:22:18", updatedAt: "2026-08-27 10:22:18", operator: "Mike", isNew: true },
+    { id: 110, typeName: "盈利通知", typeCode: "LARGE_PROFIT_NOTICE", typeDesc: "累计、7日、当日或单次盈利达到对应站点阈值时命中", enabled: true, tgEnabled: true, componentId: "B04", createdAt: "2026-08-27 10:24:31", updatedAt: "2026-08-27 10:24:31", operator: "Mike", isNew: true },
+    { id: 111, typeName: "大客户未活跃通知", typeCode: "VIP_CUSTOMER_INACTIVE_NOTICE", typeDesc: "大客户未登录或未玩游戏天数达到对应站点阈值时命中", enabled: true, tgEnabled: false, componentId: "B05", createdAt: "2026-08-27 10:26:45", updatedAt: "2026-08-27 10:26:45", operator: "Mike", isNew: true },
+    { id: 1, typeName: "套利行为", typeCode: "ARBITRAGE", typeDesc: "检测会员套利行为", enabled: true, createdAt: "2025-11-18 09:20:10", updatedAt: "2026-06-12 11:08:42", operator: "admin", isNew: false },
+    { id: 2, typeName: "基本信息", typeCode: "BASIC_INFO", typeDesc: "检测会员基本资料及关联信息异常", enabled: true, createdAt: "2025-11-18 09:22:36", updatedAt: "2026-06-12 11:10:15", operator: "admin", isNew: false },
+    { id: 3, typeName: "盈利类", typeCode: "PROFIT", typeDesc: "检测会员盈利类风险", enabled: true, createdAt: "2025-11-18 09:25:08", updatedAt: "2026-06-12 11:12:50", operator: "admin", isNew: false }
+  ];
   const agent498SubViewState = {};
   let agent498ProfileTab = "基本资料";
   let agent498ProfileUnlocked = false;
@@ -315,14 +325,15 @@
     const summary = annotation.summary ? `<p class="annotation-summary${annotation.summaryTone === "danger" ? " annotation-summary-danger" : ""}">${summaryText}</p>` : "";
     const rules = [...annotation.rules];
     if (currentRequirementId !== "#828" && (annotation.name.includes("筛选") || annotation.name.includes("输入处理"))) rules.push("筛选按钮的可点击面积大于其他按钮一倍，可参考原型");
-    if (currentRequirementId !== "#828" && annotation.type === "数据表格") rules.push("表格仅在内容超出对应可视区域时显示滚动条：横向滚动条高度、纵向滚动条宽度均保持15px；内容可完整显示时对应滚动条隐藏");
+    if (currentRequirementId !== "#828" && annotation.type === "数据表格" && !annotation.suppressStandardTableRules) rules.push("表格仅在内容超出对应可视区域时显示滚动条：横向滚动条高度、纵向滚动条宽度均保持15px；内容可完整显示时对应滚动条隐藏");
     if (currentRequirementId !== "#828" && (annotation.name.includes("导出") || annotation.type.includes("导出"))) exportExcelRules.forEach((rule) => { if (!rules.includes(rule)) rules.push(rule); });
     const ruleHtml = rules.map((rule, index) => {
       let text = escapeHtml(rule);
       annotation.ruleHighlights?.forEach((term) => { text = text.replaceAll(escapeHtml(term), `<strong class="rule-highlight">${escapeHtml(term)}</strong>`); });
       return `<li${annotation.ruleEmphasisIndexes?.includes(index) ? ' class="rule-emphasis"' : ""}>${text}</li>`;
     }).join("");
-    return `<article class="annotation-card${annotation.critical ? " critical-annotation" : ""}" data-spec-id="${annotation.id}" tabindex="0"><div class="annotation-heading"><span class="component-code">${annotation.id}</span><div><h3>${escapeHtml(annotation.name)}</h3></div></div>${summary}<ul>${ruleHtml}</ul>${demoControls}</article>`;
+    const template = annotation.templateText ? `<pre class="annotation-template">${escapeHtml(annotation.templateText)}</pre>` : "";
+    return `<article class="annotation-card${annotation.critical ? " critical-annotation" : ""}${annotation.templateText ? " template-annotation" : ""}" data-spec-id="${annotation.id}" tabindex="0"><div class="annotation-heading"><span class="component-code">${annotation.id}</span><div><h3>${escapeHtml(annotation.name)}</h3></div></div>${summary}${template || `<ul>${ruleHtml}</ul>`}${demoControls}</article>`;
   }
 
   function agent498IsTeamIdentity(identity = agent498Identity) {
@@ -441,6 +452,12 @@
         ["risk-warning-784", "风控预警"]
       ].map(([key, name], index) => `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${key}" class="risk-784-menu-item ${page.key === key ? "active" : ""}"><span class="menu-symbol risk-784-menu-symbol icon-${index + 1}" aria-hidden="true"></span><span class="menu-name">${name}</span></a>`).join("");
       return `<aside class="risk-sidebar risk-784-sidebar"><div class="risk-brand"><span>R</span><div><strong>总控后台管理系统</strong><small>风控管理</small></div></div><div class="risk-menu-label">功能导航</div><nav class="risk-784-menu-tree"><section class="risk-784-menu-group is-expanded"><button type="button" class="risk-784-menu-parent" data-risk-784-menu-toggle aria-expanded="true"><span class="menu-symbol">■</span><span class="menu-name">风控管理</span><span class="risk-784-menu-arrow" aria-hidden="true"></span></button><div class="risk-784-menu-children">${items}</div></section></nav><div class="risk-user"><span>MK</span><div><strong>Mike</strong><small>总控管理员</small></div></div></aside>`;
+    }
+    if (requirement.id === "#830") {
+      const items = ["风控提款审核", "风控配置", "风控名单库", "风险命中记录", "异常代理", "会员登录日志", "流水查询"].map((name, index) => name === "风控配置"
+        ? `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/risk-config-830" class="risk-784-menu-item active"><span class="menu-symbol risk-784-menu-symbol icon-${index + 1}" aria-hidden="true"></span><span class="menu-name">${name}</span></a>`
+        : `<span class="risk-784-menu-item risk830-context-menu" aria-disabled="true"><span class="menu-symbol risk-784-menu-symbol icon-${index + 1}" aria-hidden="true"></span><span class="menu-name">${name}</span></span>`).join("");
+      return `<aside class="risk-sidebar risk-784-sidebar"><div class="risk-brand"><span>R</span><div><strong>总控后台管理系统</strong><small>风控管理</small></div></div><div class="risk-menu-label">功能导航</div><nav class="risk-784-menu-tree"><section class="risk-784-menu-group is-expanded"><button type="button" class="risk-784-menu-parent" data-risk-830-menu-toggle aria-expanded="true"><span class="menu-symbol">■</span><span class="menu-name">风控管理</span><span class="risk-784-menu-arrow" aria-hidden="true"></span></button><div class="risk-784-menu-children">${items}</div></section></nav><div class="risk-user"><span>MK</span><div><strong>Mike</strong><small>总控管理员</small></div></div></aside>`;
     }
     if (isP0RiskRequirement(requirement.id)) {
       const p0Suffix = p0RiskRequirementSuffix(requirement.id);
@@ -4742,6 +4759,97 @@
     root.querySelectorAll("[data-risk784-frequency]").forEach((select) => select.addEventListener("change", () => { const key = select.dataset.ruleKey; const methodIndex = Number(select.dataset.methodIndex); risk784EnsureState(); const config = risk784RuleDefaults[key] || { values: [], frequencies: [] }; const frequencies = risk784Methods(risk784Rules().find((rule, index) => risk784RuleKey(rule, index) === key), Number(key.split("-")[0])).map((method) => method.frequency); frequencies[methodIndex] = select.value; config.frequencies = frequencies; risk784RuleDefaults[key] = config; refreshRisk784(page); }));
   }
 
+  function risk830FilteredRows() {
+    return risk830TypeRows.filter((row) => {
+      const statusMatches = risk830State.status === "全部" || (risk830State.status === "启用" ? row.enabled : !row.enabled);
+      return statusMatches
+        && (!risk830State.typeName || row.typeName.toLowerCase().includes(risk830State.typeName.toLowerCase()))
+        && (!risk830State.typeCode || row.typeCode.toLowerCase().includes(risk830State.typeCode.toLowerCase()));
+    });
+  }
+
+  function risk830Tabs(page) {
+    return `<nav class="inner-tabs risk784-tabs risk830-tabs">${page.tabs.map((tab) => `<button type="button" class="risk830-tab ${risk830State.activeTab === tab ? "active" : ""}${tab === "风控类型" ? "" : " risk830-reference-control"}" data-risk830-tab="${escapeHtml(tab)}">${escapeHtml(tab)}</button>`).join("")}</nav>`;
+  }
+
+  function risk830TypeTable() {
+    const rows = risk830FilteredRows();
+    const body = rows.map((row) => {
+      const tgLabel = !row.enabled ? "已暂停" : row.tgEnabled ? "开启" : "关闭";
+      const tgCell = row.isNew
+        ? `<button type="button" role="switch" aria-checked="${row.tgEnabled}" class="risk830-switch risk830-tg-switch annotated${row.enabled ? "" : " is-disabled"}" data-component-id="${row.componentId}" data-risk830-tg-toggle="${row.id}" ${row.enabled ? "" : "disabled"}>${componentBadge(row.componentId)}<span class="switch-track"></span><b>${tgLabel}</b></button>`
+        : `<span class="risk830-not-applicable">--</span>`;
+      const statusSwitch = `<button type="button" role="switch" aria-checked="${row.enabled}" class="risk830-switch${row.isNew ? "" : " risk830-reference-control"}" data-risk830-type-toggle="${row.id}" ${row.isNew ? "" : "disabled"}><span class="switch-track"></span><b>${row.enabled ? "启用" : "禁用"}</b></button>`;
+      const actions = row.isNew
+        ? `<button type="button" class="link-action" data-risk830-edit="${row.id}">编辑</button><button type="button" class="link-action risk830-delete-reference" disabled>删除</button>`
+        : `<button type="button" class="link-action" disabled>编辑</button><button type="button" class="link-action" disabled>删除</button>`;
+      return `<tr class="${row.isNew ? "risk830-new-row" : "risk830-reference-row"}"><td>${row.id}</td><td><strong>${escapeHtml(row.typeName)}</strong>${row.isNew ? '<span class="risk830-new-tag">本次新增</span>' : ""}</td><td><code>${escapeHtml(row.typeCode)}</code></td><td>${statusSwitch}</td><td>${tgCell}</td><td>${escapeHtml(row.typeDesc)}</td><td>${escapeHtml(row.createdAt)}</td><td>${escapeHtml(row.updatedAt)}</td><td>${escapeHtml(row.operator)}</td><td class="risk830-actions">${actions}</td></tr>`;
+    }).join("");
+    const pageControl = `<div class="full-pagination risk830-pagination"><span>共 ${rows.length} 条</span><select aria-label="每页数量"><option>10条/页</option><option selected>20条/页</option><option>50条/页</option><option>100条/页</option><option>200条/页</option></select><button type="button" aria-label="上一页" disabled>‹</button><button type="button" class="active">1</button><button type="button" aria-label="下一页" disabled>›</button><label>前往 <input type="number" min="1" max="1" value="1" /> 页</label></div>`;
+    return `<section class="risk-list-card risk830-type-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk830-production-filter risk830-reference-control"><div class="risk830-query-field risk830-query-small"><label>状态</label><select data-risk830-status><option ${risk830State.status === "全部" ? "selected" : ""}>全部</option><option ${risk830State.status === "启用" ? "selected" : ""}>启用</option><option ${risk830State.status === "禁用" ? "selected" : ""}>禁用</option></select></div><div class="risk830-query-field"><label>类型名称</label><input type="text" data-risk830-name value="${escapeHtml(risk830State.typeName)}" placeholder="请输入类型名称" /></div><div class="risk830-query-field"><label>类型code</label><input type="text" data-risk830-code value="${escapeHtml(risk830State.typeCode)}" placeholder="请输入类型code" /></div><div class="risk830-query-actions"><button type="button" class="main-action" data-risk830-search>查询</button><button type="button" class="secondary-action" data-risk830-reset>重置</button></div></div><div class="risk830-toolbar risk830-reference-control"><button type="button" class="main-action" disabled>＋ 新增风控类型</button><button type="button" class="secondary-action" disabled>导出</button></div><div class="risk-table-wrap risk830-table-wrap"><table class="risk-table risk830-type-table"><thead><tr><th>ID</th><th>类型名称</th><th>类型code</th><th>启用</th><th class="annotated risk830-tg-heading" data-component-id="B01">${componentBadge("B01")}TG群通知</th><th>类型说明</th><th>创建时间</th><th>更新时间</th><th>操作人</th><th>操作</th></tr></thead><tbody>${body || '<tr><td colspan="10" class="empty-state">暂无符合条件的风控类型</td></tr>'}</tbody></table></div>${pageControl}</section>`;
+  }
+
+  function risk830Content(page) {
+    const content = risk830State.activeTab === "风控类型"
+      ? risk830TypeTable()
+      : `<section class="reserved-area unchanged-page risk784-unchanged risk830-unchanged"><div><strong>与生产一致，无需修改</strong><span>${escapeHtml(risk830State.activeTab)}的字段、权限、数据和交互均沿用生产现状。</span></div></section>`;
+    return `<div class="risk-page-heading risk830-page-heading"><div><p>风控管理</p><h1>风控配置</h1></div></div>${risk830Tabs(page)}${content}`;
+  }
+
+  function risk830EditModal(row) {
+    modal("修改风控类型", `<div class="risk830-edit-form"><label><span>类型名称</span><input type="text" data-risk830-edit-name value="${escapeHtml(row.typeName)}" /></label><label><span>类型code</span><input type="text" data-risk830-edit-code value="${escapeHtml(row.typeCode)}" /></label><label><span>状态</span><select data-risk830-edit-status><option value="enabled" ${row.enabled ? "selected" : ""}>启用</option><option value="disabled" ${row.enabled ? "" : "selected"}>禁用</option></select></label><label><span>类型说明</span><textarea rows="3" data-risk830-edit-desc>${escapeHtml(row.typeDesc)}</textarea></label><p>数值阈值不在此弹窗维护，请在【风控规则】中按站点配置。</p></div>`, "确定");
+    const root = document.getElementById("modal-root");
+    root.querySelector(".modal-confirm")?.addEventListener("click", () => {
+      row.typeName = root.querySelector("[data-risk830-edit-name]")?.value.trim() || row.typeName;
+      row.typeCode = root.querySelector("[data-risk830-edit-code]")?.value.trim() || row.typeCode;
+      row.typeDesc = root.querySelector("[data-risk830-edit-desc]")?.value.trim() || row.typeDesc;
+      row.enabled = root.querySelector("[data-risk830-edit-status]")?.value === "enabled";
+      row.updatedAt = "2026-08-27 16:30:00";
+      window.setTimeout(render, 0);
+    }, true);
+  }
+
+  function bindRisk830Behavior(page) {
+    if (currentRequirementId !== "#830") return;
+    document.querySelector("[data-risk-830-menu-toggle]")?.addEventListener("click", (event) => {
+      const button = event.currentTarget;
+      const group = button.closest(".risk-784-menu-group");
+      const expanded = button.getAttribute("aria-expanded") !== "false";
+      button.setAttribute("aria-expanded", String(!expanded));
+      group?.classList.toggle("is-expanded", !expanded);
+    });
+    document.querySelectorAll("[data-risk830-tab]").forEach((button) => button.addEventListener("click", () => { risk830State.activeTab = button.dataset.risk830Tab; render(); }));
+    document.querySelector("[data-risk830-search]")?.addEventListener("click", () => {
+      risk830State.status = document.querySelector("[data-risk830-status]")?.value || "全部";
+      risk830State.typeName = document.querySelector("[data-risk830-name]")?.value.trim() || "";
+      risk830State.typeCode = document.querySelector("[data-risk830-code]")?.value.trim() || "";
+      render();
+    });
+    document.querySelector("[data-risk830-reset]")?.addEventListener("click", () => { Object.assign(risk830State, { status: "全部", typeName: "", typeCode: "" }); render(); });
+    document.querySelectorAll("[data-risk830-type-toggle]").forEach((button) => {
+      button.addEventListener("click", () => {
+      const row = risk830TypeRows.find((item) => item.id === Number(button.dataset.risk830TypeToggle));
+      if (!row?.isNew) return;
+      const next = !row.enabled;
+      modal(`${next ? "启用" : "禁用"}风控类型`, `<div class="risk830-confirm-message"><strong>${escapeHtml(row.typeName)}</strong><p>${next ? "启用后恢复该类型的检测和命中记录，并按保留的TG开关状态决定是否发送通知。" : "禁用后停止该类型的检测、命中记录和TG发送，TG开关值将保留。"}</p></div>`, `确认${next ? "启用" : "禁用"}`);
+      document.querySelector("#modal-root .modal-confirm")?.addEventListener("click", () => { row.enabled = next; row.updatedAt = "2026-08-27 16:30:00"; window.setTimeout(render, 0); }, true);
+      }, true);
+    });
+    document.querySelectorAll("[data-risk830-tg-toggle]").forEach((button) => {
+      button.addEventListener("click", () => {
+      const row = risk830TypeRows.find((item) => item.id === Number(button.dataset.risk830TgToggle));
+      if (!row?.isNew || !row.enabled) return;
+      const next = !row.tgEnabled;
+      modal(`${next ? "开启" : "关闭"}TG群通知`, `<div class="risk830-confirm-message"><strong>${escapeHtml(row.typeName)}</strong><p>${next ? "命中后将继续写入风控命中记录，并向大客户TG群发送对应通知。" : "关闭后仍正常检测并写入风控命中记录，只停止向大客户TG群发送通知。"}</p></div>`, `确认${next ? "开启" : "关闭"}`);
+      document.querySelector("#modal-root .modal-confirm")?.addEventListener("click", () => { row.tgEnabled = next; row.updatedAt = "2026-08-27 16:30:00"; window.setTimeout(render, 0); }, true);
+      }, true);
+    });
+    document.querySelectorAll("[data-risk830-edit]").forEach((button) => button.addEventListener("click", () => {
+      const row = risk830TypeRows.find((item) => item.id === Number(button.dataset.risk830Edit));
+      if (row) risk830EditModal(row);
+    }));
+  }
+
   function cooperationContactTable828(contextLabel = "当前站点", options = {}) {
     const componentId = options.componentId || "T01";
     const showHeading = options.showHeading !== false;
@@ -4750,7 +4858,7 @@
     const heading = showHeading
       ? `<header class="control-828-card-heading"><div><h2>合营联系方式</h2><span>当前已配置 ${rows.length} 条</span></div><button type="button" class="main-action control-828-add annotated" data-component-id="B01"><span class="component-badge">B01</span>新增联系方式</button></header>`
       : `<div class="control-828-contact-toolbar"><button type="button" class="main-action control-828-add annotated" data-component-id="B01"><span class="component-badge">B01</span>新增联系方式</button></div>`;
-    return `<section class="site-828-contact-card annotated control-828-contact-section" data-component-id="${componentId}"><div class="component-badge">${componentId}</div>${heading}<div class="control-828-table-note"><span>展示规则</span><strong>最多同时显示两个联系方式</strong><em>排序数字越大，排名越在左边靠前</em></div><div class="risk-table-wrap"><table class="risk-table control-828-contact-table"><thead><tr><th>序号</th><th>联系名称</th><th>联系软件名称</th><th>联系账号</th><th>联系说明</th><th>排序</th><th>是否显示</th><th>操作</th></tr></thead><tbody>${body}</tbody></table></div></section>`;
+    return `<section class="site-828-contact-card annotated control-828-contact-section" data-component-id="${componentId}"><div class="component-badge">${componentId}</div>${heading}<div class="control-828-table-note"><span>展示规则</span><strong>最多同时显示两个联系方式</strong><em>排序数字越大，排名越在左边靠前</em></div><div class="risk-table-wrap"><table class="risk-table control-828-contact-table"><thead><tr><th>序号</th><th>联系名称</th><th>联系软件名称</th><th>联系账号</th><th>营业说明</th><th>排序</th><th>是否显示</th><th>操作</th></tr></thead><tbody>${body}</tbody></table></div></section>`;
   }
 
   function siteCooperation828Content() {
@@ -4779,6 +4887,7 @@
 
   function pageContent(page) {
     if (page.mergedInto) return mergedRequirementContent(page);
+    if (currentRequirementId === "#830") return risk830Content(page);
     if (currentRequirementId === "#828") {
       if (page.key === "site-cooperation-config-828") return siteCooperation828Content();
       if (page.key === "control-site-list-828") return controlSiteList828Content();
@@ -4828,9 +4937,12 @@
     const tabGoal = page.pageGoals?.[activeTab];
     const isNewPage = page.pageType === "new" || page.changeType === "纯新增";
     const goalText = tabGoal || page.purpose;
+    const ruleNotes = Array.isArray(page.ruleNotes) && page.ruleNotes.length
+      ? `<span>${escapeHtml(page.ruleNotesTitle || "规则需求说明")}</span>${page.ruleNotes.map((rule, index) => `<p>${index + 1}、${escapeHtml(rule)}</p>`).join("")}`
+      : "";
     const goal = (tabGoal || isNewPage || page.showPageGoal) && goalText ? `<span>页面目标</span><p>${escapeHtml(goalText)}</p>` : "";
     const flow = page.showMainFlow && page.flow ? `<span>主流程</span><p>${escapeHtml(page.flow)}</p>` : "";
-    return goal || flow ? `<section class="page-note">${goal}${flow}</section>` : "";
+    return ruleNotes || goal || flow ? `<section class="page-note">${ruleNotes}${goal}${flow}</section>` : "";
   }
 
   function addTopPaginators() {
@@ -5183,6 +5295,7 @@
     const control498Mode = isAgent498Requirement(requirement.id) && page.key.startsWith("control-");
     const risk680Mode = isP0RiskRequirement(requirement.id);
     const risk784Mode = isRisk784Requirement(requirement.id);
+    const risk830Mode = requirement.id === "#830";
     const site695Mode = requirement.id === "#695";
     const siteAgent736Mode = requirement.id === "#736";
     const agent776Mode = requirement.id === "#776";
@@ -5197,7 +5310,7 @@
     const scopeAnnotation = page.key === "member-logs-488" ? currentAnnotations.find((annotation) => annotation.id === "P01" && annotation.tab === "会员日志") : null;
     const exportLinkId = exportAnnotation?.id || "B99";
     const cardAnnotations = currentAnnotations.filter((annotation) => annotation !== exportAnnotation && annotation !== scopeAnnotation);
-    const suppressUnchangedExportNotice = requirement.id === "#776" && page.key === "agent-finance-management-776";
+    const suppressUnchangedExportNotice = (requirement.id === "#776" && page.key === "agent-finance-management-776") || requirement.id === "#830";
     const exportNotice = renderedPageContent.includes("导出") && !suppressUnchangedExportNotice ? exportStandardNotice(exportAnnotation) : "";
     const topSpecNotices = `${productionComparisonNotice(requirement, page)}${scopeSpecNotice(scopeAnnotation)}`;
     const prototypeBody = profitSimulatorMode
@@ -5206,10 +5319,10 @@
       ? `<div class="member-mobile-stage">${memberMobilePrototypeNav(page.key)}${renderedPageContent}</div>`
       : vipAlgorithmMode
         ? `<div class="vip-algorithm-stage">${renderedPageContent}</div>`
-      : `<div class="risk-app${memberModuleMode ? " member-module-mode production-admin-ui-488" : ""}${member493Mode ? " member-493-mode" : ""}${memberDetailMode ? " member-detail-mode" : ""}${agent498Mode || control498Mode ? ` agent-498-app${publicAgent498Mode ? " production-admin-ui-488" : ""}` : ""}${risk680Mode ? " risk-680-app" : ""}${risk784Mode ? " risk-784-app production-admin-ui-488" : ""}${site695Mode || siteAgent736Mode || agent776Mode || site828Mode ? " site-member-695-app production-site-ui-695" : ""}${control828Mode ? " production-admin-ui-488 control-828-app" : ""}${site828Mode ? " site-828-app" : ""}${agent776Mode ? " agent-776-app" : ""}">${sidebar(requirement,page)}<section class="risk-main">${risk680Mode ? `<header class="risk-topbar risk-680-topbar"><button type="button" class="risk-680-sidebar-toggle" data-risk-680-sidebar-toggle aria-label="收起或展开侧栏"><i></i><i></i><i></i></button><nav aria-label="面包屑"><span>风控中心</span><b>/</b><strong>${displayPageName}</strong></nav><div class="risk-680-top-actions"><button type="button" class="risk-680-top-icon" aria-label="全屏预览" title="全屏预览"></button><span class="risk-680-avatar">M</span><strong>Mike</strong><i aria-hidden="true"></i></div></header>` : `<header class="risk-topbar"><div>${publicAgent498Mode ? '<button type="button" class="agent-498-sidebar-toggle" aria-label="收起或展开侧栏" title="收起或展开侧栏"><span></span><span></span><span></span>' : ""}<span>${control498Mode ? `总控后台 / ${page.menuGroup}` : agent498Mode ? (requirement.id === "#498" ? `${agent498PortalLabel()} / ${agent498Portal === "AGENT" ? page.menuGroup : "会员管理"}` : page.key === "agent-dashboard-498" ? "代理后台" : `${page.menuGroup} / ${page.name}`) : moduleName} /</span><strong>${displayPageName}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header>`}<div class="risk-content">${renderedPageContent}</div></section></div>`;
+      : `<div class="risk-app${memberModuleMode ? " member-module-mode production-admin-ui-488" : ""}${member493Mode ? " member-493-mode" : ""}${memberDetailMode ? " member-detail-mode" : ""}${agent498Mode || control498Mode ? ` agent-498-app${publicAgent498Mode ? " production-admin-ui-488" : ""}` : ""}${risk680Mode ? " risk-680-app" : ""}${risk784Mode ? " risk-784-app production-admin-ui-488" : ""}${risk830Mode ? " risk-784-app risk-830-app production-admin-ui-488" : ""}${site695Mode || siteAgent736Mode || agent776Mode || site828Mode ? " site-member-695-app production-site-ui-695" : ""}${control828Mode ? " production-admin-ui-488 control-828-app" : ""}${site828Mode ? " site-828-app" : ""}${agent776Mode ? " agent-776-app" : ""}">${sidebar(requirement,page)}<section class="risk-main">${risk680Mode ? `<header class="risk-topbar risk-680-topbar"><button type="button" class="risk-680-sidebar-toggle" data-risk-680-sidebar-toggle aria-label="收起或展开侧栏"><i></i><i></i><i></i></button><nav aria-label="面包屑"><span>风控中心</span><b>/</b><strong>${displayPageName}</strong></nav><div class="risk-680-top-actions"><button type="button" class="risk-680-top-icon" aria-label="全屏预览" title="全屏预览"></button><span class="risk-680-avatar">M</span><strong>Mike</strong><i aria-hidden="true"></i></div></header>` : `<header class="risk-topbar"><div>${publicAgent498Mode ? '<button type="button" class="agent-498-sidebar-toggle" aria-label="收起或展开侧栏" title="收起或展开侧栏"><span></span><span></span><span></span>' : ""}<span>${control498Mode ? `总控后台 / ${page.menuGroup}` : agent498Mode ? (requirement.id === "#498" ? `${agent498PortalLabel()} / ${agent498Portal === "AGENT" ? page.menuGroup : "会员管理"}` : page.key === "agent-dashboard-498" ? "代理后台" : `${page.menuGroup} / ${page.name}`) : moduleName} /</span><strong>${displayPageName}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header>`}<div class="risk-content">${renderedPageContent}</div></section></div>`;
     const permissionReview = agent498Mode ? agent498PermissionReviewControls() : site695Mode ? site695IdentityReviewControls() : "";
     const agent498Role = requirement.id === "#498" && agent498Portal !== "AGENT" ? (agent498Portal === "CONTROL" ? "总控管理员" : "站点管理员") : agent498IdentityConfig[agent498Identity]?.label;
-    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav${["#509", "#643", "#828"].includes(requirement.id) || isAgent498Requirement(requirement.id) ? ' class="prototype-endpoint-nav"' : ""} aria-label="当前原型页面">${prototypeEndpointSwitch(requirement, page)}</nav></header><div class="prototype-canvas${memberMobileMode ? " member-mobile-canvas" : ""}${vipAlgorithmMode ? " vip-algorithm-canvas" : ""}${profitSimulatorMode ? " profit-simulator-canvas" : ""}${risk680Mode ? " risk-680-canvas" : ""}${risk784Mode ? " risk-784-canvas" : ""}">${prototypeBody}</div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${agent498Mode ? escapeHtml(agent498Role) : site695Mode ? escapeHtml(site695IdentityConfig[site695Identity].label) : page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><div><h2>${displayPageName}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll">${permissionReview}<div class="spec-top-notices">${topSpecNotices}</div><div class="questions-slot">${questionsBlock(page)}</div>${pageNoteBlock(page)}${pageLogic}${extraNotice}${adjustmentNotice}${exportNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${cardAnnotations.length} 项</span></div><div class="annotation-list">${cardAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"${memberModuleMode || publicAgent498Mode || risk784Mode || requirement.id === "#828" ? ' class="production-admin-ui-488"' : risk680Mode ? ' class="risk-680-modal-root"' : ""}></div>`;
+    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav${["#509", "#643", "#828"].includes(requirement.id) || isAgent498Requirement(requirement.id) ? ' class="prototype-endpoint-nav"' : ""} aria-label="当前原型页面">${prototypeEndpointSwitch(requirement, page)}</nav></header><div class="prototype-canvas${memberMobileMode ? " member-mobile-canvas" : ""}${vipAlgorithmMode ? " vip-algorithm-canvas" : ""}${profitSimulatorMode ? " profit-simulator-canvas" : ""}${risk680Mode ? " risk-680-canvas" : ""}${risk784Mode || risk830Mode ? " risk-784-canvas" : ""}">${prototypeBody}</div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${agent498Mode ? escapeHtml(agent498Role) : site695Mode ? escapeHtml(site695IdentityConfig[site695Identity].label) : page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><div><h2>${displayPageName}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll">${permissionReview}<div class="spec-top-notices">${topSpecNotices}</div><div class="questions-slot">${questionsBlock(page)}</div>${pageNoteBlock(page)}${pageLogic}${extraNotice}${adjustmentNotice}${exportNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${cardAnnotations.length} 项</span></div><div class="annotation-list">${cardAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"${memberModuleMode || publicAgent498Mode || risk784Mode || risk830Mode || requirement.id === "#828" ? ' class="production-admin-ui-488"' : risk680Mode ? ' class="risk-680-modal-root"' : ""}></div>`;
     if (exportNotice) bindExportStandardLink(app, exportLinkId);
     if (page.key === "withdraw-monitor") renderMonitorView(false);
     addTopPaginators();
@@ -5217,6 +5330,7 @@
     bindPageBehavior(page);
     bindDatePickers();
     bindRisk784Behavior(page);
+    bindRisk830Behavior(page);
     if (agent498Mode || control498Mode) bindAgent498DatePickers();
     normalizeTableCurrencyUnits(app);
     applyTableRowLimits(app);
@@ -6918,14 +7032,42 @@
     if (requirement) detailView(requirement, pageKey);
   }
 
+  function contactTextLength828(value) {
+    return Array.from(value).reduce((total, character) => total + (/^[\u3400-\u9fff]$/.test(character) ? 2 : 1), 0);
+  }
+
+  function limitContactText828(value, maxLength) {
+    let limitedValue = "";
+    let currentLength = 0;
+    Array.from(value).some((character) => {
+      const characterLength = /^[\u3400-\u9fff]$/.test(character) ? 2 : 1;
+      if (currentLength + characterLength > maxLength) return true;
+      limitedValue += character;
+      currentLength += characterLength;
+      return false;
+    });
+    return limitedValue;
+  }
+
   function open828ContactModal(page, contactId = null) {
     const contact = contactId == null ? null : cooperationContacts828.find((item) => item.id === Number(contactId));
     const title = contact ? "编辑联系方式" : "新增联系方式";
-    const body = `<form class="control-828-contact-form" data-828-contact-form><label><span>联系名称</span><input type="text" data-828-contact-name value="${escapeHtml(contact?.name || "")}" placeholder="请输入联系名称" /></label><label><span>联系软件名称</span><input type="text" data-828-contact-software value="${escapeHtml(contact?.softwareName || "")}" maxlength="12" placeholder="请输入联系软件名称" /><small>中文最多6个字，英文最多12个字母</small></label><label><span>联系账号</span><input type="text" data-828-contact-account value="${escapeHtml(contact?.account || "")}" placeholder="请输入联系账号" /></label><label><span>联系说明</span><input type="text" data-828-contact-description value="${escapeHtml(contact?.description || "")}" placeholder="例如营业时间" /></label><label><span>排序</span><input type="number" data-828-contact-sort value="${escapeHtml(contact?.sort ?? "")}" min="0" step="1" placeholder="请输入排序数字" /><small>数字越大排名越在左边靠前</small></label></form>`;
+    const body = `<form class="control-828-contact-form" data-828-contact-form><label><span>联系名称</span><input type="text" data-828-contact-name value="${escapeHtml(contact?.name || "")}" maxlength="20" placeholder="例如：官方客服小丽" /><small>最多可输入10个中文或20个英文字母</small></label><label><span>联系软件名称</span><input type="text" data-828-contact-software value="${escapeHtml(contact?.softwareName || "")}" maxlength="12" placeholder="例如：Telegram" /><small>最多可输入6个中文或12个英文字母</small></label><label><span>联系账号</span><input type="text" data-828-contact-account value="${escapeHtml(contact?.account || "")}" placeholder="请输入该软件的联系账号" /></label><label><span>营业说明</span><input type="text" data-828-contact-description value="${escapeHtml(contact?.description || "")}" maxlength="32" placeholder="例如：每日 09:00-22:00" /><small>最多可输入16个中文或32个英文字母</small></label><label><span>排序</span><input type="number" data-828-contact-sort value="${escapeHtml(contact?.sort ?? "")}" min="0" step="1" placeholder="请输入排序数字" /><small>数字越大排名越在左边靠前</small></label></form>`;
     modal(title, body, contact ? "保存修改" : "保存");
     const root = document.getElementById("modal-root");
     const form = root?.querySelector("[data-828-contact-form]");
     const confirm = root?.querySelector(".modal-confirm");
+    [
+      ["[data-828-contact-name]", 20],
+      ["[data-828-contact-software]", 12],
+      ["[data-828-contact-description]", 32]
+    ].forEach(([selector, maxLength]) => {
+      const input = form?.querySelector(selector);
+      input?.addEventListener("input", () => {
+        const limitedValue = limitContactText828(input.value, maxLength);
+        if (input.value !== limitedValue) input.value = limitedValue;
+      });
+    });
     confirm?.addEventListener("click", () => {
       const name = form?.querySelector("[data-828-contact-name]")?.value.trim() || "";
       const softwareName = form?.querySelector("[data-828-contact-software]")?.value.trim() || "";
@@ -6933,17 +7075,27 @@
       const description = form?.querySelector("[data-828-contact-description]")?.value.trim() || "";
       const sortValue = form?.querySelector("[data-828-contact-sort]")?.value.trim() || "";
       const sort = Number(sortValue);
-      const softwareNameLength = Array.from(softwareName).reduce((total, character) => total + (/^[\u3400-\u9fff]$/.test(character) ? 2 : 1), 0);
+      const nameLength = contactTextLength828(name);
+      const softwareNameLength = contactTextLength828(softwareName);
+      const descriptionLength = contactTextLength828(description);
       if (!name || !softwareName || !account) {
-        modal("保存失败", "请完整填写联系名称、联系软件名称和联系账号。", "关闭");
+        modal("无法保存", "请填写联系名称、联系软件名称和联系账号后再保存。", "关闭");
+        return;
+      }
+      if (nameLength > 20) {
+        modal("无法保存", "联系名称过长，请控制在10个中文或20个英文字母以内。", "关闭");
         return;
       }
       if (softwareNameLength > 12) {
-        modal("保存失败", "联系软件名称中文最多6个字，英文最多12个字母。", "关闭");
+        modal("无法保存", "联系软件名称过长，请控制在6个中文或12个英文字母以内。", "关闭");
+        return;
+      }
+      if (descriptionLength > 32) {
+        modal("无法保存", "营业说明过长，请控制在16个中文或32个英文字母以内。", "关闭");
         return;
       }
       if (sortValue && (!Number.isFinite(sort) || sort < 0)) {
-        modal("保存失败", "请输入有效的排序数字。", "关闭");
+        modal("无法保存", "排序仅支持大于或等于0的数字，请修改后再保存。", "关闭");
         return;
       }
       const normalizedSort = sortValue ? sort : 0;
