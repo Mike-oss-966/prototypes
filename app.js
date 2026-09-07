@@ -412,9 +412,9 @@
   }
 
   function sidebar(requirement, page) {
-    if (requirement.id === "#862") {
+    if (["#862", "#946"].includes(requirement.id)) {
       const items = visiblePages(requirement).map((item) => `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${item.key}" class="privacy-862-menu-item ${page.key === item.key ? "active" : ""}"><span aria-hidden="true"></span><strong>${escapeHtml(item.name)}</strong></a>`).join("");
-      return `<aside class="risk-sidebar privacy-862-sidebar"><div class="privacy-862-brand"><span>P</span><div><strong>个人数据隐私处理</strong><small>后台范围</small></div></div><nav class="privacy-862-menu">${items}</nav><div class="privacy-862-sidebar-note">只读需求清单</div></aside>`;
+      return `<aside class="risk-sidebar privacy-862-sidebar"><div class="privacy-862-brand"><span>P</span><div><strong>${requirement.id === "#946" ? "取消姓名隐匿" : "个人数据隐私处理"}</strong><small>后台范围</small></div></div><nav class="privacy-862-menu">${items}</nav><div class="privacy-862-sidebar-note">只读需求清单</div></aside>`;
     }
     if (requirement.id === "#776") {
       const items = [
@@ -4891,7 +4891,10 @@
 
   function privacy862Content(page) {
     const blocks = page.privacyBlocks || [];
-    const changeNotice = `<section class="privacy-862-change-notice"><header><h2>修改说明</h2></header><div class="privacy-862-change-grid"><article><h3>真实姓名</h3><div class="privacy-862-example-flow"><span><small>原字段</small><strong>陈发</strong></span><i aria-hidden="true">→</i><span class="result"><small>修改后</small><strong>陈**</strong></span></div><p>只取姓外加两个星号，不管真实姓名是几个字，都显示两个星号。</p></article><article><h3>手机号</h3><div class="privacy-862-example-flow"><span><small>原字段</small><strong>15904091236</strong></span><i aria-hidden="true">→</i><span class="result"><small>修改后</small><strong>159****1236</strong></span></div></article></div></section>`;
+    const nameDisclosure = page.privacyNameDisclosure === true;
+    const changeNotice = nameDisclosure
+      ? `<section class="privacy-862-change-notice"><header><h2>修改说明</h2></header><div class="privacy-862-change-grid"><article><h3>真实姓名恢复完整显示</h3><div class="privacy-862-example-flow"><span><small>当前显示</small><strong>陈**</strong></span><i aria-hidden="true">→</i><span class="result"><small>修改后</small><strong>陈发</strong></span></div><p>本清单中的姓名字段恢复完整姓名；手机号继续按原规则隐匿。会员实名审核列表恢复【审核真实姓名】筛选项。截图用于定位页面，具体修改范围以取消隐匿字段明细为准。</p></article></div></section>`
+      : `<section class="privacy-862-change-notice"><header><h2>修改说明</h2></header><div class="privacy-862-change-grid"><article><h3>真实姓名</h3><div class="privacy-862-example-flow"><span><small>原字段</small><strong>陈发</strong></span><i aria-hidden="true">→</i><span class="result"><small>修改后</small><strong>陈**</strong></span></div><p>只取姓外加两个星号，不管真实姓名是几个字，都显示两个星号。</p></article><article><h3>手机号</h3><div class="privacy-862-example-flow"><span><small>原字段</small><strong>15904091236</strong></span><i aria-hidden="true">→</i><span class="result"><small>修改后</small><strong>159****1236</strong></span></div></article></div></section>`;
     const blockHtml = blocks.map((block) => {
       const fields = (block.fields || []).map((field) => `<span>${escapeHtml(field)}</span>`).join("");
       const note = block.screenshotNote?.trim()
@@ -4900,14 +4903,14 @@
       const screenshots = (block.screenshots || []).length
         ? `<section class="privacy-862-screenshots"><h3>页面截图</h3><div>${block.screenshots.map((screenshot) => `<figure><button type="button" data-privacy-862-image data-image-src="${escapeHtml(screenshot.path)}" data-image-title="${escapeHtml(screenshot.description || screenshot.originalName || block.menuPage)}"><img src="${escapeHtml(screenshot.path)}" alt="${escapeHtml(screenshot.description || screenshot.originalName || block.menuPage)}" loading="lazy" /></button>${screenshot.description?.trim() ? `<figcaption>${escapeHtml(screenshot.description)}</figcaption>` : ""}</figure>`).join("")}</div></section>`
         : "";
-      return `<article class="privacy-862-block"><header><h2>${escapeHtml(block.menuPage)}</h2></header><section class="privacy-862-fields"><h3>字段明细</h3><div>${fields}</div></section>${note}${screenshots}</article>`;
+      return `<article class="privacy-862-block"><header><h2>${escapeHtml(block.menuPage)}</h2></header><section class="privacy-862-fields"><h3>${nameDisclosure ? "取消隐匿字段明细" : "字段明细"}</h3><div>${fields}</div></section>${note}${screenshots}</article>`;
     }).join("");
-    return `<main class="privacy-862-document"><header class="privacy-862-page-heading"><div><span>隐私处理范围</span><h1>${escapeHtml(page.name)}</h1></div><strong>${blocks.length} 个菜单 / 页面</strong></header>${changeNotice}<div class="privacy-862-block-list">${blockHtml}</div></main>`;
+    return `<main class="privacy-862-document${nameDisclosure ? " privacy-946-document" : ""}"><header class="privacy-862-page-heading"><div><span>${nameDisclosure ? "取消姓名隐匿范围" : "隐私处理范围"}</span><h1>${escapeHtml(page.name)}</h1></div><strong>${blocks.length} 个菜单 / 页面</strong></header>${changeNotice}<div class="privacy-862-block-list">${blockHtml || (nameDisclosure ? '<div class="privacy-946-empty">本次无调整内容</div>' : "")}</div></main>`;
   }
 
   function pageContent(page) {
     if (page.mergedInto) return mergedRequirementContent(page);
-    if (currentRequirementId === "#862") return privacy862Content(page);
+    if (["#862", "#946"].includes(currentRequirementId)) return privacy862Content(page);
     if (currentRequirementId === "#830") return risk830Content(page);
     if (currentRequirementId === "#828") {
       if (page.key === "site-cooperation-config-828") return siteCooperation828Content();
@@ -5317,7 +5320,7 @@
     const risk680Mode = isP0RiskRequirement(requirement.id);
     const risk784Mode = isRisk784Requirement(requirement.id);
     const risk830Mode = requirement.id === "#830";
-    const privacy862Mode = requirement.id === "#862";
+    const privacy862Mode = ["#862", "#946"].includes(requirement.id);
     const site695Mode = requirement.id === "#695";
     const siteAgent736Mode = requirement.id === "#736";
     const agent776Mode = requirement.id === "#776";
@@ -5332,7 +5335,7 @@
     const scopeAnnotation = page.key === "member-logs-488" ? currentAnnotations.find((annotation) => annotation.id === "P01" && annotation.tab === "会员日志") : null;
     const exportLinkId = exportAnnotation?.id || "B99";
     const cardAnnotations = currentAnnotations.filter((annotation) => annotation !== exportAnnotation && annotation !== scopeAnnotation);
-    const suppressUnchangedExportNotice = (requirement.id === "#776" && page.key === "agent-finance-management-776") || requirement.id === "#830" || requirement.id === "#862";
+    const suppressUnchangedExportNotice = (requirement.id === "#776" && page.key === "agent-finance-management-776") || requirement.id === "#830" || privacy862Mode;
     const exportNotice = renderedPageContent.includes("导出") && !suppressUnchangedExportNotice ? exportStandardNotice(exportAnnotation) : "";
     const topSpecNotices = `${productionComparisonNotice(requirement, page)}${scopeSpecNotice(scopeAnnotation)}`;
     const prototypeBody = profitSimulatorMode

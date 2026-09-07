@@ -5054,6 +5054,10 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
   .control-828-table-note { align-items: flex-start; flex-direction: column; gap: 4px; padding: 9px 14px; }
 }
 
+/* #946 reuses the existing read-only privacy document layout. */
+.privacy-946-document .privacy-862-change-grid { grid-template-columns: minmax(0, 1fr); }
+.privacy-946-empty { padding: 36px 18px; color: #909399; text-align: center; background: #fff; border: 1px solid #ebeef5; border-radius: 4px; }
+
 /* #862 用户个人数据隐私处理：正式只读清单。 */
 .privacy-862-canvas { padding: 0; background: #eef1f5; }
 .risk-app.privacy-862-app {
