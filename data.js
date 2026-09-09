@@ -1923,3 +1923,36 @@ VIP等级: {{VIP等级}}
   const requirement643 = window.PROTOTYPE_DATA.requirements.find((requirement) => requirement.id === "#643");
   if (requirement643) requirement643.updatedAt = "2026-08-04 15:30";
 })();
+
+(function registerCommission911() {
+  const tableRules = ["默认每页20条", "支持最多200条/页的选项"];
+  const navigation = { id: "N01", name: "菜单与适用范围", type: "导航", summary: "", rules: ["仅改造负盈利佣金发放，不修改其他代理模式的佣金逻辑", "负盈利代理佣金结算增加三级菜单【佣金发放记录】TAB", "新增标记仅用于原型评审，不属于生产页面功能"] };
+  const portalAnnotations = (agent) => [
+    { id: "F01", name: "佣金报表筛选", type: "组合筛选", summary: "", rules: ["按周期结束时间倒序；历史停用代理已有账单仍可查询。", ...(agent ? [] : ["代理账号/编号支持联想查询，查询前去除首尾空格"])] },
+    { id: "T01", name: "周期发放进度", type: "数据表格", summary: "", rules: ["一张已结算团队账单一行，按佣金周期结束时间倒序、账单编号倒序；包含尚未发放的账单，不把实时预估当成应发金额", "不发放已结转的原账单剩余可发金额为0，结转部分只计入消费该结转的后续账单；无可发佣金展示0", "单次发完与多次发完统一显示已发完", ...tableRules] },
+    { id: "M01", name: "佣金发放明细", type: "关联列表弹窗", summary: "", rules: ["展示当前账单的全部成功发放记录，按发放时间倒序；无记录展示暂无发放记录", "累计已发佣金和剩余佣金是该次发放完成后的快照，不随后续发放改写", "每笔展示本次发放金额、发放时间、单号和批次。", "默认每页10条", tableRules[1]] }
+  ];
+  window.PROTOTYPE_DATA.requirements.push({
+    id: "#911", title: "代理佣金分批发放", owner: "Mike", status: "进行中", priority: "P1",
+    startDate: "2026-09-09", completionDate: "-", updatedAt: "2026-09-09 22:16",
+    summary: "负盈利代理佣金支持分批发放，总控留存逐笔记录，站点与收款代理查看周期发放进度。",
+    moduleName: "代理管理", workspaceName: "总控后台、站点后台、代理后台", roleName: "总控管理员、站点管理员、负盈利代理",
+    carryoverRule: "跨周期未发完的佣金保留原账单继续发放，不并入下期。",
+    defaultPageKey: "control-settlement-911",
+    pages: [
+      { id: "P01", key: "control-settlement-911", name: "负盈利代理佣金结算", pageType: "existing-change", menuGroup: "代理管理", role: "总控管理员", annotations: [navigation,
+        { id: "F01", name: "佣金状态筛选", type: "组合筛选", summary: "", rules: ["佣金状态 筛选 增加【部分发放】状态。"] },
+        { id: "T01", name: "已发放与剩余佣金", type: "数据表格", summary: "", rules: ["已发放佣金=此账单各笔成功到账金额之和；剩余佣金=最终可发佣金-已发放佣金，不得为负数", "原发放人、发放时间在部分发放期间展示最近一次成功发放的操作员和时间，逐笔历史查佣金发放记录", "首次发放前保留不发放、修改发放原有逻辑；部分发放后这两个操作不可再执行，只允许继续发放", ...tableRules] },
+        { id: "B01", name: "发放佣金", type: "操作按钮", summary: "", rules: ["原【确认】按钮，改为【发放】按钮 点击后弹窗。"] },
+        { id: "M01", name: "发放佣金弹窗", type: "表单弹窗", summary: "", rules: ["默认全部发放，含义是发放当前全部剩余佣金，而不是再次发放原应发佣金", "选择分批发放后金额必填，只允许大于0且不超过最新剩余佣金，最多2位小数，最小0.01 CNY；不支持负数、科学计数法、非数字", "金额等于剩余佣金允许提交，结果变为已发放；总控记录仍保留当时选择的发放方式", "校验提示：请输入发放金额 / 发放金额必须大于0，且最多保留2位小数 / 发放金额不能大于剩余佣金", "确认后展示站点、收款代理、本次金额和发放后剩余金额二次核对；取消或关闭不改变账单与余额", "提交期间禁止重复点击；同一次请求重试使用同一幂等标识，同账单并发发放需加锁并校验最新剩余金额", "站点与代理接口不得返回总控操作员、发放方式、内部原因及后台日志，不只是前端隐藏"] }
+      ] },
+      { id: "P02", key: "control-payouts-911", name: "佣金发放记录", pageType: "new", menuGroup: "代理管理", role: "总控管理员", annotations: [
+        { id: "F01", name: "发放记录筛选", type: "组合筛选", summary: "", rules: ["所属站点默认全选，支持多选和全选；代理账号/编号输入时联想匹配。", "发放时间默认不限制；开始不得晚于结束，可清空、包含快捷范围选择", "单号和操作员输入提交前去除首尾空格；操作员匹配后台登录账号，输入时联想匹配。", "团队名称支持联想输入，候选按所选站点的发放记录去重匹配；提交前去除首尾空格。"] },
+        { id: "T01", name: "逐笔发放记录", type: "数据表格", summary: "", rules: ["一笔成功到账一行，按发放时间倒序、单号倒序；失败不算成功发放。", "已发放佣金（本次后）和剩余佣金（本次后）是当次成功的历史快照，不用最新累计值覆盖", "总计只计算筛选结果中的 本次发放金额；", ...tableRules] }
+      ] },
+      { id: "P04", key: "site-report-911", name: "佣金报表", pageType: "new", menuGroup: "财务管理", role: "站点管理员", annotations: portalAnnotations(false) },
+      { id: "P05", key: "agent-report-911", name: "佣金报表", pageType: "new", menuGroup: "财务管理", role: "负盈利多线负责人 / 负盈利单线", annotations: portalAnnotations(true) }
+    ]
+  });
+  window.PROTOTYPE_DATA.requirements.sort((a, b) => Number(b.id.replace(/\D/g, "")) - Number(a.id.replace(/\D/g, "")));
+})();

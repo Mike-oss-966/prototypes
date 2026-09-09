@@ -412,6 +412,7 @@
   }
 
   function sidebar(requirement, page) {
+    if (requirement.id === "#911") return window.Commission911.sidebar(page);
     if (["#862", "#946"].includes(requirement.id)) {
       const items = visiblePages(requirement).map((item) => `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${item.key}" class="privacy-862-menu-item ${page.key === item.key ? "active" : ""}"><span aria-hidden="true"></span><strong>${escapeHtml(item.name)}</strong></a>`).join("");
       return `<aside class="risk-sidebar privacy-862-sidebar"><div class="privacy-862-brand"><span>P</span><div><strong>${requirement.id === "#946" ? "取消姓名隐匿" : "个人数据隐私处理"}</strong><small>后台范围</small></div></div><nav class="privacy-862-menu">${items}</nav><div class="privacy-862-sidebar-note">只读需求清单</div></aside>`;
@@ -3732,7 +3733,7 @@
     const endDay = options.endDay || 31;
     const startTime = options.startTime || "00:00:00";
     const endTime = options.endTime || "23:59:59";
-    const calendarDays = (selectedDay) => Array.from({ length: 31 }, (_, index) => {
+    const calendarDays = (selectedDay) => (currentRequirementId === "#911" ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: currentRequirementId === "#911" ? new Date(year, month, 0).getDate() : 31 }, (_, index) => {
       const day = index + 1;
       return `<button type="button" class="calendar-day${day === selectedDay ? " selected" : ""}" data-day="${day}">${day}</button>`;
     }).join("");
@@ -4909,6 +4910,7 @@
   }
 
   function pageContent(page) {
+    if (currentRequirementId === "#911") return window.Commission911.render(page, { badge: componentBadge, dateControl: agent498DateControl, modal });
     if (page.mergedInto) return mergedRequirementContent(page);
     if (["#862", "#946"].includes(currentRequirementId)) return privacy862Content(page);
     if (currentRequirementId === "#830") return risk830Content(page);
@@ -5268,6 +5270,7 @@
   }
 
   function prototypeEndpointSwitch(requirement, page) {
+    if (requirement.id === "#911") return window.Commission911.endpoints(page);
     if (requirement.id === "#828") {
       const siteActive = page.key.startsWith("site-");
       return `<div class="prototype-endpoint-switch"><a href="#requirement/${encodeURIComponent(requirement.id)}/page/site-cooperation-config-828" class="${siteActive ? "active" : ""}">站点后台</a><a href="#requirement/${encodeURIComponent(requirement.id)}/page/control-site-list-828" class="${siteActive ? "" : "active"}">总控后台</a></div><span class="current-page-label">${escapeHtml(page.name)}</span>`;
@@ -5335,7 +5338,7 @@
     const scopeAnnotation = page.key === "member-logs-488" ? currentAnnotations.find((annotation) => annotation.id === "P01" && annotation.tab === "会员日志") : null;
     const exportLinkId = exportAnnotation?.id || "B99";
     const cardAnnotations = currentAnnotations.filter((annotation) => annotation !== exportAnnotation && annotation !== scopeAnnotation);
-    const suppressUnchangedExportNotice = (requirement.id === "#776" && page.key === "agent-finance-management-776") || requirement.id === "#830" || privacy862Mode;
+    const suppressUnchangedExportNotice = (requirement.id === "#776" && page.key === "agent-finance-management-776") || ["#830", "#911"].includes(requirement.id) || privacy862Mode;
     const exportNotice = renderedPageContent.includes("导出") && !suppressUnchangedExportNotice ? exportStandardNotice(exportAnnotation) : "";
     const topSpecNotices = `${productionComparisonNotice(requirement, page)}${scopeSpecNotice(scopeAnnotation)}`;
     const prototypeBody = profitSimulatorMode
@@ -5348,6 +5351,10 @@
     const permissionReview = agent498Mode ? agent498PermissionReviewControls() : site695Mode ? site695IdentityReviewControls() : "";
     const agent498Role = requirement.id === "#498" && agent498Portal !== "AGENT" ? (agent498Portal === "CONTROL" ? "总控管理员" : "站点管理员") : agent498IdentityConfig[agent498Identity]?.label;
     app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav${["#509", "#643", "#828"].includes(requirement.id) || isAgent498Requirement(requirement.id) ? ' class="prototype-endpoint-nav"' : ""} aria-label="当前原型页面">${prototypeEndpointSwitch(requirement, page)}</nav></header><div class="prototype-canvas${memberMobileMode ? " member-mobile-canvas" : ""}${vipAlgorithmMode ? " vip-algorithm-canvas" : ""}${profitSimulatorMode ? " profit-simulator-canvas" : ""}${risk680Mode ? " risk-680-canvas" : ""}${risk784Mode || risk830Mode ? " risk-784-canvas" : ""}${privacy862Mode ? " privacy-862-canvas" : ""}">${prototypeBody}</div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${agent498Mode ? escapeHtml(agent498Role) : site695Mode ? escapeHtml(site695IdentityConfig[site695Identity].label) : page.role}</span>${privacy862Mode ? "" : `<span>页面：${page.id}</span>`}</div><div class="spec-title-row"><div><h2>${displayPageName}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll">${permissionReview}<div class="spec-top-notices">${topSpecNotices}</div><div class="questions-slot">${questionsBlock(page)}</div>${pageNoteBlock(page)}${pageLogic}${extraNotice}${adjustmentNotice}${exportNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${cardAnnotations.length} 项</span></div><div class="annotation-list">${cardAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"${memberModuleMode || publicAgent498Mode || risk784Mode || risk830Mode || requirement.id === "#828" ? ' class="production-admin-ui-488"' : risk680Mode ? ' class="risk-680-modal-root"' : ""}></div>`;
+    if (requirement.id === "#911") {
+      window.Commission911.bind({ rerender: () => detailView(requirement, page.key) });
+      bindAgent498DatePickers();
+    }
     if (exportNotice) bindExportStandardLink(app, exportLinkId);
     if (page.key === "withdraw-monitor") renderMonitorView(false);
     addTopPaginators();
@@ -5441,7 +5448,7 @@
         panel.dataset.year = String(year);
         panel.dataset.month = String(month);
         panel.querySelector("header strong").textContent = `${year}年${month}月`;
-        panel.querySelector(".calendar-days").innerHTML = Array.from({ length: dayCount }, (_, index) => {
+        panel.querySelector(".calendar-days").innerHTML = (currentRequirementId === "#911" ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dayCount }, (_, index) => {
           const day = index + 1;
           return `<button type="button" class="calendar-day${day === selectedDay ? " selected" : ""}" data-day="${day}">${day}</button>`;
         }).join("");
@@ -5471,6 +5478,10 @@
         popover.style.maxHeight = `${Math.max(260, visibleBottom - visibleTop)}px`;
       };
       const close = () => {
+        if (currentRequirementId === "#911" && trigger.dataset.n911RangeBefore !== undefined) {
+          trigger.innerHTML = trigger.dataset.n911RangeBefore;
+          delete trigger.dataset.n911RangeBefore;
+        }
         popover.hidden = true;
         trigger.setAttribute("aria-expanded", "false");
         field.querySelector(".agent-date-error").hidden = true;
@@ -5480,10 +5491,14 @@
         document.querySelectorAll(".agent-498-date-popover:not([hidden])").forEach((item) => { if (item !== popover) item.hidden = true; });
         popover.hidden = !opening;
         trigger.setAttribute("aria-expanded", String(opening));
-        if (opening) positionPopover();
+        if (opening) {
+          if (currentRequirementId === "#911") trigger.dataset.n911RangeBefore = trigger.innerHTML;
+          positionPopover();
+        }
       });
       field.querySelector(".date-close")?.addEventListener("click", close);
       field.querySelector(".site-695-date-clear")?.addEventListener("click", () => {
+        if (currentRequirementId === "#911") delete trigger.dataset.n911RangeBefore;
         trigger.innerHTML = `<span>开始时间</span><b>至</b><span>结束时间</span>`;
         trigger.classList.remove("range-selected");
         close();
@@ -5505,7 +5520,7 @@
         }
         const quickButton = event.target.closest("[data-range-days]");
         if (!quickButton) return;
-        const end = currentRequirementId === "#776" ? new Date(2026, 7, 21) : field.closest(".site-member-695-app") ? new Date(2026, 7, 13) : new Date(2026, 6, 31);
+        const end = currentRequirementId === "#911" ? new Date() : currentRequirementId === "#776" ? new Date(2026, 7, 21) : field.closest(".site-member-695-app") ? new Date(2026, 7, 13) : new Date(2026, 6, 31);
         let start = new Date(end);
         const range = quickButton.dataset.rangeDays;
         if (range === "1") {
@@ -5520,8 +5535,9 @@
         selectPanelDate(panels[0], start);
         selectPanelDate(panels[1], end);
         panels[0].querySelector("input[type='time']").value = "00:00:00";
-        panels[1].querySelector("input[type='time']").value = "23:59:59";
-        trigger.innerHTML = `<span>${formatDateTime(start, "00:00:00")}</span><b>至</b><span>${formatDateTime(end, "23:59:59")}</span>`;
+        const endTime = currentRequirementId === "#911" && range !== "1" ? [end.getHours(), end.getMinutes(), end.getSeconds()].map(pad).join(":") : "23:59:59";
+        panels[1].querySelector("input[type='time']").value = endTime;
+        trigger.innerHTML = `<span>${formatDateTime(start, "00:00:00")}</span><b>至</b><span>${formatDateTime(end, endTime)}</span>`;
         trigger.classList.add("range-selected");
       });
       field.querySelector(".date-apply")?.addEventListener("click", () => {
@@ -5533,6 +5549,7 @@
         }
         trigger.innerHTML = `<span>${values[0]}</span><b>至</b><span>${values[1]}</span>`;
         trigger.classList.add("range-selected");
+        if (currentRequirementId === "#911") delete trigger.dataset.n911RangeBefore;
         close();
       });
     });
