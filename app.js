@@ -1649,7 +1649,7 @@
     const pages = qianNengRequirement
       ? [["member-withdraw-accounts-739", "提现账户管理"], ["member-withdrawal-739", "取款"]]
       : phaseTwo
-      ? [["member-vip-center-643", "VIP页面"], ["member-settings-643", "设置"], ["member-profile-643", "个人资料"]]
+      ? [["member-vip-center-643", "VIP页面"], ["member-settings-643", "个人信息"], ["member-profile-643", "个人资料"]]
       : [["member-vip-center-509", "VIP页面"], ["member-electronic-rebate-509", "电子返水明细"], ["member-center-509", "个人中心"]];
     const active = ["member-vip-detail-643", "member-vip-rules-643"].includes(activeKey) ? "member-vip-center-643" : activeKey;
     return `<nav class="member-mobile-prototype-nav" aria-label="会员端原型页面切换"><span>会员端页面</span><div>${pages.map(([key, name]) => `<a class="${active === key ? "active" : ""}" href="#requirement/${encodeURIComponent(requirementId)}/page/${key}">${name}</a>`).join("")}</div><small>原型评审导航，不属于生产功能</small></nav>`;
@@ -1659,10 +1659,10 @@
     return `<div class="member-mobile-frame ${extraClass}"><div class="mobile-status-bar"><strong>18:30</strong><span>● ● ●　87%</span></div>${content}</div>`;
   }
 
-  function memberVipMobileHeader(title, backKey = "", rightAction = "") {
+  function memberVipMobileHeader(title, backKey = "", rightAction = "", subtitle = "") {
     const requirementId = backKey.endsWith("-643") ? "#643" : "#509";
     const back = backKey ? `<a class="mobile-back" href="#requirement/${encodeURIComponent(requirementId)}/page/${backKey}" aria-label="返回">‹</a>` : '<button type="button" class="mobile-back" aria-label="返回">‹</button>';
-    return `<header class="member-mobile-header">${back}<h1>${title}</h1>${rightAction || '<span class="mobile-header-placeholder"></span>'}</header>`;
+    return `<header class="member-mobile-header">${back}<div class="member-mobile-header-title"><h1>${title}</h1>${subtitle ? `<small>${subtitle}</small>` : ""}</div>${rightAction || '<span class="mobile-header-placeholder"></span>'}</header>`;
   }
 
   function memberVipPerks(level) {
@@ -1809,6 +1809,19 @@
       ["VIP返水", "返水按照有效投注、会员VIP等级及具体游戏返水比例计算，生成后可在福利中心查看和领取。"]
     ];
     return mobileVipFrame(`${memberVipMobileHeader("VIP规则说明", "member-vip-detail-643")}<main class="mobile-vip-rules annotated" data-component-id="P01">${componentBadge("P01")}<p class="mobile-rules-intro">以下规则由总控后台统一维护，实际门槛、金额和有效期以页面最新展示为准。</p>${rules.map(([title, content], index) => `<section><span>${String(index + 1).padStart(2, "0")}</span><div><h2>${title}</h2><p>${content}</p></div></section>`).join("")}</main>`, "member-vip-rules");
+  }
+
+  function memberPersonalInfo643Content() {
+    const profileHref = `#requirement/${encodeURIComponent("#643")}/page/member-profile-643`;
+    const rows = [
+      ["card", "提现账户管理", "", ""],
+      ["fund", "资金密码设置", "未设置", "立即设置"],
+      ["lock", "修改登录密码", "", ""],
+      ["phone", "手机/实名", "未绑定/未认证", "立即认证"]
+    ];
+    const rowHtml = ([type, name, meta, action]) => `<div class="member-personal-info-row unchanged-production"><span class="member-personal-info-icon ${type}" aria-hidden="true">${type === "card" ? "▤" : type === "fund" ? "◇" : type === "lock" ? "▣" : "▥"}</span><div><strong>${name}</strong>${meta ? `<small>${meta}</small>` : ""}</div>${action ? `<button type="button" class="member-personal-info-action">${action}</button>` : ""}<span class="member-personal-info-arrow">›</span></div>`;
+    const group = (items) => `<section class="member-personal-info-group">${items.map(rowHtml).join("")}</section>`;
+    return mobileVipFrame(`${memberVipMobileHeader("个人信息", "member-vip-center-643", "", "管理您的账户安全与基本资料")}<main class="member-personal-info-page"><section class="member-personal-profile annotated" data-component-id="P01">${componentBadge("P01")}<span class="member-personal-avatar">M</span><div class="member-personal-identity"><strong>mike32</strong><small>UID:1930</small></div><a class="member-personal-edit annotated" data-component-id="B01" href="${profileHref}">${componentBadge("B01")}编辑资料</a></section>${group([rows[0]])}${group(rows.slice(1, 3))}${group([rows[3]])}</main>`, "member-personal-info");
   }
 
   function memberSettings509Content() {
@@ -1960,7 +1973,7 @@
     if (page.key === "member-center-509") return memberCenter509Content();
     if (page.key === "member-vip-detail-643") return memberVipDetail509Content(page);
     if (page.key === "member-vip-rules-643") return memberVipRules509Content();
-    if (page.key === "member-settings-643") return memberSettings509Content();
+    if (page.key === "member-settings-643") return memberPersonalInfo643Content();
     if (page.key === "member-profile-643") return memberProfile509Content();
     if (page.key === "member-withdraw-accounts-739") return member739Content();
     if (page.key === "vip-algorithm-509") return vipAlgorithm509Content();
@@ -3780,7 +3793,7 @@
     const endDay = options.endDay || 31;
     const startTime = options.startTime || "00:00:00";
     const endTime = options.endTime || "23:59:59";
-    const calendarDays = (selectedDay) => (currentRequirementId === "#911" ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: currentRequirementId === "#911" ? new Date(year, month, 0).getDate() : 31 }, (_, index) => {
+    const calendarDays = (selectedDay) => (["#911", "#971"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: ["#911", "#971"].includes(currentRequirementId) ? new Date(year, month, 0).getDate() : 31 }, (_, index) => {
       const day = index + 1;
       return `<button type="button" class="calendar-day${day === selectedDay ? " selected" : ""}" data-day="${day}">${day}</button>`;
     }).join("");
@@ -3927,74 +3940,12 @@
     return `${agent498Filter(fields, false, false, "agent-copy-member-filter")}${agent498Table(tab, headers, agent498CopyMemberRows(team), team ? 328 : 186, "agent-member-table agent-copy-member-table")}`;
   }
 
-  function finance971Metric(label, value, detail = "较上周期", action = "", componentId = "") {
-    const badge = componentId ? componentBadge(componentId) : "";
-    return `<article class="finance971-metric${action ? " is-clickable" : ""}${componentId ? " annotated" : ""}"${componentId ? ` data-component-id="${componentId}"` : ""}>${badge}<header><span>${escapeHtml(label)}</span></header><strong>${escapeHtml(value)}</strong><footer><small>${escapeHtml(detail)}</small>${action ? `<button type="button" class="link-action finance971-open-fee" data-finance971-fee="${action}">${action === "venue" ? "查看场馆明细" : "查看存提手续费"}</button>` : ""}</footer></article>`;
-  }
-
-  function finance971ExistingSections(portal) {
-    const oldFees = portal === "代理"
-      ? [finance971Metric("存款", "¥286,000"), finance971Metric("提款", "¥86,000"), finance971Metric("总输赢", "+¥128,600"), finance971Metric("红利", "¥18,600"), finance971Metric("返水", "¥22,400"), finance971Metric("充提手续运营费", "¥12,460")]
-      : [finance971Metric("存款", "¥1,286,000"), finance971Metric("提款", "¥386,000"), finance971Metric("总输赢", "+¥528,600"), finance971Metric("红利", "¥68,600"), finance971Metric("返水", "¥84,200")];
-    return `<section class="finance971-production-section"><h2>资金${portal === "代理" ? "流水" : "明细"}</h2><div class="finance971-metrics">${oldFees.join("")}</div></section><section class="finance971-production-section"><h2>会员数据</h2><div class="finance971-metrics">${[finance971Metric("会员总数", portal === "代理" ? "1,286" : "28,640"), finance971Metric("新增会员", "186"), finance971Metric("活跃会员", "328"), finance971Metric("付费会员", "241")].join("")}</div></section>`;
-  }
-
-  function finance971FeeSection(portal) {
-    const metrics = portal === "代理"
-      ? `${finance971Metric("场馆费", "¥12,800", "按筛选结果", "venue", "M01")}${finance971Metric("存提手续费", "¥3,859.60", "按筛选结果", "fee", "M02")}`
-      : `${finance971Metric("场馆费", "¥28,600", "按筛选结果", "venue", "M01")}${finance971Metric("存提手续费", "¥3,859.60", "按筛选结果", "fee", "M02")}`;
-    return `<section class="finance971-new-section annotated" data-component-id="P01" data-finance971-portal="${portal}">${componentBadge("P01")}<header><div><span>本次新增</span><h2>费用明细</h2></div><small>点击查看按场馆或渠道拆分的费用</small></header><div class="finance971-metrics finance971-new-metrics">${metrics}</div></section>`;
-  }
-
   function finance971DashboardContent(page) {
-    const portal = page.portal || "代理";
-    return `<div class="finance971-page">${agent498PageHeading("运营数据看板", `${portal}后台 · 经营数据`)}${agent498Filter([["统计时间", "date", { startDay: 14, endDay: 14, endTime: "18:30:00" }]], false, false, "finance971-filter")}${finance971ExistingSections(portal)}${finance971FeeSection(portal)}</div>`;
-  }
-
-  function finance971Totals(label, amount) {
-    return `<div class="finance971-total-bar"><span>${escapeHtml(label)}</span><strong>${escapeHtml(amount)} CNY</strong></div>`;
-  }
-
-  function finance971VenueModal(portal) {
-    const rows = portal === "代理"
-      ? [["1", "FB体育", "86,000", "10%", "8,600"], ["2", "PG电子", "42,000", "8%", "3,360"], ["3", "DB真人", "14,000", "6%", "840"], ["4", "DB捕鱼", "0", "5%", "0"], ["5", "沙巴体育", "-12,400", "10%", "0"]]
-      : [["1", "FB体育", "156,000", "10%", "15,600"], ["2", "PG电子", "90,000", "8%", "7,200"], ["3", "DB真人", "96,667", "6%", "5,800"], ["4", "DB捕鱼", "0", "5%", "0"], ["5", "沙巴体育", "-12,400", "10%", "0"]];
-    const total = portal === "代理" ? "12,800.00" : "28,600.00";
-    const body = rows.map((row) => `<tr>${row.map((cell, index) => `<td${index === 0 ? " class=\"finance971-index\"" : ""}>${cell}</td>`).join("")}</tr>`).join("");
-    return `<div class="finance971-modal-content"><p class="finance971-modal-tip">展示当前已开启场馆，以及筛选时间内曾产生费用的已关闭场馆。</p>${finance971Totals("场馆费总计", total)}<div class="risk-table-wrap finance971-modal-table-wrap"><table class="risk-table finance971-modal-table"><thead><tr><th>序号</th><th>场馆名称</th><th>总输赢（CNY）</th><th>场馆费率</th><th>场馆费（CNY）</th></tr></thead><tbody>${body}</tbody><tfoot><tr><td colspan="4"><strong>总计</strong></td><td><strong>${total}</strong></td></tr></tfoot></table></div></div>`;
-  }
-
-  function finance971FeeRows(type) {
-    return type === "deposit"
-      ? [["1", "支付宝", "86,000", "1.2%", "1,032"], ["2", "EBPay", "62,000", "0.8%", "496"], ["3", "钱能钱包", "28,600", "0.6%", "171.60"], ["4", "代理代存", "18,000", "0.4%", "72"]]
-      : [["1", "USDT", "128,000", "1.0%", "1,280"], ["2", "支付宝", "46,000", "1.2%", "552"], ["3", "EBPay", "32,000", "0.8%", "256"], ["4", "钱能钱包", "0", "0.6%", "0"]];
-  }
-
-  function finance971FeeTable(type) {
-    const deposit = type === "deposit";
-    const rows = finance971FeeRows(type);
-    const total = deposit ? "1,771.60" : "2,088.00";
-    const cells = rows.map((row) => `<tr>${row.map((cell, index) => `<td${index === 0 ? " class=\"finance971-index\"" : ""}>${cell}</td>`).join("")}</tr>`).join("");
-    return `<div class="finance971-fee-table-panel" data-finance971-fee-panel="${type}">${finance971Totals(`${deposit ? "存款" : "提款"}手续费总计`, total)}<div class="risk-table-wrap finance971-modal-table-wrap"><table class="risk-table finance971-modal-table"><thead><tr><th>序号</th><th>${deposit ? "存款渠道" : "提款渠道"}</th><th>${deposit ? "存款金额" : "提款金额"}（CNY）</th><th>费率</th><th>手续费（CNY）</th></tr></thead><tbody>${cells}</tbody><tfoot><tr><td colspan="4"><strong>总计</strong></td><td><strong>${total}</strong></td></tr></tfoot></table></div></div>`;
-  }
-
-  function finance971FeeModal() {
-    return `<div class="finance971-modal-content"><p class="finance971-modal-tip">展示当前已开启渠道，以及筛选时间内曾产生费用的已关闭渠道。</p><div class="finance971-modal-tabs" role="tablist"><button type="button" class="active" data-finance971-fee-tab="deposit">存款手续费</button><button type="button" data-finance971-fee-tab="withdraw">提款手续费</button></div>${finance971FeeTable("deposit")}${finance971FeeTable("withdraw")}</div>`;
+    return window.Finance971.render(page, { badge: componentBadge, dateControl: agent498DateControl, modal, select: selectComponent, bindDates: bindAgent498DatePickers, limitRows: applyTableRowLimits });
   }
 
   function bindFinance971() {
-    document.querySelectorAll(".finance971-open-fee").forEach((button) => button.addEventListener("click", () => {
-      const type = button.dataset.finance971Fee;
-      modal(type === "venue" ? "场馆费明细" : "存提手续费明细", type === "venue" ? finance971VenueModal(button.closest(".finance971-new-section")?.dataset.finance971Portal || "代理") : finance971FeeModal(), "关闭");
-      if (type !== "venue") {
-        document.querySelectorAll("[data-finance971-fee-tab]").forEach((tab) => tab.addEventListener("click", () => {
-          const value = tab.dataset.finance971FeeTab;
-          document.querySelectorAll("[data-finance971-fee-tab]").forEach((item) => item.classList.toggle("active", item === tab));
-          document.querySelectorAll("[data-finance971-fee-panel]").forEach((panel) => { panel.hidden = panel.dataset.finance971FeePanel !== value; });
-        }));
-        document.querySelector('[data-finance971-fee-panel="withdraw"]')?.setAttribute("hidden", "");
-      }
-    }));
+    window.Finance971.bind();
   }
 
   function agent498ActiveMemberContext() {
@@ -5900,7 +5851,7 @@
         panel.dataset.year = String(year);
         panel.dataset.month = String(month);
         panel.querySelector("header strong").textContent = `${year}年${month}月`;
-        panel.querySelector(".calendar-days").innerHTML = (currentRequirementId === "#911" ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dayCount }, (_, index) => {
+        panel.querySelector(".calendar-days").innerHTML = (["#911", "#971"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dayCount }, (_, index) => {
           const day = index + 1;
           return `<button type="button" class="calendar-day${day === selectedDay ? " selected" : ""}" data-day="${day}">${day}</button>`;
         }).join("");
@@ -5930,7 +5881,7 @@
         popover.style.maxHeight = `${Math.max(260, visibleBottom - visibleTop)}px`;
       };
       const close = () => {
-        if (currentRequirementId === "#911" && trigger.dataset.n911RangeBefore !== undefined) {
+        if (["#911", "#971"].includes(currentRequirementId) && trigger.dataset.n911RangeBefore !== undefined) {
           trigger.innerHTML = trigger.dataset.n911RangeBefore;
           delete trigger.dataset.n911RangeBefore;
         }
@@ -5944,13 +5895,13 @@
         popover.hidden = !opening;
         trigger.setAttribute("aria-expanded", String(opening));
         if (opening) {
-          if (currentRequirementId === "#911") trigger.dataset.n911RangeBefore = trigger.innerHTML;
+          if (["#911", "#971"].includes(currentRequirementId)) trigger.dataset.n911RangeBefore = trigger.innerHTML;
           positionPopover();
         }
       });
       field.querySelector(".date-close")?.addEventListener("click", close);
       field.querySelector(".site-695-date-clear")?.addEventListener("click", () => {
-        if (currentRequirementId === "#911") delete trigger.dataset.n911RangeBefore;
+        if (["#911", "#971"].includes(currentRequirementId)) delete trigger.dataset.n911RangeBefore;
         trigger.innerHTML = `<span>开始时间</span><b>至</b><span>结束时间</span>`;
         trigger.classList.remove("range-selected");
         close();
@@ -5972,7 +5923,7 @@
         }
         const quickButton = event.target.closest("[data-range-days]");
         if (!quickButton) return;
-        const end = currentRequirementId === "#911" ? new Date() : currentRequirementId === "#776" ? new Date(2026, 7, 21) : field.closest(".site-member-695-app") ? new Date(2026, 7, 13) : new Date(2026, 6, 31);
+        const end = ["#911", "#971"].includes(currentRequirementId) ? new Date() : currentRequirementId === "#776" ? new Date(2026, 7, 21) : field.closest(".site-member-695-app") ? new Date(2026, 7, 13) : new Date(2026, 6, 31);
         let start = new Date(end);
         const range = quickButton.dataset.rangeDays;
         if (range === "1") {
@@ -6001,7 +5952,7 @@
         }
         trigger.innerHTML = `<span>${values[0]}</span><b>至</b><span>${values[1]}</span>`;
         trigger.classList.add("range-selected");
-        if (currentRequirementId === "#911") delete trigger.dataset.n911RangeBefore;
+        if (["#911", "#971"].includes(currentRequirementId)) delete trigger.dataset.n911RangeBefore;
         close();
       });
     });
