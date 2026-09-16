@@ -450,12 +450,7 @@
 
   function sidebar(requirement, page) {
     if (requirement.id === "#911") return window.Commission911.sidebar(page);
-    if (requirement.id === "#971") {
-      const site = page.key === "site-dashboard-971";
-      const currentKey = site ? "site-dashboard-971" : "agent-dashboard-971";
-      const items = `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${currentKey}" class="finance971-menu-item active"><span class="menu-symbol">■</span><span class="menu-name">运营数据看板</span></a>`;
-      return `<aside class="risk-sidebar finance971-sidebar"><div class="risk-brand"><span>${site ? "S" : "A"}</span><div><strong>${site ? "SitePortal" : "AgentPortal"}</strong><small>${site ? "站点后台" : "代理后台"}</small></div></div><div class="risk-menu-label">功能导航</div><nav>${items}</nav><div class="risk-user"><span>${site ? "ST" : "AG"}</span><div><strong>${site ? "site_admin" : "agent_mike"}</strong><small>${site ? "站点管理员" : "代理"}</small></div></div></aside>`;
-    }
+    if (requirement.id === "#971") return window.Finance971.sidebar(page);
     if (["#862", "#946"].includes(requirement.id)) {
       const items = visiblePages(requirement).map((item) => `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${item.key}" class="privacy-862-menu-item ${page.key === item.key ? "active" : ""}"><span aria-hidden="true"></span><strong>${escapeHtml(item.name)}</strong></a>`).join("");
       return `<aside class="risk-sidebar privacy-862-sidebar"><div class="privacy-862-brand"><span>P</span><div><strong>${requirement.id === "#946" ? "取消姓名隐匿" : "个人数据隐私处理"}</strong><small>后台范围</small></div></div><nav class="privacy-862-menu">${items}</nav><div class="privacy-862-sidebar-note">只读需求清单</div></aside>`;
@@ -3793,7 +3788,7 @@
     const endDay = options.endDay || 31;
     const startTime = options.startTime || "00:00:00";
     const endTime = options.endTime || "23:59:59";
-    const calendarDays = (selectedDay) => (["#911", "#971"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: ["#911", "#971"].includes(currentRequirementId) ? new Date(year, month, 0).getDate() : 31 }, (_, index) => {
+    const calendarDays = (selectedDay) => (["#510", "#911", "#971"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: ["#510", "#911", "#971"].includes(currentRequirementId) ? new Date(year, month, 0).getDate() : 31 }, (_, index) => {
       const day = index + 1;
       return `<button type="button" class="calendar-day${day === selectedDay ? " selected" : ""}" data-day="${day}">${day}</button>`;
     }).join("");
@@ -3941,7 +3936,7 @@
   }
 
   function finance971DashboardContent(page) {
-    return window.Finance971.render(page, { badge: componentBadge, dateControl: agent498DateControl, modal, select: selectComponent, bindDates: bindAgent498DatePickers, limitRows: applyTableRowLimits });
+    return window.Finance971.render(page, { badge: componentBadge, dateControl: agent498DateControl, siteSelect: siteMultiSelect, sites: siteOptions, modal, select: selectComponent, bindDates: bindAgent498DatePickers, limitRows: applyTableRowLimits, activeTab: financeTabState[page.key] || page.tabs?.[0], setTab: (tab) => { window.location.hash = `#requirement/%23971/page/${page.key}/menu/${encodeURIComponent(tab)}`; }, rerender: () => detailView(requirements.find((item) => item.id === currentRequirementId), page.key) });
   }
 
   function bindFinance971() {
@@ -5669,8 +5664,9 @@
   function prototypeEndpointSwitch(requirement, page) {
     if (requirement.id === "#911") return window.Commission911.endpoints(page);
     if (requirement.id === "#971") {
-      const siteActive = page.key === "site-dashboard-971";
-      return `<div class="prototype-endpoint-switch"><a href="#requirement/${encodeURIComponent(requirement.id)}/page/agent-dashboard-971" class="${siteActive ? "" : "active"}">代理后台</a><a href="#requirement/${encodeURIComponent(requirement.id)}/page/site-dashboard-971" class="${siteActive ? "active" : ""}">站点后台</a></div><span class="current-page-label">${escapeHtml(page.name)}</span>`;
+      const controlActive = page.portal === "总控";
+      const siteActive = page.portal === "站点";
+      return `<div class="prototype-endpoint-switch"><a href="#requirement/${encodeURIComponent(requirement.id)}/page/agent-financial-report-971" class="${!controlActive && !siteActive ? "active" : ""}">代理后台</a><a href="#requirement/${encodeURIComponent(requirement.id)}/page/site-financial-report-971" class="${siteActive ? "active" : ""}">站点后台</a><a href="#requirement/${encodeURIComponent(requirement.id)}/page/control-rebate-plan-971" class="${controlActive ? "active" : ""}">总控后台</a></div><span class="current-page-label">${escapeHtml(page.name)}</span>`;
     }
     if (requirement.id === "#828") {
       const siteActive = page.key.startsWith("site-");
@@ -5694,6 +5690,21 @@
     return `<div class="prototype-endpoint-switch${annotated ? " annotated" : ""}"${annotated ? ' data-component-id="N09"' : ""}>${annotated ? componentBadge("N09") : ""}<a href="#requirement/${encodeURIComponent("#509")}/page/vip-settings-509" class="${!memberActive && !algorithmActive ? "active" : ""}">总控后台</a><a href="#requirement/${encodeURIComponent("#509")}/page/member-vip-center-509" class="${memberActive ? "active" : ""}">会员端</a><a href="#requirement/${encodeURIComponent("#509")}/page/vip-algorithm-509" class="${algorithmActive ? "active" : ""}">新VIP算法</a></div>${currentPageLabel}`;
   }
 
+  function detailBonus510(requirement, page) {
+    const mobile = page.portal === "会员";
+    const helpers = { badge: componentBadge, dateControl: agent498DateControl, bindDates: bindAgent498DatePickers, siteSelect: siteMultiSelect, sites: siteOptions, bonusTypes: bonusTypeOptions, tags: [...new Set([...memberCustomTagOptions, ...memberSystemTagOptions].map((item) => item.name).concat(riskTags, ["新会员"]))], modal, select: selectComponent, bindLinks: bindComponentLinks, limitRows: applyTableRowLimits, mobileFrame: mobileVipFrame, rerender: () => detailView(requirement, page.key) };
+    const content = window.Bonus510.render(page, helpers);
+    const annotations = window.Bonus510.annotations(page);
+    const questions = page.questions?.length ? `<section class="questions-block"><div class="questions-title"><strong>待确认事项</strong></div><ol>${page.questions.map((question) => `<li>${escapeHtml(question)}</li>`).join("")}</ol></section>` : "";
+    const comparison = page.pageType === "existing-change" ? '<section class="comparison-spec-note"><span>对比说明</span><p>低对比度区域与生产一致，无需修改。</p></section>' : "";
+    const body = mobile ? `<div class="member-mobile-stage">${window.Bonus510.mobileNav(page)}${content}</div>` : `<div class="risk-app bonus510-app production-admin-ui-488">${window.Bonus510.sidebar(page)}<section class="risk-main"><header class="risk-topbar"><div><span>${page.menuGroup} / </span><strong>${page.name}</strong></div><div><span class="environment-tag">产品原型</span><strong>mike.ops</strong></div></header><div class="risk-content">${content}</div></section></div>`;
+    app.innerHTML = `<main class="detail-shell bonus510-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>#510</strong><span>${requirement.title}</span></div><nav class="prototype-endpoint-nav" aria-label="当前原型页面">${window.Bonus510.endpoints(page)}</nav></header><div class="prototype-canvas${mobile ? " member-mobile-canvas" : ""}">${body}</div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${page.role}</span><span>页面：${page.id}</span></div><div class="spec-title-row"><h2>${page.name}</h2><span class="version">V1.0</span></div></div><div class="spec-scroll">${comparison}${questions}${pageNoteBlock(page)}${page.extraNotice ? `<section class="critical-note"><span>福利分类</span><p>${escapeHtml(page.extraNotice)}</p></section>` : ""}<div class="spec-section-heading"><h2>组件说明</h2><span>${annotations.length} 项</span></div><div class="annotation-list">${annotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root" class="production-admin-ui-488 bonus510-modal-root"></div>`;
+    bindSiteAutocomplete();
+    window.Bonus510.bind();
+    bindComponentLinks();
+    applyTableRowLimits(app);
+  }
+
   function detailView(requirement, requestedPageKey) {
     const pages = visiblePages(requirement);
     let page = pages.find((item) => item.key === requestedPageKey) || pages[0];
@@ -5705,12 +5716,13 @@
     currentPageKey = page.key;
     if (requirement.id === "#828" && page.key === "control-site-config-828" && !financeTabState[page.key]) financeTabState[page.key] = "合营联系方式";
     if (page.key !== requestedPageKey) window.history.replaceState(null, "", `#requirement/${encodeURIComponent(requirement.id)}/page/${page.key}`);
+    if (requirement.id === "#510") { detailBonus510(requirement, page); return; }
     if (page.key === "member-login-log") loginState.searched = false;
     if (page.key === "transaction-query") transactionState.searched = false;
     const pageLogic = page.logic ? `<section class="logic-note"><span>逻辑说明</span><p>${escapeHtml(page.logic)}</p></section>` : "";
     const extraNotice = page.extraNotice ? `<section class="critical-note"><span>额外功能</span><p>${escapeHtml(page.extraNotice)}</p></section>` : "";
     const currentAnnotations = visibleAnnotations(page);
-    const moduleName = ["#509", "#643"].includes(requirement.id) ? page.moduleName || requirement.moduleName || "风控管理" : requirement.moduleName || "风控管理";
+    const moduleName = requirement.id === "#971" ? `${page.menuGroup}${page.portal === "总控" ? " / 返佣方案" : ""}` : ["#509", "#643"].includes(requirement.id) ? page.moduleName || requirement.moduleName || "风控管理" : requirement.moduleName || "风控管理";
     const adjustmentNotice = requirement.id === "#427" ? '<section class="adjustment-note"><span>调整说明</span><p>未标注的地方均为未修改，保持原页面内容和逻辑即可。</p></section>' : "";
     const memberModuleMode = requirement.id === "#488";
     const member493Mode = requirement.id === "#493";
@@ -5734,7 +5746,7 @@
     const agent498Mode = isAgent498Requirement(requirement.id) && !profitSimulatorMode && !control498Mode;
     const publicAgent498Mode = requirement.id === "#498" && agent498Mode;
     const agent498ActiveMenu = agent498Mode && page.key !== "agent-dashboard-498" ? activePageTab(page) : "";
-    const displayPageName = agent498ActiveMenu || (agent498Mode ? agent498PageDisplayName(page) : page.name);
+    const displayPageName = agent498ActiveMenu || (finance971Mode && page.key === "control-rebate-plan-971" ? activePageTab(page) : (agent498Mode ? agent498PageDisplayName(page) : page.name));
     const renderedPageContent = pageContent(page);
     const exportAnnotation = currentAnnotations.find((annotation) => annotation.name.includes("导出") || annotation.type.includes("导出")) || null;
     const scopeAnnotation = page.key === "member-logs-488" ? currentAnnotations.find((annotation) => annotation.id === "P01" && annotation.tab === "会员日志") : null;
@@ -5851,7 +5863,7 @@
         panel.dataset.year = String(year);
         panel.dataset.month = String(month);
         panel.querySelector("header strong").textContent = `${year}年${month}月`;
-        panel.querySelector(".calendar-days").innerHTML = (["#911", "#971"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dayCount }, (_, index) => {
+        panel.querySelector(".calendar-days").innerHTML = (["#510", "#911", "#971"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dayCount }, (_, index) => {
           const day = index + 1;
           return `<button type="button" class="calendar-day${day === selectedDay ? " selected" : ""}" data-day="${day}">${day}</button>`;
         }).join("");
@@ -5881,7 +5893,7 @@
         popover.style.maxHeight = `${Math.max(260, visibleBottom - visibleTop)}px`;
       };
       const close = () => {
-        if (["#911", "#971"].includes(currentRequirementId) && trigger.dataset.n911RangeBefore !== undefined) {
+        if (["#510", "#911", "#971"].includes(currentRequirementId) && trigger.dataset.n911RangeBefore !== undefined) {
           trigger.innerHTML = trigger.dataset.n911RangeBefore;
           delete trigger.dataset.n911RangeBefore;
         }
@@ -5895,13 +5907,13 @@
         popover.hidden = !opening;
         trigger.setAttribute("aria-expanded", String(opening));
         if (opening) {
-          if (["#911", "#971"].includes(currentRequirementId)) trigger.dataset.n911RangeBefore = trigger.innerHTML;
+          if (["#510", "#911", "#971"].includes(currentRequirementId)) trigger.dataset.n911RangeBefore = trigger.innerHTML;
           positionPopover();
         }
       });
       field.querySelector(".date-close")?.addEventListener("click", close);
       field.querySelector(".site-695-date-clear")?.addEventListener("click", () => {
-        if (["#911", "#971"].includes(currentRequirementId)) delete trigger.dataset.n911RangeBefore;
+        if (["#510", "#911", "#971"].includes(currentRequirementId)) delete trigger.dataset.n911RangeBefore;
         trigger.innerHTML = `<span>开始时间</span><b>至</b><span>结束时间</span>`;
         trigger.classList.remove("range-selected");
         close();
@@ -5923,7 +5935,7 @@
         }
         const quickButton = event.target.closest("[data-range-days]");
         if (!quickButton) return;
-        const end = ["#911", "#971"].includes(currentRequirementId) ? new Date() : currentRequirementId === "#776" ? new Date(2026, 7, 21) : field.closest(".site-member-695-app") ? new Date(2026, 7, 13) : new Date(2026, 6, 31);
+        const end = ["#510", "#911", "#971"].includes(currentRequirementId) ? new Date() : currentRequirementId === "#776" ? new Date(2026, 7, 21) : field.closest(".site-member-695-app") ? new Date(2026, 7, 13) : new Date(2026, 6, 31);
         let start = new Date(end);
         const range = quickButton.dataset.rangeDays;
         if (range === "1") {
@@ -5938,7 +5950,7 @@
         selectPanelDate(panels[0], start);
         selectPanelDate(panels[1], end);
         panels[0].querySelector("input[type='time']").value = "00:00:00";
-        const endTime = currentRequirementId === "#911" && range !== "1" ? [end.getHours(), end.getMinutes(), end.getSeconds()].map(pad).join(":") : "23:59:59";
+        const endTime = ["#510", "#911"].includes(currentRequirementId) && range !== "1" ? [end.getHours(), end.getMinutes(), end.getSeconds()].map(pad).join(":") : "23:59:59";
         panels[1].querySelector("input[type='time']").value = endTime;
         trigger.innerHTML = `<span>${formatDateTime(start, "00:00:00")}</span><b>至</b><span>${formatDateTime(end, endTime)}</span>`;
         trigger.classList.add("range-selected");
@@ -5952,7 +5964,7 @@
         }
         trigger.innerHTML = `<span>${values[0]}</span><b>至</b><span>${values[1]}</span>`;
         trigger.classList.add("range-selected");
-        if (["#911", "#971"].includes(currentRequirementId)) delete trigger.dataset.n911RangeBefore;
+        if (["#510", "#911", "#971"].includes(currentRequirementId)) delete trigger.dataset.n911RangeBefore;
         close();
       });
     });
@@ -7705,6 +7717,15 @@
       const targetPage = visiblePages(requirement).find((item) => item.key === match[2]);
       const requestedMenu = decodeURIComponent(match[3]);
       if (targetPage?.tabs?.includes(requestedMenu)) agent498SubViewState[targetPage.key] = requestedMenu;
+    }
+    if (requirement.id === "#971") {
+      const replacement = { "agent-dashboard-971": "agent-financial-report-971", "site-dashboard-971": "site-financial-report-971" }[match[2]];
+      if (replacement) { window.location.replace(`#requirement/%23971/page/${replacement}`); return; }
+      const targetPage = requirement.pages.find((item) => item.key === match[2]);
+      if (targetPage?.tabs) {
+        const tab = match[3] ? decodeURIComponent(match[3]) : targetPage.tabs[0];
+        financeTabState[targetPage.key] = targetPage.tabs.includes(tab) ? tab : targetPage.tabs[0];
+      }
     }
     detailView(requirement, match[2] || requirement.defaultPageKey || visiblePages(requirement)[0].key);
     document.title = `${requirement.title} · 产品需求原型库`;

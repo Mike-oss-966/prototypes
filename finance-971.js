@@ -2,183 +2,255 @@
   const pad = (value) => String(value).padStart(2, "0");
   const dateText = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
   const today = dateText(new Date());
-  const state = { agent: { start: today, end: today }, site: { start: today, end: today, quick: "today" } };
+  const defaults = () => ({ start: `${today} 00:00:00`, end: `${today} 23:59:59` });
+  const state = Object.fromEntries(["agent", "site", "control"].map((portal) => [portal, { ...defaults(), draft: defaults(), sites: null, agent: "", draftAgent: "", kind: "deposit", page: 1, size: 20, menuOpen: true }]));
   const money = (value) => Number(value).toLocaleString("en-US", { maximumFractionDigits: 2 });
   const round = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
   const escape = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
-  const icon = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="M3 9h18M15 13h6M5 5V3h13"/></svg>';
+  // Supported pay_type labels; actual channel instances are configured in the production database.
+  const channels = {
+    deposit: ["代理代存", "支付宝", "微信", "银行卡", "USDT", "EBPay", "TronPay", "EZT", "钱能钱包"],
+    withdraw: ["支付宝", "微信", "银行卡", "USDT", "EBPay", "TronPay", "钱能钱包"]
+  };
   let helpers;
   let activePortal = "agent";
-
-  // Stable sample records let date filters, entry amounts and detail totals share the same source.
-  const sources = {
-    venue: [
-      ["FB体育", 86000, 10, true], ["PG电子", 42000, 8, true], ["DB真人", 14000, 6, true],
-      ["DB捕鱼", 0, 5, true], ["沙巴体育", -12400, 10, true], ["CQ9电子", 18000, 8, false], ["MG电子", 0, 8, false]
-    ],
-    deposit: [["支付宝", 86000, 1.2, true], ["EBPay", 62000, 0.8, true], ["钱能钱包", 28600, 0.6, true], ["代理代存", 18000, 0.4, true], ["USDT", 0, 0.5, true], ["银行卡", 9000, 1, false]],
-    withdraw: [["USDT", 128000, 1, true], ["支付宝", 46000, 1.2, true], ["EBPay", 32000, 0.8, true], ["钱能钱包", 0, 0.6, true], ["银行卡", 5000, 1, false]]
-  };
+  let activeTab = "返佣方案";
+  const agentOptions = [["agent_mike", "AG10086"], ["subline_a", "AG10201"], ["agent_north", "AG10318"], ["agent_south", "AG10426"]];
 
   function rows(kind, portal) {
     const range = state[portal];
-    const scale = portal === "site" ? 3 : 1;
-    return sources[kind].map(([name, amount, rate, enabled]) => {
+    const names = kind === "venue" ? window.PROTOTYPE_VENUE_GAMES.map((venue) => venue.name) : channels[kind];
+    const sites = portal === "control" ? range.sites : [helpers.sites[0]];
+    if (!sites.length) return [];
+    return names.map((name, index) => {
+      const rate = kind === "venue" ? [8, 10, 6, 5][index % 4] : [0.6, 1.2, 0.8, 1][index % 4];
       let base = 0;
       let fee = 0;
-      [0, -1, -6].forEach((offset) => {
-        const date = new Date(`${today}T12:00:00`);
-        date.setDate(date.getDate() + offset);
-        const day = dateText(date);
-        if (day < range.start || day > range.end || (!enabled && offset !== -1)) return;
-        const value = round(amount * scale * (offset === 0 ? 1 : offset === -1 ? 0.6 : 0.4));
-        base += value;
-        fee += round(Math.max(value, 0) * rate / 100);
+      let enabled = false;
+      const rates = [];
+      sites.forEach((site) => {
+        const siteIndex = helpers.sites.indexOf(site);
+        const siteEnabled = !(siteIndex === 1 && index % 6 === 0);
+        const siteRate = round(rate + siteIndex * (kind === "venue" ? 0.5 : 0.1));
+        rates.push({ site, rate: siteRate });
+        enabled ||= siteEnabled;
+        [0, -1, -6].forEach((offset) => {
+          if (!siteEnabled && offset !== -1) return;
+          const date = new Date(`${today}T12:00:00`);
+          date.setDate(date.getDate() + offset);
+          const time = `${dateText(date)} 12:00:00`;
+          if ((range.start && time < range.start) || (range.end && time > range.end)) return;
+          const amount = index % 8 === 3 ? 0 : kind === "venue" && index % 9 === 4 ? -12400 : 18000 + index * 1300;
+        const scale = portal === "agent" ? 1 : range.agent ? 1.6 : 3 + siteIndex;
+          const value = round(amount * scale * (offset === 0 ? 1 : offset === -1 ? 0.6 : 0.4));
+          base += value;
+          fee += round(Math.max(value, 0) * siteRate / 100);
+        });
       });
-      return { name, base: round(base), rate, fee: round(fee), enabled };
-    }).filter((row) => row.enabled || row.fee !== 0);
+      return { name, base: round(base), rate: rates[0].rate, rates, fee: round(fee), enabled, agent: agentOptions[index % agentOptions.length][0] };
+    }).filter((row) => (row.enabled || row.fee !== 0) && (!range.agent || row.agent === range.agent));
   }
-
   const total = (kind, portal) => round(rows(kind, portal).reduce((sum, row) => sum + row.fee, 0));
+  const periodText = (portal) => state[portal].start ? `${state[portal].start} 至 ${state[portal].end}` : "全部时间";
+  const period = (portal) => `<div class="finance971-modal-period"><span>统计时间：</span><strong>${escape(periodText(portal))}</strong></div>`;
 
-  function metric(label, value, { tone = "blue", action = "", compare = false, blue = false } = {}) {
-    const tag = action ? "button" : "article";
-    const id = action === "venue" ? "M01" : "M02";
-    return `<${tag} class="finance971-metric${action ? " finance971-open-fee" : " finance971-reference"}${blue ? " is-blue-card" : ""}"${action ? ` type="button" data-finance971-fee="${action}" aria-label="查看${label}明细"` : ""} style="--metric-tone:var(--finance971-${tone},#2563eb)">${action ? helpers.badge(id) : ""}<header><span>${escape(label)}</span><i class="finance971-metric-icon">${icon}</i></header><strong${action ? ` data-finance971-value="${action}"` : ""}>${escape(value)}</strong>${compare || action ? `<footer>${compare ? "<small>-- 较前一周期</small>" : ""}${action ? "<span>查看明细</span>" : ""}</footer>` : ""}</${tag}>`;
+  function sidebar(page) {
+    const portal = page.portal === "总控" ? "control" : page.portal === "站点" ? "site" : "agent";
+    const control = portal === "control";
+    const open = state[portal].menuOpen;
+    return `<aside class="risk-sidebar finance971-sidebar"><div class="finance971-brand">${page.portal}后台管理系统</div><nav><section class="finance971-menu-group"><button type="button" class="finance971-menu-parent" data-finance971-menu-toggle aria-expanded="${open}" aria-controls="finance971-menu-children"><span class="finance971-menu-icon" aria-hidden="true"></span><span>${escape(page.menuGroup)}</span><i class="finance971-menu-arrow${open ? " open" : ""}" aria-hidden="true"></i></button><div id="finance971-menu-children"${open ? "" : " hidden"}><a class="finance971-menu-child active${control ? "" : " annotated"}" href="#requirement/%23971/page/${page.key}" aria-current="page"${control ? "" : ' data-component-id="N01"'}>${control ? "" : '<span class="component-badge">N01</span>'}<span>${escape(page.name)}</span>${control ? "" : '<em class="menu-change-badge is-new">新增</em>'}</a></div></section></nav></aside>`;
   }
-
-  function section(title, cards, columns, funds = false) {
-    return `<section class="finance971-section${funds ? " annotated finance971-funds" : ""}"${funds ? ' data-component-id="P01"' : ""}>${funds ? helpers.badge("P01") : ""}<h2 class="finance971-reference">${escape(title)}</h2><div class="finance971-metrics" style="--finance971-cols:${columns}">${cards.join("")}</div></section>`;
+  function agentFilter(portal) {
+    if (portal !== "control") return "";
+    const value = state.control.draftAgent;
+    return `<div class="risk-field finance971-agent-field"><label for="finance971-agent">代理账号/ID</label><div class="finance971-agent-autocomplete"><input id="finance971-agent" name="finance971-agent" value="${escape(value)}" placeholder="请输入代理账号或ID" autocomplete="off" /><div class="finance971-agent-options" hidden>${agentOptions.map(([account, id]) => `<button type="button" data-finance971-agent-value="${account}"><strong>${account}</strong><span>${id}</span></button>`).join("")}</div></div></div>`;
   }
-
-  function feeCards(portal) {
-    return [metric("场馆费", `¥${money(total("venue", portal))}`, { action: "venue" }), metric("存提手续费", `¥${money(total("deposit", portal) + total("withdraw", portal))}`, { action: "fee", tone: "red" })];
+  function filters(portal) {
+    const range = state[portal].draft;
+    const date = new Date(`${(range.start || today).slice(0, 10)}T12:00:00`);
+    return `<section class="finance971-filters annotated" data-component-id="F01">${helpers.badge("F01")}${portal === "control" ? helpers.siteSelect() : ""}${agentFilter(portal)}<div class="risk-field finance971-date"><label>统计时间</label>${helpers.dateControl({ year: date.getFullYear(), month: date.getMonth() + 1, startDay: date.getDate(), endDay: date.getDate(), empty: !range.start })}</div><div class="finance971-filter-actions"><button type="button" class="main-action" data-finance971-search>筛选</button><button type="button" class="secondary-action" data-finance971-reset>重置</button></div></section>`;
   }
-
-  function agentSections() {
-    const m = (label, value, tone = "blue", blue = false) => metric(label, value, { tone, blue, compare: true });
-    return section("本期佣金预估净收益", [m("本期佣金预估净收益", "¥18,600", "green", true)], 4)
-      + section("佣金余额", [m("当前余额", "¥86,000", "orange", true), m("总推广佣金", "¥126,800", "red", true), m("已结算佣金", "¥108,200", "green", true)], 3)
-      + section("资金流水", [m("总充值", "¥286,000", "green"), m("总提现", "¥86,000", "red"), m("总投注", "¥1,286,000", "dark"), m("有效投注", "¥1,186,000", "dark"), m("总盈亏", "+¥128,600", "green"), m("会员VIP福利", "¥22,400"), m("活动福利", "¥18,600", "orange"), m("会员推广福利", "¥4,280"), m("充提手续运营费", "¥12,460", "red"), ...feeCards("agent")], 4, true)
-      + section("代理数据", [m("代理总人数", "126", "blue", true), m("新增代理", "12"), m("活跃代理", "84")], 4)
-      + section("会员数据", [m("会员总数", "1,286", "blue", true), m("新增会员", "186", "green"), m("活跃会员", "328", "orange"), m("付费会员", "241"), m("新增付费", "86", "orange"), m("代理推广会员", "128"), m("会员推广会员", "58"), m("30天未登录会员数", "42", "dark", true)], 4);
+  function feeCard(label, type, value, withTip = false) {
+    const id = type === "venue" ? "M01" : "M02";
+    return `<button type="button" class="finance971-open-fee annotated" data-finance971-fee="${type}" data-component-id="${id}">${helpers.badge(id)}<span class="finance971-card-title">${label}${withTip ? '<i class="finance971-info-tip" role="button" tabindex="0" aria-label="查看费用说明">?</i>' : ""}</span><strong>¥${money(value)}</strong><span class="finance971-card-link">查看明细 <b aria-hidden="true">›</b></span></button>`;
   }
-
-  function siteSections() {
-    const m = (label, value, tone = "blue", compare = false) => metric(label, value, { tone, compare });
-    return section("网站收益", [m("总投注额度", "¥8,682,000"), m("总收益", "¥628,600", "green"), m("总投注人数", "2,186", "indigo")], 3)
-      + section("资金明细", [m("本站用户总额", "¥2,186,000", "indigo"), m("资金池额度", "¥3,286,000"), m("充值总额", "¥1,286,000", "green"), m("提现总额", "¥386,000", "red"), ...feeCards("site")], 4, true)
-      + section("用户增长动态", [m("总用户数", "28,640"), m("活跃用户数", "3,286", "orange", true), m("新增用户", "628", "green", true), m("付费用户", "2,186", "red", true), m("新增付费用户", "241", "red", true)], 5)
-      + section("代理数据", [m("总代理数", "628"), m("新增代理数", "28", "indigo", true), m("代理佣金余额（含未结算）", "¥286,000", "orange"), m("代理余额", "¥328,000", "green")], 4)
-      + `<div class="finance971-bottom finance971-reference"><section><h3>投注返彩趋势分析</h3><p>总投注金额 / 总返彩金额 / 总盈利金额</p><svg viewBox="0 0 600 180" aria-label="投注返彩趋势分析"><path d="M0 30h600M0 70h600M0 110h600M0 150h600" stroke="#e2e8f0"/>${[52,83,65,106,95,74,124,96,133,148].map((height, i) => `<rect x="${i * 59 + 15}" y="${170 - height}" width="20" height="${height}" fill="#fb923c"/>`).join("")}<polyline points="10,110 70,78 130,92 190,53 250,67 310,81 370,40 430,60 490,27 550,18" fill="none" stroke="#2563eb" stroke-width="3"/><polyline points="10,140 70,115 130,122 190,90 250,108 310,117 370,71 430,85 490,59 550,45" fill="none" stroke="#ec4899" stroke-width="3"/></svg></section><section><h3>游戏收益排行榜</h3><p>收益最高的前6名游戏</p>${["百家乐", "三公", "炸金花", "龙虎", "轮盘", "牛牛"].map((name, index) => `<div class="finance971-rank"><span>${name}</span><b>¥${money(48000 - index * 5600)}</b><i style="width:${95 - index * 12}%"></i></div>`).join("")}<footer>平台最高收益金额汇总</footer></section></div>`;
+  function kindTabs(attribute, selected) {
+    return `<div class="finance971-modal-tabs" role="tablist" aria-label="手续费类型">${[["deposit", "存款手续费"], ["withdraw", "提款手续费"]].map(([kind, label]) => `<button type="button" role="tab" aria-selected="${kind === selected}" class="${kind === selected ? "active" : ""}" ${attribute}="${kind}">${label}</button>`).join("")}</div>`;
   }
-
   function render(page, api) {
     helpers = api;
-    activePortal = page.portal === "站点" ? "site" : "agent";
-    const range = state[activePortal];
-    const date = new Date(`${range.start}T12:00:00`);
-    const header = activePortal === "site"
-      ? `<header class="finance971-board-header"><strong class="finance971-reference">全站运营数据看板</strong><div class="finance971-site-ranges annotated" data-component-id="F01">${helpers.badge("F01")}${[["today", "今日"], ["yesterday", "昨日"], ["3d", "近3日"], ["7d", "近7日"], ["30d", "近1月"]].map(([key, label]) => `<button type="button" data-finance971-range="${key}" class="${range.quick === key ? "active" : ""}">${label}</button>`).join("")}</div></header>`
-      : `<header class="finance971-board-header"><button class="finance971-guide finance971-reference" type="button" disabled>看板说明</button><div class="finance971-date annotated" data-component-id="F01">${helpers.badge("F01")}${helpers.dateControl({ year: date.getFullYear(), month: date.getMonth() + 1, startDay: date.getDate(), endDay: Number(range.end.slice(-2)) })}</div></header><div class="finance971-board-tip finance971-reference">淡蓝底色卡片的数据，一般为总计数据，只有在获得新数据时会每天更新，不能通过日期筛选来更新，白底卡片数据会根据日期筛选而同步变化</div>`;
-    return `<div class="finance971-page finance971-${activePortal}" data-finance971-portal="${activePortal}">${header}${activePortal === "site" ? siteSections() : agentSections()}</div>`;
+    activePortal = page.portal === "站点" ? "site" : page.portal === "总控" ? "control" : "agent";
+    state.control.sites ??= [...helpers.sites];
+    activeTab = api.activeTab || "返佣方案";
+    if (activePortal !== "control") return `<div class="finance971-page finance971-${activePortal}">${filters(activePortal)}<section class="finance971-report-section annotated" data-component-id="P01">${helpers.badge("P01")}${period(activePortal)}<div class="finance971-report-cards">${feeCard("场馆费比例", "venue", total("venue", activePortal), true)}${feeCard("存提手续费比例", "fee", total("deposit", activePortal) + total("withdraw", activePortal), true)}</div></section></div>`;
+    const tabs = `<nav class="finance971-control-tabs annotated" data-component-id="N01" role="tablist">${helpers.badge("N01")}${page.tabs.map((tab) => `<button type="button" role="tab" aria-selected="${activeTab === tab}" class="finance971-control-tab${activeTab === tab ? " active" : ""}" data-finance971-control-tab="${tab}">${tab}${tab === "返佣方案" ? "" : '<em class="menu-change-badge is-new">新增</em>'}</button>`).join("")}</nav>`;
+    const kind = activeTab === "场馆费比例" ? "venue" : state.control.kind;
+    const content = activeTab === "返佣方案" ? '<section class="finance971-control-reference">此页面与生产一致，无修改</section>' : `${filters("control")}<section class="finance971-control-detail">${period("control")}${activeTab === "存提手续费比例" ? `<div class="finance971-kind-field annotated" data-component-id="T01">${helpers.badge("T01")}${kindTabs("data-finance971-control-kind", kind)}</div>` : ""}<div class="finance971-control-table annotated" data-component-id="${kind === "venue" ? "T02" : "T03"}">${helpers.badge(kind === "venue" ? "T02" : "T03")}<div class="finance971-fee-table-panel">${detailTable(kind, "control", state.control)}</div></div></section>`;
+    return `<div class="finance971-page finance971-control">${tabs}${content}</div>`;
   }
-
-  function detailTable(kind, portal) {
-    const venue = kind === "venue";
-    const deposit = kind === "deposit";
+  function detailTable(kind, portal, pager) {
     const data = rows(kind, portal);
     const amount = money(total(kind, portal));
-    const label = venue ? "场馆费" : `${deposit ? "存款" : "提款"}手续费`;
-    return `<div class="finance971-total-bar"><span>${label}总计（CNY）</span><strong>${amount}</strong></div><div class="risk-table-wrap finance971-modal-table-wrap"><table class="risk-table finance971-modal-table"><thead><tr><th>序号</th><th>${venue ? "场馆名称" : deposit ? "存款渠道" : "提款渠道"}</th><th>${venue ? "总输赢" : deposit ? "存款金额" : "提款金额"}（CNY）</th><th>${venue ? "场馆费率" : "费率"}</th><th>${venue ? "场馆费" : "手续费"}（CNY）</th></tr></thead><tbody>${data.map((row, index) => `<tr><td>${index + 1}</td><td>${escape(row.name)}</td><td>${money(row.base)}</td><td>${row.rate}%</td><td><strong>${money(row.fee)}</strong></td></tr>`).join("") || '<tr><td colspan="5">暂无数据</td></tr>'}</tbody><tfoot><tr><td colspan="4">总计</td><td><strong>${amount}</strong></td></tr></tfoot></table></div>`;
+    const label = kind === "venue" ? "场馆费比例" : `${kind === "deposit" ? "存款" : "提款"}手续费比例`;
+    const count = Math.max(1, Math.ceil(data.length / pager.size));
+    pager.page = Math.min(pager.page, count);
+    const offset = (pager.page - 1) * pager.size;
+    const totalBar = `<div class="finance971-total-bar"><span>${label}总计（CNY）：</span><strong>${amount}</strong></div>`;
+    return `<div class="finance971-table-panel">${totalBar}<div class="risk-table-wrap finance971-modal-table-wrap"><table class="risk-table finance971-modal-table"><thead><tr><th>序号</th><th>${kind === "venue" ? "场馆名称" : kind === "deposit" ? "存款渠道" : "提款渠道"}</th><th>${kind === "venue" ? "总输赢" : kind === "deposit" ? "存款金额" : "提款金额"}（CNY）</th><th>${kind === "venue" ? "场馆费率" : "费率"}</th><th>${kind === "venue" ? "场馆费" : "手续费"}（CNY）</th></tr></thead><tbody>${data.slice(offset, offset + pager.size).map((row, index) => `<tr><td>${offset + index + 1}</td><td>${escape(row.name)}</td><td>${money(row.base)}</td><td><span${row.rates.length > 1 ? ` class="finance971-rate" tabindex="0" title="${escape(row.rates.map((item) => `${item.site}：${item.rate}%`).join("；"))}"` : ""}>${new Set(row.rates.map((item) => item.rate)).size > 1 ? "多种费率" : `${row.rate}%`}</span></td><td><strong>${money(row.fee)}</strong></td></tr>`).join("") || '<tr class="finance971-empty"><td colspan="5">暂无数据</td></tr>'}</tbody></table></div>${totalBar}<div class="finance971-pagination"><span>共 ${data.length} 条</span><select aria-label="每页数量" data-finance971-size>${[10, 20, 50, 100, 200].map((size) => `<option value="${size}"${pager.size === size ? " selected" : ""}>${size}条/页</option>`).join("")}</select><button type="button" data-finance971-page="${pager.page - 1}" aria-label="上一页"${pager.page === 1 ? " disabled" : ""}>‹</button>${Array.from({ length: count }, (_, index) => `<button type="button" data-finance971-page="${index + 1}" class="${pager.page === index + 1 ? "active" : ""}"${pager.page === index + 1 ? ' aria-current="page"' : ""}>${index + 1}</button>`).join("")}<button type="button" data-finance971-page="${pager.page + 1}" aria-label="下一页"${pager.page === count ? " disabled" : ""}>›</button><label>前往 <input type="number" min="1" max="${count}" value="${pager.page}" aria-label="跳转页码" /> 页</label></div></div>`;
   }
-
+  function bindTable(root, kind, portal, pager) {
+    const refresh = () => {
+      // Removing a focused page input can synchronously fire change again.
+      if (root.dataset.finance971Updating) return;
+      root.dataset.finance971Updating = "true";
+      try { root.innerHTML = detailTable(kind, portal, pager); bindTable(root, kind, portal, pager); helpers.limitRows(root); }
+      finally { delete root.dataset.finance971Updating; }
+    };
+    root.querySelectorAll("[data-finance971-page]").forEach((button) => button.addEventListener("click", () => { pager.page = Number(button.dataset.finance971Page); refresh(); }));
+    root.querySelector("[data-finance971-size]").addEventListener("change", (event) => { pager.size = Number(event.target.value); pager.page = 1; refresh(); });
+    root.querySelector('input[aria-label="跳转页码"]').addEventListener("change", (event) => {
+      const next = Math.max(1, Math.min(Number(event.target.max), Number(event.target.value) || 1));
+      event.target.value = String(next);
+      if (pager.page === next) return;
+      pager.page = next; refresh();
+    });
+  }
   function openDetail(type) {
     const previousFocus = document.activeElement;
     const portal = activePortal;
     const id = type === "venue" ? "M01" : "M02";
-    const range = state[portal];
-    const time = `<div class="finance971-modal-period"><span>统计时间</span><strong>${range.start} 00:00:00</strong><span>至</span><strong>${range.end} 23:59:59</strong></div>`;
-    const tabs = type === "venue" ? "" : '<div class="finance971-modal-tabs" role="tablist" aria-label="手续费类型"><button type="button" role="tab" aria-selected="true" class="active" data-finance971-fee-tab="deposit">存款手续费</button><button type="button" role="tab" aria-selected="false" data-finance971-fee-tab="withdraw">提款手续费</button></div>';
-    helpers.modal(type === "venue" ? "场馆费明细" : "存提手续费明细", `<div class="finance971-modal-content annotated" data-component-id="${id}" data-finance971-modal-portal="${portal}">${helpers.badge(id)}${time}${tabs}<div class="finance971-fee-table-panel">${detailTable(type === "venue" ? "venue" : "deposit", portal)}</div></div>`, "关闭");
+    let kind = type === "venue" ? "venue" : "deposit";
+    const pager = { page: 1, size: 20 };
+    helpers.modal(type === "venue" ? "场馆费明细" : "存提手续费明细", `<div class="finance971-modal-content annotated" data-component-id="${id}">${helpers.badge(id)}${period(portal)}${type === "venue" ? "" : kindTabs("data-finance971-fee-tab", kind)}<div class="finance971-fee-table-panel">${detailTable(kind, portal, pager)}</div></div>`, "关闭");
     const dialog = document.querySelector("#modal-root .risk-modal");
-    dialog.classList.add("finance971-dialog", `finance971-${portal}-dialog`);
+    dialog.classList.add("finance971-dialog");
     helpers.select(id, "component");
     dialog.querySelectorAll(".modal-close,.modal-confirm").forEach((button) => button.addEventListener("click", () => { if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true }); }));
     dialog.addEventListener("keydown", (event) => {
       if (event.key === "Escape") { event.preventDefault(); dialog.querySelector(".modal-close").click(); }
       if (event.key !== "Tab") return;
-      const buttons = [...dialog.querySelectorAll("button")];
-      if (event.shiftKey && document.activeElement === buttons[0]) { event.preventDefault(); buttons.at(-1).focus(); }
-      else if (!event.shiftKey && document.activeElement === buttons.at(-1)) { event.preventDefault(); buttons[0].focus(); }
+      const controls = [...dialog.querySelectorAll("button:not(:disabled),select,input")];
+      if (event.shiftKey && document.activeElement === controls[0]) { event.preventDefault(); controls.at(-1).focus(); }
+      else if (!event.shiftKey && document.activeElement === controls.at(-1)) { event.preventDefault(); controls[0].focus(); }
     });
-    dialog.querySelector(".modal-close").focus({ preventScroll: true });
+    const panel = dialog.querySelector(".finance971-fee-table-panel");
+    bindTable(panel, kind, portal, pager);
     dialog.querySelectorAll("[data-finance971-fee-tab]").forEach((button) => button.addEventListener("click", () => {
+      kind = button.dataset.finance971FeeTab;
+      pager.page = 1;
       dialog.querySelectorAll("[data-finance971-fee-tab]").forEach((tab) => { tab.classList.toggle("active", tab === button); tab.setAttribute("aria-selected", String(tab === button)); });
-      dialog.querySelector(".finance971-fee-table-panel").innerHTML = detailTable(button.dataset.finance971FeeTab, portal);
+      panel.innerHTML = detailTable(kind, portal, pager);
+      bindTable(panel, kind, portal, pager);
       helpers.limitRows(dialog);
     }));
-    dialog.querySelector(".finance971-modal-tabs")?.addEventListener("keydown", (event) => {
+    bindTabKeys(dialog);
+    helpers.limitRows(dialog);
+    dialog.querySelector(".modal-close").focus({ preventScroll: true });
+  }
+  function bindTabKeys(root) {
+    root.querySelectorAll('[role="tablist"]').forEach((list) => list.addEventListener("keydown", (event) => {
       if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+      const buttons = [...list.querySelectorAll('[role="tab"]')];
+      const index = buttons.indexOf(event.target);
+      if (index < 0) return;
       event.preventDefault();
-      const other = [...dialog.querySelectorAll("[data-finance971-fee-tab]")].find((tab) => tab !== event.target);
-      other?.click();
-      other?.focus();
+      const next = buttons[(index + (event.key === "ArrowLeft" ? -1 : 1) + buttons.length) % buttons.length];
+      next.click(); next.focus();
+    }));
+  }
+  function bindDate() {
+    const field = document.querySelector(".finance971-date");
+    if (!field) return;
+    helpers.bindDates();
+    const range = state[activePortal].draft;
+    const trigger = field.querySelector(".agent-498-date");
+    const popover = field.querySelector(".agent-498-date-popover");
+    const refreshLabel = () => { trigger.innerHTML = `<span>${escape(range.start || "开始时间")}</span><b>至</b><span>${escape(range.end || "结束时间")}</span>`; };
+    refreshLabel();
+    trigger.addEventListener("click", () => {
+      if (popover.hidden) return;
+      popover.querySelectorAll(".calendar-panel").forEach((panel) => {
+        const value = (panel.dataset.rangeSide === "start" ? range.start : range.end) || `${today} ${panel.dataset.rangeSide === "start" ? "00:00:00" : "23:59:59"}`;
+        const date = new Date(value.replace(" ", "T"));
+        const year = date.getFullYear(); const month = date.getMonth() + 1;
+        Object.assign(panel.dataset, { year, month });
+        panel.querySelector("header strong").textContent = `${year}年${month}月`;
+        panel.querySelector(".calendar-days").innerHTML = '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) + Array.from({ length: new Date(year, month, 0).getDate() }, (_, index) => `<button type="button" class="calendar-day${index + 1 === date.getDate() ? " selected" : ""}" data-day="${index + 1}">${index + 1}</button>`).join("");
+        panel.querySelector("input[type='time']").value = value.slice(11);
+      });
     });
+    field.querySelector(".date-apply").addEventListener("click", () => {
+      if (!popover.hidden) return;
+      const spans = trigger.querySelectorAll("span");
+      range.start = spans[0].textContent; range.end = spans[1].textContent;
+    });
+    field.querySelector(".site-695-date-clear").addEventListener("click", () => { range.start = ""; range.end = ""; refreshLabel(); });
+    popover.addEventListener("keydown", (event) => { if (event.key === "Escape") field.querySelector(".date-close").click(); });
   }
-
-  function updateAmounts() {
-    document.querySelector('[data-finance971-value="venue"]').textContent = `¥${money(total("venue", activePortal))}`;
-    document.querySelector('[data-finance971-value="fee"]').textContent = `¥${money(total("deposit", activePortal) + total("withdraw", activePortal))}`;
-  }
-
   function bind() {
     const range = state[activePortal];
-    document.querySelectorAll(".finance971-open-fee").forEach((button) => button.addEventListener("click", () => openDetail(button.dataset.finance971Fee)));
-    ["M01", "M02"].forEach((id) => {
-      const activate = () => { if (!document.querySelector(`#modal-root [data-component-id="${id}"]`)) openDetail(id === "M01" ? "venue" : "fee"); };
+    document.querySelector("[data-finance971-menu-toggle]").addEventListener("click", (event) => {
+      range.menuOpen = !range.menuOpen;
+      event.currentTarget.setAttribute("aria-expanded", String(range.menuOpen));
+      event.currentTarget.querySelector("i").classList.toggle("open", range.menuOpen);
+      document.getElementById("finance971-menu-children").hidden = !range.menuOpen;
+    });
+    document.querySelectorAll("[data-finance971-control-tab]").forEach((button) => button.addEventListener("click", () => { range.page = 1; helpers.setTab(button.dataset.finance971ControlTab); }));
+    document.querySelectorAll("[data-finance971-control-kind]").forEach((button) => button.addEventListener("click", () => { range.kind = button.dataset.finance971ControlKind; range.page = 1; helpers.rerender(); }));
+    const sites = document.querySelector(".finance971-filters .site-multi-field");
+    sites?.querySelectorAll('input:not([data-site-all])').forEach((input) => { input.checked = range.sites.includes(input.value); });
+    const agentInput = document.querySelector("#finance971-agent");
+    const agentOptionsBox = document.querySelector(".finance971-agent-options");
+    if (agentInput && agentOptionsBox) {
+      const choices = [...agentOptionsBox.querySelectorAll("button")];
+      const showAgents = () => {
+        const query = agentInput.value.trim().toLowerCase();
+        choices.forEach((choice) => { choice.hidden = !`${choice.dataset.finance971AgentValue} ${choice.textContent}`.toLowerCase().includes(query); });
+        agentOptionsBox.hidden = false;
+      };
+      agentInput.addEventListener("focus", showAgents);
+      agentInput.addEventListener("input", showAgents);
+      agentInput.addEventListener("blur", () => { agentInput.value = agentInput.value.trim(); state.control.draftAgent = agentInput.value; setTimeout(() => { agentOptionsBox.hidden = true; }, 120); });
+      choices.forEach((choice) => choice.addEventListener("mousedown", (event) => event.preventDefault()));
+      choices.forEach((choice) => choice.addEventListener("click", () => { agentInput.value = choice.dataset.finance971AgentValue; state.control.draftAgent = agentInput.value; agentOptionsBox.hidden = true; }));
+    }
+    document.querySelector("[data-finance971-search]")?.addEventListener("click", () => {
+      Object.assign(range, range.draft, { page: 1 });
+      if (sites) range.sites = [...sites.querySelectorAll('input:not([data-site-all]):checked')].map((input) => input.value);
+      if (agentInput) range.agent = agentInput.value.trim();
+      helpers.rerender();
+    });
+    document.querySelector("[data-finance971-reset]")?.addEventListener("click", () => {
+      Object.assign(range, defaults(), { draft: defaults(), draftAgent: "", agent: "", page: 1 });
+      if (activePortal === "control") range.sites = [...helpers.sites];
+      helpers.rerender();
+    });
+    document.querySelectorAll(".finance971-open-fee").forEach((button) => {
+      button.addEventListener("click", () => openDetail(button.dataset.finance971Fee));
+      button.querySelector(".finance971-info-tip")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        helpers.modal("费用说明", "<p>仅展示比例和金额，不代表承担的费用</p>", "关闭");
+      });
+      button.querySelector(".finance971-info-tip")?.addEventListener("keydown", (event) => {
+        if (["Enter", " "].includes(event.key)) { event.preventDefault(); event.stopPropagation(); event.currentTarget.click(); }
+      });
+    });
+    if (activePortal !== "control") {
+      const revealMenu = () => { if (!range.menuOpen) document.querySelector("[data-finance971-menu-toggle]").click(); };
+      const menuSpec = document.querySelector('[data-spec-id="N01"]');
+      menuSpec?.addEventListener("click", revealMenu);
+      menuSpec?.addEventListener("keydown", (event) => { if (["Enter", " "].includes(event.key)) revealMenu(); });
+    }
+    if (activePortal !== "control") ["M01", "M02"].forEach((id) => {
+      const activate = () => { if (!document.querySelector("#modal-root .finance971-dialog")) openDetail(id === "M01" ? "venue" : "fee"); };
       const spec = document.querySelector(`[data-spec-id="${id}"]`);
       spec?.addEventListener("click", activate);
       spec?.addEventListener("keydown", (event) => { if (["Enter", " "].includes(event.key)) { event.preventDefault(); activate(); } });
     });
-    document.querySelectorAll("[data-finance971-range]").forEach((button) => button.addEventListener("click", () => {
-      const start = new Date(`${today}T12:00:00`);
-      const key = button.dataset.finance971Range;
-      const offset = { today: 0, yesterday: 1, "3d": 2, "7d": 6, "30d": 29 }[key];
-      start.setDate(start.getDate() - offset);
-      Object.assign(range, { start: dateText(start), end: key === "yesterday" ? dateText(start) : today, quick: key });
-      document.querySelectorAll("[data-finance971-range]").forEach((item) => item.classList.toggle("active", item === button));
-      updateAmounts();
-    }));
-    if (activePortal !== "agent") return;
-    helpers.bindDates();
-    const field = document.querySelector(".finance971-date");
-    const trigger = field.querySelector(".agent-498-date");
-    const refreshLabel = () => { trigger.innerHTML = `<span>${range.start}</span><b>~</b><span>${range.end}</span>`; };
-    refreshLabel();
-    trigger.addEventListener("click", () => {
-      if (field.querySelector(".agent-498-date-popover").hidden) return;
-      field.querySelectorAll(".calendar-panel").forEach((panel) => {
-        const start = panel.dataset.rangeSide === "start";
-        const date = new Date(`${start ? range.start : range.end}T12:00:00`);
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1;
-        Object.assign(panel.dataset, { year, month });
-        panel.querySelector("header strong").textContent = `${year}年${month}月`;
-        panel.querySelector(".calendar-days").innerHTML = '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) + Array.from({ length: new Date(year, month, 0).getDate() }, (_, index) => `<button type="button" class="calendar-day${index + 1 === date.getDate() ? " selected" : ""}" data-day="${index + 1}">${index + 1}</button>`).join("");
-        panel.querySelector("input[type='time']").value = start ? "00:00:00" : "23:59:59";
-      });
-    });
-    field.querySelector(".date-apply").addEventListener("click", () => {
-      if (!field.querySelector(".agent-498-date-popover").hidden) return;
-      const spans = trigger.querySelectorAll("span");
-      range.start = spans[0].textContent.slice(0, 10);
-      range.end = spans[1].textContent.slice(0, 10);
-      refreshLabel();
-      updateAmounts();
-    });
-    field.querySelector(".date-close").addEventListener("click", refreshLabel);
+    const panel = document.querySelector(".finance971-control-detail .finance971-fee-table-panel");
+    if (panel) bindTable(panel, activeTab === "场馆费比例" ? "venue" : range.kind, "control", range);
+    bindTabKeys(document.querySelector(".finance971-page"));
+    bindDate();
   }
-
-  window.Finance971 = { render, bind };
+  window.Finance971 = { render, bind, sidebar };
 })();
