@@ -2030,7 +2030,7 @@ VIP等级: {{VIP等级}}
   ];
   window.PROTOTYPE_DATA.requirements.push({
     id: "#971", title: "代理/站点/总控后台增加场馆费明细、存提手续费明细", owner: "Mike", status: "进行中", priority: "P1",
-    startDate: "2026-09-14", completionDate: "-", updatedAt: "2026-09-16 12:58",
+    startDate: "2026-09-14", completionDate: "-", updatedAt: "2026-09-16 13:18",
     summary: "代理、站点新增财务报表；总控返佣方案下增加可按站点和时间筛选的费用明细。",
     moduleName: "财务报表", workspaceName: "总控后台、代理后台、站点后台", roleName: "总控管理员、代理、站点管理员",
     questions: pendingQuestions, defaultPageKey: "agent-financial-report-971",
