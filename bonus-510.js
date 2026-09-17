@@ -3,14 +3,14 @@
   const money = (value) => Number(value).toLocaleString("en-US", { maximumFractionDigits: 2 });
   const pad = (value) => String(value).padStart(2, "0");
   const time = (date = new Date()) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-  const memberTypes = ["活动彩金", "平台红利", "线上活动", "线下红利", "晋升礼金", "生日礼金", "周礼金", "月礼金"];
+  const memberTypes = ["活动彩金", "平台红利", "线上活动", "线下红利", "晋升礼金", "生日礼金", "周礼金", "月礼金", "代理彩金", "官方代理红利", "负数置零"];
   const existingReportTypes = ["活动礼金", "晋升礼金", "周礼金", "月礼金", "活动彩金", "首充彩金", "首充奖励", "存款奖励", "投注返佣"];
   const newReportTypes = memberTypes.filter((type) => !existingReportTypes.includes(type));
   const transactionTypes = ["全部", "充值", "提现", "转账", "红利", "返水", "加币", "减币"];
-  const agentTypes = ["代理彩金", "官方代理红利", "负数置零"];
-  const walletTypes = ["中心钱包", "场馆钱包", "代理佣金钱包"];
+  const features = { venueWallet: false, message: false };
+  const walletTypes = ["中心钱包", ...(features.venueWallet ? ["场馆钱包"] : []), "代理佣金钱包"];
   const statuses = ["已派发", "已领取", "已过期"];
-  const defaults = () => ({ site: "", wallet: "中心钱包", mode: "单笔发放", type: "", title: "", claim: "手动领取", days: "3", account: "", amount: "", venue: "", turnover: "无需流水限制", multiple: "", message: "是", remark: "" });
+  const defaults = () => ({ site: "", wallet: "中心钱包", mode: "单笔发放", type: "", title: "", claim: "手动领取", days: "3", account: "", amount: "", venue: "", turnover: "无需流水限制", multiple: "", message: features.message ? "是" : "否", remark: "" });
   let form = defaults();
   let batch = { name: "", rows: [], errors: [], loading: false };
   let api;
@@ -19,14 +19,12 @@
   let sequence = 1000;
   let excelPromise;
   let uploadVersion = 0;
-  const agentBalances = new Map();
   const menuOpen = { 财务管理: true, 运营报表: true };
   const history = { filters: {}, page: 1, size: 20, expanded: false };
   const report = { type: "", method: "", operator: "" };
-  const extraHistoryKeys = ["accountType", "id", "agent", "venue", "title", "tags", "remark"];
+  const extraHistoryKeys = ["wallet", "accountType", "id", "agent", ...(features.venueWallet ? ["venue"] : []), "title", "tags", "remark"];
   const mobile = { kind: "红利", status: "全部", period: "全部", expanded: "", limit: 20 };
   const isAgent = () => form.wallet === "代理佣金钱包";
-  const isZero = () => isAgent() && form.type === "负数置零";
   const href = (key) => `#requirement/%23510/page/${key}`;
   const badge = (id) => api.badge(id);
   const region = (id, contents, extra = "") => `<section class="bonus510-region annotated ${extra}" data-component-id="${id}">${badge(id)}${contents}</section>`;
@@ -37,7 +35,7 @@
   const roundSum = (rows) => rows.reduce((sum, row) => sum + Math.round(row.amount * 100), 0) / 100;
   const users = (site = form.site, agent = isAgent()) => site ? Array.from({ length: 8 }, (_, index) => ({
     account: agent ? ["agent_087", "agent_102", "agent_205", "north_star", "agent_510", "agent_620", "agent_730", "agent_840"][index] : ["member_10086", "summer_728", "player_2026", "member_22017", "member_510", "member_620", "member_730", "member_840"][index],
-    id: String((agent ? 20000 : 10000) + api.sites.indexOf(site) * 100 + index + 1), balance: agentBalances.get(`${site}:${index}`) ?? [-280.5, -1000, 520, 0, -88, -12.3, 1600, -620][index], site, index
+    id: String((agent ? 20000 : 10000) + api.sites.indexOf(site) * 100 + index + 1), site
   })) : [];
   const resolveUser = (value, site = form.site, agent = isAgent()) => users(site, agent).find((user) => user.account === value || user.id === value);
   function activities() { return form.site ? ["新会员首存礼", "体育周末加奖", "电子闯关活动", "会员专属回馈"].map((name, index) => ({ account: `${form.site} · ${name}`, id: `ACT${api.sites.indexOf(form.site) + 1}${pad(index + 1)}` })) : []; }
@@ -49,11 +47,12 @@
     if (records) return;
     records = Array.from({ length: 42 }, (_, index) => {
       const agent = index % 7 === 6;
+      const venueWallet = features.venueWallet && !agent && index % 4 === 1;
       const site = api.sites[index % api.sites.length];
       const issued = new Date(Date.now() - (index + 1) * 6 * 3600000);
       const expire = new Date(issued); expire.setDate(expire.getDate() + 3);
       const status = agent ? "已派发" : statuses[index % 3];
-      return { site, account: agent ? "agent_087" : "member_10086", accountType: agent ? "代理" : "会员", id: `${agent ? "AB" : "BN"}${time(issued).replace(/\D/g, "")}${pad(index)}`, agent: "agent_087", agentId: "AG10386", tags: ["新会员", "高盈利会员", "大额存款关注"][index % 3], wallet: agent ? "代理佣金钱包" : index % 4 === 1 ? "场馆钱包" : "中心钱包", venue: !agent && index % 4 === 1 ? window.PROTOTYPE_VENUE_GAMES[index % 39].name : "-", type: agent ? agentTypes[index % 2] : memberTypes[index % 8], title: agent ? "-" : ["会员专属回馈", "每周礼遇", "周末加奖", "生日祝福"][index % 4], info: agent ? "代理奖励" : "会员福利", multiple: !agent && index % 3 ? [1, 3, 5][index % 3] : 0, amount: 50 + index * 25.5, remark: ["运营活动发放", "会员关怀补发", "批量红利发放"][index % 3], issued: time(issued), received: !agent && status === "已领取" ? time(issued) : "-", expires: agent ? "-" : time(expire), status, method: index % 4 === 0 ? "系统派发" : "人工发放", recordSource: index % 4 === 0 ? "vip" : "backend", operator: index % 4 === 0 ? "系统" : "mike.ops", userId: "10001", vip: index % 11 };
+      return { site, account: agent ? "agent_087" : "member_10086", accountType: agent ? "代理" : "会员", id: `${agent ? "AB" : "BN"}${time(issued).replace(/\D/g, "")}${pad(index)}`, agent: "agent_087", agentId: "AG10386", tags: ["新会员", "高盈利会员", "大额存款关注"][index % 3], wallet: agent ? "代理佣金钱包" : venueWallet ? "场馆钱包" : "中心钱包", venue: venueWallet ? window.PROTOTYPE_VENUE_GAMES[index % 39].name : "-", type: agent ? "-" : memberTypes[index % memberTypes.length], title: agent ? "-" : ["会员专属回馈", "每周礼遇", "周末加奖", "生日祝福"][index % 4], multiple: !agent && index % 3 ? [1, 3, 5][index % 3] : 0, amount: 50 + index * 25.5, remark: ["运营活动发放", "会员关怀补发", "批量红利发放"][index % 3], issued: time(issued), received: !agent && status === "已领取" ? time(issued) : "-", expires: agent ? "-" : time(expire), status, method: index % 4 === 0 ? "系统派发" : "人工发放", recordSource: index % 4 === 0 ? "vip" : "backend", operator: index % 4 === 0 ? "系统" : "mike.ops", userId: "10001", vip: index % 11 };
     });
   }
   function endpoints(page) {
@@ -75,17 +74,15 @@
   }
   function issueForm() {
     const agent = isAgent();
-    const user = resolveUser(form.account);
-    if (isZero()) form.amount = user ? String(Math.max(0, -user.balance)) : "";
     const scope = field("site", "所属站点", select("site", api.sites, form.site, "请选择站点")) + field("wallet", "钱包类型", radios("wallet", walletTypes)) + (form.wallet === "场馆钱包" ? field("venue", "选择场馆", select("venue", venues(), form.venue, form.site ? "请选择场馆" : "请先选择站点", !form.site)) : "");
     const mode = field("mode", "操作类型", `<div class="bonus510-segments" role="group" aria-label="操作类型">${["单笔发放", "批量发放"].map((value) => `<button type="button" data-b510-mode="${value}" class="${form.mode === value ? "active" : ""}" aria-pressed="${form.mode === value}">${value}</button>`).join("")}</div>`);
-    const type = field("type", "红利类型", select("type", agent ? agentTypes : memberTypes, form.type, "请选择红利类型")) + (agent ? "" : field("title", "红利标题", form.type === "活动彩金" ? autocomplete("title", activities(), form.site ? "输入关键词搜索活动标题" : "请先选择站点", !form.site) : input("title", "请输入红利标题"), false));
+    const type = agent ? "" : region("F02", field("type", "红利类型", select("type", memberTypes, form.type, "请选择红利类型")) + field("title", "红利标题", form.type === "活动彩金" ? autocomplete("title", activities(), form.site ? "输入关键词搜索活动标题" : "请先选择站点", !form.site) : input("title", "请输入红利标题"), false));
     const claim = agent ? "" : region("F03", field("claim", "领取方式", radios("claim", ["手动领取", "自动派发"])) + (form.claim === "手动领取" ? field("days", "红利有效期", `<div class="bonus510-unit-input">${input("days", "请输入天数", form.days, 'inputmode="numeric"')}<span>天</span></div>`) : ""));
-    const target = form.mode === "批量发放" ? region("B01", field("file", "导入文件", batchContent())) : region("F04", field("account", `${agent ? "代理" : "会员"}账号/ID`, autocomplete("account", users(), form.site ? `请输入${agent ? "代理" : "会员"}账号或ID` : "请先选择站点", !form.site)) + field("amount", "发放金额", `<div class="bonus510-unit-input">${input("amount", isZero() ? "选择代理后自动计算" : "请输入0.01-99999999", form.amount, `inputmode="decimal"${isZero() ? " readonly" : ""}`)}<span>CNY</span></div>${isZero() ? `<p class="bonus510-hint">${user ? `当前余额：${money(user.balance)} CNY${user.balance >= 0 ? "，无需补零" : ""}` : "补足代理负余额至0"}</p>` : ""}`));
+    const target = form.mode === "批量发放" ? region("B01", field("file", "导入文件", batchContent())) : region("F04", field("account", `${agent ? "代理" : "会员"}账号/ID`, autocomplete("account", users(), form.site ? `请输入${agent ? "代理" : "会员"}账号或ID` : "请先选择站点", !form.site)) + field("amount", "发放金额", `<div class="bonus510-unit-input">${input("amount", "请输入0.01-99999999", form.amount, 'inputmode="decimal"')}<span>CNY</span></div>`));
     const turnover = agent ? "" : region("F05", field("turnover", "流水限制", radios("turnover", ["无需流水限制", "需要流水限制"])) + (form.turnover === "需要流水限制" ? field("multiple", "流水倍数", `<div class="bonus510-unit-input">${input("multiple", "请输入大于0的正数", form.multiple, 'inputmode="decimal"')}<span>倍</span></div>`) : ""));
-    return `${tabs()}<form class="bonus510-form" novalidate>${region("F01", scope)}${mode}${region("F02", type)}${claim}${target}${turnover}${agent ? "" : field("message", "站内信通知", radios("message", ["是", "否"]))}${field("remark", "申请备注", `<div class="bonus510-remark">${input("unused", "", "", 'type="hidden"')}<textarea name="remark" id="b510-remark" maxlength="500" placeholder="请输入申请备注">${escape(form.remark)}</textarea><small><span data-b510-remark-count>${form.remark.length}</span>/500</small></div>`)}<div class="bonus510-submit"><p class="bonus510-form-error" role="alert" hidden></p><p class="bonus510-success" role="status" hidden></p><button type="submit" class="main-action annotated" data-component-id="B02">${badge("B02")}提交</button></div></form>`;
+    return `${tabs()}<form class="bonus510-form" novalidate>${region("F01", scope)}${mode}${type}${claim}${target}${turnover}${agent || !features.message ? "" : field("message", "站内信通知", radios("message", ["是", "否"]))}${field("remark", "申请备注", `<div class="bonus510-remark">${input("unused", "", "", 'type="hidden"')}<textarea name="remark" id="b510-remark" maxlength="500" placeholder="请输入申请备注（选填）">${escape(form.remark)}</textarea><small><span data-b510-remark-count>${form.remark.length}</span>/500</small></div>`, false)}<div class="bonus510-submit"><p class="bonus510-form-error" role="alert" hidden></p><p class="bonus510-success" role="status" hidden></p><button type="submit" class="main-action annotated" data-component-id="B02">${badge("B02")}提交</button></div></form>`;
   }
-  const historyColumns = [["site", "所属站点"], ["account", "账号"], ["accountType", "账号类型"], ["id", "单号"], ["agent", "上级代理账号"], ["agentId", "上级代理编号"], ["tags", "会员标签"], ["wallet", "钱包类型"], ["venue", "场馆名称"], ["type", "红利类型"], ["title", "红利标题"], ["info", "红利信息"], ["turnover", "流水要求"], ["multiple", "流水倍数"], ["amount", "红利金额（CNY）"], ["remark", "申请备注"], ["issued", "派发时间"], ["received", "领取时间"], ["expires", "过期时间"], ["status", "状态"]];
+  const historyColumns = [["site", "所属站点"], ["account", "账号"], ["accountType", "账号类型"], ["id", "单号"], ["agent", "上级代理账号"], ["agentId", "上级代理编号"], ["tags", "会员标签"], ["wallet", "钱包类型"], ["venue", "场馆名称"], ["type", "红利类型"], ["title", "红利标题"], ["turnover", "流水要求"], ["multiple", "流水倍数"], ["amount", "红利金额（CNY）"], ["remark", "申请备注"], ["issued", "派发时间"], ["received", "领取时间"], ["expires", "过期时间"], ["status", "状态"]].filter(([key]) => features.venueWallet || key !== "venue");
   function selectedHistory() {
     const f = history.filters;
     return records.filter((row) => Object.entries(f).every(([key, value]) => {
@@ -102,9 +99,9 @@
   }
   function filterField(key, label, options, placeholder) { return `<div class="risk-field"><label for="b510-filter-${key}">${label}</label>${options ? select(`filter-${key}`, options, "", placeholder || "全部") : input(`filter-${key}`, placeholder || `请输入${label}`, "")}</div>`; }
   function historyView() {
-    const common = `<div class="bonus510-filters">${api.siteSelect()}${filterField("account", "账号", null, "会员或代理账号")}${filterField("status", "状态", statuses)}</div><div class="bonus510-filters bonus510-filter-date-row">${filterField("type", "红利类型", [...memberTypes, ...agentTypes])}${filterField("wallet", "钱包类型", walletTypes)}${dateField("issued", "派发时间")}</div>`;
-    const extra = `${filterField("accountType", "账号类型", ["会员", "代理"])}${filterField("id", "单号")}${filterField("agent", "上级代理账号/编号", null, "账号或编号")}${filterField("venue", "场馆名称", window.PROTOTYPE_VENUE_GAMES.map((venue) => venue.name))}${filterField("title", "红利标题")}${filterField("tags", "会员标签", api.tags)}`;
-    return `<div class="bonus510-history">${tabs()}${region("F01", `<form class="bonus510-filter-form">${common}<div id="b510-history-extra" class="bonus510-extra-filters"${history.expanded ? "" : " hidden"}><div class="bonus510-filters">${extra}</div><div class="bonus510-filters bonus510-filter-date-row bonus510-filter-extra-last">${filterField("remark", "申请备注")}${dateField("received", "领取时间")}</div></div><div class="bonus510-actions"><button type="submit" class="main-action">筛选</button><button type="button" class="secondary-action" data-b510-reset>重置</button><button type="button" class="bonus510-more-filters" data-b510-more-filters aria-expanded="${history.expanded}" aria-controls="b510-history-extra"></button><button type="button" class="secondary-action annotated" data-component-id="B01" data-b510-export>${badge("B01")}导出</button></div></form>`, "bonus510-filter-panel bonus510-compact-filters")}<div class="bonus510-history-result">${historyTable()}</div></div>`;
+    const common = `<div class="bonus510-filters bonus510-history-common">${api.siteSelect()}${filterField("account", "账号", null, "会员或代理账号")}${filterField("status", "状态", statuses)}${filterField("type", "红利类型", memberTypes)}</div><div class="bonus510-filters bonus510-history-dates">${dateField("issued", "派发时间")}${dateField("received", "领取时间")}</div>`;
+    const extra = `${filterField("wallet", "钱包类型", walletTypes)}${filterField("accountType", "账号类型", ["会员", "代理"])}${filterField("id", "单号")}${filterField("agent", "上级代理账号/编号", null, "账号或编号")}${features.venueWallet ? filterField("venue", "场馆名称", window.PROTOTYPE_VENUE_GAMES.map((venue) => venue.name)) : ""}${filterField("title", "红利标题")}${filterField("tags", "会员标签", api.tags)}${filterField("remark", "申请备注")}`;
+    return `<div class="bonus510-history">${tabs()}${region("F01", `<form class="bonus510-filter-form">${common}<div id="b510-history-extra" class="bonus510-extra-filters"${history.expanded ? "" : " hidden"}><div class="bonus510-filters">${extra}</div></div><div class="bonus510-actions"><button type="submit" class="main-action">筛选</button><button type="button" class="secondary-action" data-b510-reset>重置</button><button type="button" class="bonus510-more-filters" data-b510-more-filters aria-expanded="${history.expanded}" aria-controls="b510-history-extra"></button><button type="button" class="secondary-action annotated" data-component-id="B01" data-b510-export>${badge("B01")}导出</button></div></form>`, "bonus510-filter-panel bonus510-compact-filters")}<div class="bonus510-history-result">${historyTable()}</div></div>`;
   }
   function pagination(count, pager) {
     const pages = Math.max(1, Math.ceil(count / pager.size));
@@ -115,7 +112,9 @@
     const rows = selectedHistory();
     history.page = Math.min(history.page, Math.max(1, Math.ceil(rows.length / history.size)));
     const total = roundSum(rows);
-    return region("T01", `<header class="bonus510-table-heading"><h2>历史记录列表</h2><span>共 ${rows.length} 条</span></header>${history.size === 50 ? pagination(rows.length, history) : ""}<div class="risk-table-wrap bonus510-table-wrap"><table class="risk-table bonus510-history-table"><thead><tr>${historyColumns.map(([, label]) => `<th>${label}</th>`).join("")}</tr></thead><tbody>${rows.slice((history.page - 1) * history.size, history.page * history.size).map((row) => `<tr>${historyColumns.map(([key]) => `<td>${key === "status" ? `<span class="bonus510-status ${row.status === "已领取" ? "success" : row.status === "已过期" ? "expired" : "pending"}">${row.status}</span>` : key === "amount" ? `<strong>${money(row.amount)}</strong>` : escape(key === "turnover" ? row.multiple > 0 ? "是" : "否" : row[key])}</td>`).join("")}</tr>`).join("") || `<tr><td colspan="${historyColumns.length}" class="bonus510-empty">暂无符合条件的记录</td></tr>`}</tbody><tfoot><tr>${historyColumns.map(([key], index) => `<td>${index === 0 ? "总计" : key === "amount" ? `<strong>${money(total)}</strong>` : ""}</td>`).join("")}</tr></tfoot></table></div>${pagination(rows.length, history)}`, "bonus510-table-panel");
+    const pageRows = rows.slice((history.page - 1) * history.size, history.page * history.size);
+    const pageTotal = roundSum(pageRows);
+    return region("T01", `<header class="bonus510-table-heading"><h2>历史记录列表</h2><span>共 ${rows.length} 条</span></header><div class="bonus510-history-total"><span>总计：</span><strong>${money(total)}</strong><span>CNY</span></div>${history.size === 50 ? pagination(rows.length, history) : ""}<div class="risk-table-wrap bonus510-table-wrap" data-page-scroll><table class="risk-table bonus510-history-table"><thead><tr>${historyColumns.map(([, label]) => `<th>${label}</th>`).join("")}</tr></thead><tbody>${pageRows.map((row) => `<tr>${historyColumns.map(([key]) => `<td>${key === "status" ? `<span class="bonus510-status ${row.status === "已领取" ? "success" : row.status === "已过期" ? "expired" : "pending"}">${row.status}</span>` : key === "amount" ? `<strong>${money(row.amount)}</strong>` : escape(key === "turnover" ? row.multiple > 0 ? "是" : "否" : row[key])}</td>`).join("")}</tr>`).join("") || `<tr><td colspan="${historyColumns.length}" class="bonus510-empty">暂无符合条件的记录</td></tr>`}</tbody><tfoot><tr>${historyColumns.map(([key], index) => `<td>${index === 0 ? "本页总计" : key === "amount" ? `<strong>${money(pageTotal)}</strong>` : ""}</td>`).join("")}</tr></tfoot></table></div>${pagination(rows.length, history)}`, "bonus510-table-panel");
   }
   function reportView() {
     const allRows = records.filter((row) => row.accountType === "会员" && (!report.type || row.type === report.type) && (!report.method || row.method === report.method) && (!report.operator || row.operator.toLowerCase().includes(report.operator.toLowerCase())));
@@ -129,7 +128,7 @@
     const filters = `<form class="bonus510-report-filter-form"><div class="bonus510-filters bonus510-report-dates ${production}">${dateField("stat", "日期范围")}${dateField("receive", "领取时间")}</div><div class="bonus510-filters">${original(api.siteSelect())}${typeField}${original(filterField("status", "发放状态", ["待领取", "已领取", "已过期"]))}${original(filterField("member", "会员名"))}${original(filterField("agent", "上级代理"))}${methodField}${operatorField}</div><div class="bonus510-actions"><button type="submit" class="main-action">查询</button><button type="button" class="secondary-action" data-b510-report-reset>重置</button></div></form>`;
     const totals = [roundSum(allRows), roundSum(allRows.filter((row) => ["活动彩金", "平台红利", "线上活动", "线下红利", "活动礼金"].includes(row.type))), roundSum(allRows.filter((row) => row.type === "晋升礼金")), roundSum(allRows.filter((row) => row.type === "周礼金")), roundSum(allRows.filter((row) => row.type === "月礼金")), roundSum(allRows.filter((row) => row.status === "已过期"))];
     const summary = region("P01", ["总发放礼金", "总活动礼金", "总晋升礼金", "周礼金", "总月礼金", "过期总礼金"].map((name, index) => `<article${index === 0 ? ' class="bonus510-summary-total"' : ""}><span>${name}<small> CNY</small></span><strong>${money(totals[index])}</strong></article>`).join(""), "bonus510-report-summary");
-    const table = region("T01", `<div class="risk-table-wrap bonus510-table-wrap"><table class="risk-table bonus510-report-table"><thead><tr>${["日期", "所属站点", "上级代理", "用户名称", "会员ID", "VIP等级", "礼金类型", "礼金额度（CNY）", "状态", "领取时间", "发放方式", "操作人"].map((label, index) => `<th class="${[6, 10, 11].includes(index) ? "" : production}">${label}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${[row.issued.slice(0, 10), row.site, row.agent, row.account, row.userId, `VIP${row.vip}`, row.type, money(row.amount), row.status === "已派发" ? "待领取" : row.status, row.received, row.method, row.operator].map((value, index) => `<td class="${index >= 10 || index === 6 && newReportTypes.includes(row.type) ? "" : production}">${index === 10 ? `<span class="bonus510-method-tag ${row.method === "系统派发" ? "system" : "manual"}">${escape(value)}</span>` : escape(value)}</td>`).join("")}</tr>`).join("") || '<tr><td colspan="12" class="bonus510-empty">暂无符合条件的记录</td></tr>'}</tbody><tfoot class="${production}"><tr><td>合计</td><td colspan="6"></td><td>${money(roundSum(allRows))}</td><td colspan="4"></td></tr></tfoot></table></div><div class="${production}">${pagination(allRows.length, { page: 1, size: 20 })}</div>`, "bonus510-table-panel");
+    const table = region("T01", `<div class="risk-table-wrap bonus510-table-wrap" data-page-scroll><table class="risk-table bonus510-report-table"><thead><tr>${["日期", "所属站点", "上级代理", "用户名称", "会员ID", "VIP等级", "礼金类型", "礼金额度（CNY）", "状态", "领取时间", "发放方式", "操作人"].map((label, index) => `<th class="${[6, 10, 11].includes(index) ? "" : production}">${label}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${[row.issued.slice(0, 10), row.site, row.agent, row.account, row.userId, `VIP${row.vip}`, row.type, money(row.amount), row.status === "已派发" ? "待领取" : row.status, row.received, row.method, row.operator].map((value, index) => `<td class="${index >= 10 || index === 6 && newReportTypes.includes(row.type) ? "" : production}">${index === 10 ? `<span class="bonus510-method-tag ${row.method === "系统派发" ? "system" : "manual"}">${escape(value)}</span>` : escape(value)}</td>`).join("")}</tr>`).join("") || '<tr><td colspan="12" class="bonus510-empty">暂无符合条件的记录</td></tr>'}</tbody><tfoot class="${production}"><tr><td>合计</td><td colspan="6"></td><td>${money(roundSum(allRows))}</td><td colspan="4"></td></tr></tfoot></table></div><div class="${production}">${pagination(allRows.length, { page: 1, size: 20 })}</div>`, "bonus510-table-panel");
     return `<div class="bonus510-report"><header class="bonus510-report-heading ${production}"><h1>礼金统计报表</h1><button type="button" class="secondary-action" disabled>导出报表</button></header>${summary}${region("F01", filters, "bonus510-filter-panel bonus510-compact-filters")}${table}<section class="bonus510-report-tip ${production}"><h3>报表统计说明</h3><p>* 本报表统计全站所有类型的礼金发放明细，包含手动发放与系统自动触发的礼金。</p><p>* 晋升礼金、周礼金、月礼金等周期性奖励将根据会员VIP等级配置自动生成。</p><p>* 待领取状态的礼金需要会员在前端手动领取后方可计入余额。</p></section></div>`;
   }
   function mobileNav(page) {
@@ -157,7 +156,7 @@
   function mobileCards(rows = mobileRows()) {
     return rows.slice(0, mobile.limit).map((row) => {
       const benefit = row.kind === "红利";
-      const fields = benefit ? [["订单号", row.id], ["时间", row.date], ["红利类型", row.type], ["红利金额", `¥ ${money(row.amount)}`], ["限制场馆", row.venue === "-" ? "无限制" : row.venue], ["提现流水", `${row.multiple}倍`], ["红利说明", row.recordSource === "vip" ? "无" : row.title]] : [["订单号", row.id], ["日期", row.date], ["交易类型", row.kind], ["子类型", "支付宝"], ["申请金额", `CNY ${money(row.amount)}`], [row.kind === "充值" ? "实际充值金额" : "提款金额", `CNY ${money(row.amount)}`], ["手续费", "¥ 0"], ["汇率", "1"], ["实际到账", `¥ ${money(row.amount)}`]];
+      const fields = benefit ? [["订单号", row.id], ["时间", row.date], ["红利类型", row.type], ["红利金额", `¥ ${money(row.amount)}`], ...(features.venueWallet ? [["限制场馆", row.venue === "-" ? "无限制" : row.venue]] : []), ["提现流水", `${row.multiple}倍`]] : [["订单号", row.id], ["日期", row.date], ["交易类型", row.kind], ["子类型", "支付宝"], ["申请金额", `CNY ${money(row.amount)}`], [row.kind === "充值" ? "实际充值金额" : "提款金额", `CNY ${money(row.amount)}`], ["手续费", "¥ 0"], ["汇率", "1"], ["实际到账", `¥ ${money(row.amount)}`]];
       const expanded = mobile.expanded === row.id;
       return `<article class="bonus510-record${benefit ? "" : " bonus510-existing-record"}"><button type="button" class="bonus510-record-toggle" data-b510-record="${escape(row.id)}" aria-expanded="${expanded}"><div><strong>${row.kind}</strong><time>${row.date.slice(11)}</time></div><b>${row.kind === "提现" ? "-" : "+"}${money(row.amount)}</b><span class="bonus510-member-success">成功</span><i>${expanded ? "›" : "⌄"}</i></button><dl${expanded ? "" : " hidden"}>${fields.map(([label, value], index) => `<div><dt>${label}：</dt><dd>${escape(value)}${index === 0 ? `<button type="button" data-b510-copy="${escape(value)}" aria-label="复制订单号">复制</button>` : ""}</dd></div>`).join("")}</dl></article>`;
     }).join("") + (rows.length ? mobile.limit < rows.length ? '<button type="button" class="bonus510-load" data-b510-more>加载更多</button>' : '<p class="bonus510-list-end">没有更多了</p>' : '<div class="bonus510-mobile-empty">暂无记录</div>');
@@ -171,7 +170,7 @@
   }
   function annotations(page) {
     if (page.key !== "control-bonus-issue-510") return page.annotations;
-    return page.annotations.filter((item) => !(isAgent() && ["F03", "F05"].includes(item.id)) && !(form.mode === "单笔发放" && item.id === "B01") && !(form.mode === "批量发放" && item.id === "F04"));
+    return page.annotations.filter((item) => !(isAgent() && ["F02", "F03", "F05"].includes(item.id)) && !(form.mode === "单笔发放" && item.id === "B01") && !(form.mode === "批量发放" && item.id === "F04"));
   }
   function refresh() {
     const scrollers = [".risk-content", ".prototype-canvas", ".spec-scroll"];
@@ -188,8 +187,9 @@
   function validateAmount(value) { return /^\d+(\.\d{1,2})?$/.test(String(value)) && Number(value) >= 0.01 && Number(value) <= 99999999; }
   function validateForm() {
     if (!form.site) return "请选择站点";
+    if (!walletTypes.includes(form.wallet)) return "请选择钱包类型";
     if (form.wallet === "场馆钱包" && !venues().includes(form.venue)) return "请选择该站点已开启的场馆";
-    if (!(isAgent() ? agentTypes : memberTypes).includes(form.type)) return "请选择红利类型";
+    if (!isAgent() && !memberTypes.includes(form.type)) return "请选择红利类型";
     if (!isAgent() && form.type === "活动彩金" && !activities().some((item) => item.account === form.title)) return "请选择当前站点已开启的活动标题";
     if (!isAgent() && form.claim === "手动领取" && (!/^\d+$/.test(form.days) || !Number.isSafeInteger(Number(form.days)) || Number(form.days) <= 0)) return "请输入有效的正整数天数";
     if (form.mode === "批量发放") {
@@ -198,33 +198,19 @@
     } else {
       const user = resolveUser(form.account);
       if (!user) return `请选择当前站点的${isAgent() ? "代理" : "会员"}账号`;
-      if (isZero() && user.balance >= 0) return "该代理余额不为负数，无需补零";
       if (!validateAmount(form.amount)) return "发放金额须为0.01至99999999，最多2位小数";
     }
     if (!isAgent() && form.turnover === "需要流水限制" && (!/^\d+(\.\d+)?$/.test(form.multiple) || !Number.isFinite(Number(form.multiple)) || Number(form.multiple) <= 0)) return "流水倍数只能填写大于0的正数";
-    if (!form.remark.trim()) return "请输入申请备注";
     return "";
   }
   function confirmIssue() {
     Object.keys(form).forEach((key) => { form[key] = String(form[key]).trim(); });
-    if (isZero() && form.mode === "单笔发放") {
-      const user = resolveUser(form.account);
-      form.amount = user ? String(Math.max(0, -user.balance)) : "";
-    }
-    if (isZero() && form.mode === "批量发放" && !batch.errors.length) {
-      batch.rows.forEach((row) => {
-        const user = resolveUser(row.account);
-        if (!user || user.balance >= 0) batch.errors.push(`${row.account}余额不为负数，请重新核对整份文件`);
-        else row.amount = -user.balance;
-      });
-      if (batch.errors.length) { refresh(); formError("代理余额已变化，请重新核对文件"); return; }
-    }
     const error = validateForm();
     if (error) { formError(error); return; }
     const recipients = form.mode === "批量发放" ? batch.rows : [{ account: resolveUser(form.account).account, amount: Number(form.amount) }];
     const snapshot = { ...form };
     const multiple = !isAgent() && form.turnover === "需要流水限制" ? Number(form.multiple) : 0;
-    const pairs = [["所属站点", form.site], ["钱包类型", form.wallet], ...(form.wallet === "场馆钱包" ? [["限制场馆", form.venue]] : []), ["红利类型", form.type], ["发放人数", `${recipients.length} 人`], ["发放总金额", `${money(roundSum(recipients))} CNY`], ...(recipients.length === 1 ? [["收款账号", recipients[0].account]] : []), ...(isAgent() ? [] : [["领取方式", form.claim], ["流水倍数", `${multiple}倍`], ...(form.claim === "手动领取" ? [["红利有效期", `${form.days}天`]] : [])]), ["申请备注", form.remark]];
+    const pairs = [["所属站点", form.site], ["钱包类型", form.wallet], ...(form.wallet === "场馆钱包" ? [["限制场馆", form.venue]] : []), ...(isAgent() ? [] : [["红利类型", form.type]]), ["发放人数", `${recipients.length} 人`], ["发放总金额", `${money(roundSum(recipients))} CNY`], ...(recipients.length === 1 ? [["收款账号", recipients[0].account]] : []), ...(isAgent() ? [] : [["领取方式", form.claim], ["流水倍数", `${multiple}倍`], ...(form.claim === "手动领取" ? [["红利有效期", `${form.days}天`]] : [])]), ["申请备注", form.remark || "-"]];
     api.modal("确认发放红利", region("M01", `<dl class="bonus510-confirm">${pairs.map(([label, value]) => `<div><dt>${label}</dt><dd>${escape(value)}</dd></div>`).join("")}</dl>`), "确认发放");
     const dialog = document.querySelector(".risk-modal"); dialog.classList.add("bonus510-dialog");
     api.select("M01", "component");
@@ -233,12 +219,8 @@
       const expires = time(new Date(Date.now() + Number(snapshot.days) * 86400000));
       recipients.forEach((recipient) => {
         const agent = snapshot.wallet === "代理佣金钱包";
-        if (agent) {
-          const user = resolveUser(recipient.account, snapshot.site, true);
-          agentBalances.set(`${snapshot.site}:${user.index}`, Math.round((user.balance + recipient.amount) * 100) / 100);
-        }
         const received = !agent && snapshot.claim === "自动派发";
-        records.unshift({ site: snapshot.site, account: recipient.account, accountType: agent ? "代理" : "会员", id: `BN${issued.replace(/\D/g, "")}${sequence++}`, agent: "agent_087", agentId: "AG10386", tags: "新会员", wallet: snapshot.wallet, venue: snapshot.wallet === "场馆钱包" ? snapshot.venue : "-", type: snapshot.type, title: agent ? "-" : snapshot.title || "-", info: snapshot.type, amount: recipient.amount, multiple, remark: snapshot.remark, issued, received: received ? issued : "-", expires: agent ? "-" : expires, status: received ? "已领取" : "已派发", method: "人工发放", recordSource: snapshot.claim === "手动领取" ? "vip" : "backend", operator: "mike.ops", userId: resolveUser(recipient.account, snapshot.site, agent)?.id || "-", vip: 10 });
+        records.unshift({ site: snapshot.site, account: recipient.account, accountType: agent ? "代理" : "会员", id: `BN${issued.replace(/\D/g, "")}${sequence++}`, agent: "agent_087", agentId: "AG10386", tags: "新会员", wallet: snapshot.wallet, venue: snapshot.wallet === "场馆钱包" ? snapshot.venue : "-", type: agent ? "-" : snapshot.type, title: agent ? "-" : snapshot.title || "-", amount: recipient.amount, multiple, remark: snapshot.remark, issued, received: received ? issued : "-", expires: agent ? "-" : expires, status: received ? "已领取" : "已派发", method: "人工发放", recordSource: snapshot.claim === "手动领取" ? "vip" : "backend", operator: "mike.ops", userId: resolveUser(recipient.account, snapshot.site, agent)?.id || "-", vip: 10 });
       });
       form.account = ""; form.amount = ""; clearBatch(); refresh();
       const success = document.querySelector(".bonus510-success"); success.textContent = `发放成功：${recipients.length}人，共${money(roundSum(recipients))} CNY，可在历史记录查看`; success.hidden = false;
@@ -286,10 +268,7 @@
         seen.add(account);
         if (!user) batch.errors.push(`第${number}行：${account || "空账号"}不是所选站点的有效${isAgent() ? "代理" : "会员"}账号`);
         if (cells.slice(2).some((cell) => String(cell).trim())) batch.errors.push(`第${number}行：存在模板外的字段`);
-        if (isZero()) {
-          if (user && user.balance >= 0) batch.errors.push(`第${number}行：${account}余额不为负数，无需补零`);
-          else if (user) batch.rows.push({ account, amount: -user.balance });
-        } else if (!validateAmount(amount)) batch.errors.push(`第${number}行：金额须为0.01至99999999，最多2位小数`);
+        if (!validateAmount(amount)) batch.errors.push(`第${number}行：金额须为0.01至99999999，最多2位小数`);
         else if (user) batch.rows.push({ account, amount: Number(amount) });
       });
       if (!batch.rows.length && !batch.errors.length) batch.errors.push("文件没有可发放的数据，请填写账号和金额");
@@ -308,7 +287,7 @@
       const close = () => { list.hidden = true; inputElement.setAttribute("aria-expanded", "false"); active = -1; };
       inputElement.addEventListener("focus", show); inputElement.addEventListener("input", show);
       inputElement.addEventListener("blur", () => { inputElement.value = inputElement.value.trim(); form[inputElement.name] = inputElement.value; close(); });
-      buttons.forEach((button) => { button.addEventListener("mousedown", (event) => event.preventDefault()); button.addEventListener("click", () => { form[inputElement.name] = button.dataset.value; inputElement.value = button.dataset.value; close(); if (inputElement.name === "account" && isZero()) refresh(); }); });
+      buttons.forEach((button) => { button.addEventListener("mousedown", (event) => event.preventDefault()); button.addEventListener("click", () => { form[inputElement.name] = button.dataset.value; inputElement.value = button.dataset.value; close(); }); });
       inputElement.addEventListener("keydown", (event) => {
         if (event.key === "Escape") { close(); return; }
         const visible = buttons.filter((button) => !button.hidden);
@@ -333,7 +312,7 @@
         if (element.name === "wallet" && nextValue !== form.wallet && hasWalletContent()) {
           element.checked = false;
           root.querySelector(`input[name="wallet"][value="${CSS.escape(form.wallet)}"]`).checked = true;
-          api.modal("切换钱包类型", "<p>切换钱包类型后，已填写的红利类型、账号、金额、场馆及导入文件等内容将被清空，是否继续切换？</p>", "确认切换");
+          api.modal("切换钱包类型", `<p>切换钱包类型后，已填写的红利类型、账号、金额${features.venueWallet ? "、场馆" : ""}及导入文件等内容将被清空，是否继续切换？</p>`, "确认切换");
           document.querySelector("#modal-root .modal-confirm")?.addEventListener("click", () => { clearWalletContent(nextValue); refresh(); }, true);
           return;
         }
@@ -341,7 +320,7 @@
         if (["site", "wallet", "type", "claim", "turnover"].includes(element.name)) {
           if (element.name === "site") { form.account = ""; form.amount = ""; form.venue = ""; form.title = ""; clearBatch(); }
           if (element.name === "wallet") clearWalletContent(nextValue);
-          if (element.name === "type") { form.title = ""; if (isAgent()) { form.amount = ""; clearBatch(); } }
+          if (element.name === "type") form.title = "";
           if (element.name === "turnover" && form.turnover === "无需流水限制") form.multiple = "";
           refresh();
         }
@@ -390,7 +369,7 @@
     siteField.querySelectorAll("input:not([data-site-all])").forEach((checkbox) => { checkbox.checked = !history.filters.sites || history.filters.sites.includes(checkbox.value); });
     const moreButton = root.querySelector("[data-b510-more-filters]");
     const updateMoreLabel = () => {
-      const count = extraHistoryKeys.filter((key) => history.filters[key]).length + (history.filters.receivedStart || history.filters.receivedEnd ? 1 : 0);
+      const count = extraHistoryKeys.filter((key) => history.filters[key]).length;
       moreButton.innerHTML = `${history.expanded ? "收起筛选" : "更多筛选"}${count ? `<span>已选 ${count} 项</span>` : ""}<i aria-hidden="true"></i>`;
       moreButton.setAttribute("aria-expanded", String(history.expanded));
     };

@@ -340,30 +340,37 @@
     else bindProfitSimulatorBehavior(page);
   }
 
+  function annotationRules(annotation) {
+    const rules = [...annotation.rules];
+    if (annotation._notesManaged) return rules;
+    if (currentRequirementId !== "#828" && (annotation.name.includes("筛选") || annotation.name.includes("输入处理"))) rules.push("筛选按钮的可点击面积大于其他按钮一倍，可参考原型");
+    if (currentRequirementId !== "#828" && annotation.type === "数据表格" && !annotation.suppressStandardTableRules) rules.push("表格仅在内容超出对应可视区域时显示滚动条：横向滚动条高度、纵向滚动条宽度均保持15px；内容可完整显示时对应滚动条隐藏");
+    if (currentRequirementId !== "#828" && (annotation.name.includes("导出") || annotation.type.includes("导出"))) exportExcelRules.forEach((rule) => { if (!rules.includes(rule)) rules.push(rule); });
+    return rules;
+  }
+
   function annotationCard(annotation) {
+    const behaviorName = annotation._sourceName || annotation.name;
     let demoControls = "";
     if (currentRequirementId === "#784" && currentPageKey === "risk-warning-784" && annotation.id === "B01") demoControls = `<details class="risk784-demo-controls"><summary>原型验证（不属于生产功能）</summary><label>模拟命中规则<select data-risk784-demo-rule>${risk784Rules().map((rule, index) => `<option value="${index}">${escapeHtml(rule.name)}</option>`).join("")}</select></label><button type="button" class="secondary-action" data-risk784-demo-hit>模拟一条新命中</button><small data-risk784-demo-result>仅生成本地示例预警，不连接生产。</small></details>`;
-    if (annotation.name === "列表状态切换") demoControls = `<div class="spec-demo-controls"><label><input type="checkbox" checked id="spec-claim-toggle" /><span>展示待领取数据</span></label><label><input type="checkbox" checked id="spec-review-toggle" /><span>展示待审核数据</span></label></div>`;
-    if (annotation.name === "登录日志列表状态") demoControls = `<div class="spec-demo-controls"><label><input type="checkbox" ${loginState.searched ? "checked" : ""} id="spec-login-data-toggle" /><span>展示有数据状态</span></label></div>`;
-    if (annotation.name === "流水列表状态") demoControls = `<div class="spec-demo-controls"><label><input type="checkbox" ${transactionState.searched ? "checked" : ""} id="spec-transaction-data-toggle" /><span>展示有数据状态</span></label></div>`;
-    if (annotation.name === "晋升存款进度") demoControls = `<div class="spec-view-switch" aria-label="晋升存款进度演示"><span>晋升存款进度演示</span><div><button type="button" class="${memberVipDepositProgressVisible ? "active" : ""}" data-deposit-progress="show">显示</button><button type="button" class="${memberVipDepositProgressVisible ? "" : "active"}" data-deposit-progress="hide">隐藏</button></div><small>隐藏代表后台将当前VIP晋升存款配置为0，仅用于原型评审</small></div>`;
-    if (annotation.name === "个人资料填写状态") demoControls = `<div class="spec-view-switch" aria-label="个人资料状态演示"><span>原型状态演示</span><div><button type="button" class="${memberProfileSaved ? "" : "active"}" data-profile-state="editing">首次填写</button><button type="button" class="${memberProfileSaved ? "active" : ""}" data-profile-state="saved">已保存只读</button></div><small>仅用于原型评审，不属于会员端生产功能</small></div>`;
-    if (annotation.name === "账户状态演示") demoControls = `<div class="spec-view-switch" aria-label="钱能钱包账户状态演示"><span>原型状态演示</span><div><button type="button" class="${member739AccountState === "empty" ? "active" : ""}" data-member-739-state="empty">未绑定</button><button type="button" class="${member739AccountState === "saved" ? "active" : ""}" data-member-739-state="saved">已绑定</button></div><small>仅用于原型评审，不属于会员端生产功能</small></div>`;
-    if (annotation.name === "系统与场景健康") {
+    if (behaviorName === "列表状态切换") demoControls = `<div class="spec-demo-controls"><label><input type="checkbox" checked id="spec-claim-toggle" /><span>展示待领取数据</span></label><label><input type="checkbox" checked id="spec-review-toggle" /><span>展示待审核数据</span></label></div>`;
+    if (behaviorName === "登录日志列表状态") demoControls = `<div class="spec-demo-controls"><label><input type="checkbox" ${loginState.searched ? "checked" : ""} id="spec-login-data-toggle" /><span>展示有数据状态</span></label></div>`;
+    if (behaviorName === "流水列表状态") demoControls = `<div class="spec-demo-controls"><label><input type="checkbox" ${transactionState.searched ? "checked" : ""} id="spec-transaction-data-toggle" /><span>展示有数据状态</span></label></div>`;
+    if (behaviorName === "晋升存款进度") demoControls = `<div class="spec-view-switch" aria-label="晋升存款进度演示"><span>晋升存款进度演示</span><div><button type="button" class="${memberVipDepositProgressVisible ? "active" : ""}" data-deposit-progress="show">显示</button><button type="button" class="${memberVipDepositProgressVisible ? "" : "active"}" data-deposit-progress="hide">隐藏</button></div><small>隐藏代表后台将当前VIP晋升存款配置为0，仅用于原型评审</small></div>`;
+    if (behaviorName === "个人资料填写状态") demoControls = `<div class="spec-view-switch" aria-label="个人资料状态演示"><span>原型状态演示</span><div><button type="button" class="${memberProfileSaved ? "" : "active"}" data-profile-state="editing">首次填写</button><button type="button" class="${memberProfileSaved ? "active" : ""}" data-profile-state="saved">已保存只读</button></div><small>仅用于原型评审，不属于会员端生产功能</small></div>`;
+    if (behaviorName === "账户状态演示") demoControls = `<div class="spec-view-switch" aria-label="钱能钱包账户状态演示"><span>原型状态演示</span><div><button type="button" class="${member739AccountState === "empty" ? "active" : ""}" data-member-739-state="empty">未绑定</button><button type="button" class="${member739AccountState === "saved" ? "active" : ""}" data-member-739-state="saved">已绑定</button></div><small>仅用于原型评审，不属于会员端生产功能</small></div>`;
+    if (behaviorName === "系统与场景健康") {
       const healthIssue = p0RiskV2EnsureState().healthIssue;
       demoControls = `<div class="spec-view-switch" aria-label="风控健康状态演示"><span>原型状态演示</span><div><button type="button" class="${healthIssue ? "active" : ""}" data-p0-health-demo="issue">异常状态</button><button type="button" class="${healthIssue ? "" : "active"}" data-p0-health-demo="normal">正常状态</button></div><small>仅用于原型评审，不属于生产功能</small></div>`;
     }
-    if (annotation.name === "健康检查") {
+    if (behaviorName === "健康检查") {
       const healthIssue = p0RiskV2EnsureState().healthIssue;
       demoControls = `<div class="spec-view-switch" aria-label="风控看板健康状态演示"><span>原型状态演示</span><div><button type="button" class="${healthIssue ? "active" : ""}" data-p0-health-demo="issue">异常状态</button><button type="button" class="${healthIssue ? "" : "active"}" data-p0-health-demo="normal">正常状态</button></div><small>仅用于原型评审，不属于生产功能</small></div>`;
     }
     let summaryText = escapeHtml(annotation.summary);
     annotation.summaryHighlights?.forEach((term) => { summaryText = summaryText.replaceAll(escapeHtml(term), `<strong class="summary-danger">${escapeHtml(term)}</strong>`); });
     const summary = annotation.summary ? `<p class="annotation-summary${annotation.summaryTone === "danger" ? " annotation-summary-danger" : ""}">${summaryText}</p>` : "";
-    const rules = [...annotation.rules];
-    if (currentRequirementId !== "#828" && (annotation.name.includes("筛选") || annotation.name.includes("输入处理"))) rules.push("筛选按钮的可点击面积大于其他按钮一倍，可参考原型");
-    if (currentRequirementId !== "#828" && annotation.type === "数据表格" && !annotation.suppressStandardTableRules) rules.push("表格仅在内容超出对应可视区域时显示滚动条：横向滚动条高度、纵向滚动条宽度均保持15px；内容可完整显示时对应滚动条隐藏");
-    if (currentRequirementId !== "#828" && (annotation.name.includes("导出") || annotation.type.includes("导出"))) exportExcelRules.forEach((rule) => { if (!rules.includes(rule)) rules.push(rule); });
+    const rules = annotationRules(annotation);
     const ruleHtml = rules.map((rule, index) => {
       let text = escapeHtml(rule);
       annotation.ruleHighlights?.forEach((term) => { text = text.replaceAll(escapeHtml(term), `<strong class="rule-highlight">${escapeHtml(term)}</strong>`); });
@@ -5391,6 +5398,7 @@
         return;
       }
       wrap.style.overflowY = "hidden";
+      if (wrap.hasAttribute("data-page-scroll")) return;
       if (wrap.classList.contains("rebate-game-table-wrap")) {
         wrap.style.overflowY = "visible";
         return;
@@ -5805,6 +5813,17 @@
       const activate = () => selectComponent(spec.dataset.specId, "spec");
       spec.addEventListener("click", activate);
       spec.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); activate(); } });
+    });
+    const requirement = requirements.find(item => item.id === currentRequirementId);
+    if (!requirement || requirement.annotationEditing !== true) { window.PrototypeNotes?.mount({ requirement: requirement || {} }); return; }
+    const page = requirement.pages.find(item => item.key === currentPageKey);
+    if (!page) return;
+    const tab = activePageTab(page);
+    window.PrototypeNotes?.mount({
+      requirement, page, tab,
+      annotations: page.annotations.filter(item => !item.tab || item.tab === tab).map(item => ({ ...item, rules: annotationRules(item) })),
+      visibleAnnotations: requirement.id === "#510" ? window.Bonus510.annotations(page) : visibleAnnotations(page, tab),
+      renderCard: annotationCard, bindLinks: bindComponentLinks
     });
   }
 

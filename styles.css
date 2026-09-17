@@ -2,7 +2,7 @@
 .bonus510-app.risk-app.production-admin-ui-488 { min-width: 0; width: 100%; max-width: 100%; grid-template-columns: 260px minmax(0,1fr); border: 0; background: #fff; font: 13px "Helvetica Neue", "Microsoft YaHei", sans-serif; color: #606266; }
 .bonus510-shell .component-badge,.bonus510-modal-root .component-badge { right: auto; width: max-content; }
 .bonus510-app .risk-main { min-width: 0; background: #fff; }
-.bonus510-app .risk-content { padding: 18px 20px 40px; min-width: 0; container-type: inline-size; overflow: auto; }
+.bonus510-app .risk-content { padding: 18px 20px 40px; min-width: 0; container-type: inline-size; overflow: visible; }
 .bonus510-app .risk-sidebar.bonus510-sidebar { width: 260px; min-width: 0; padding: 0; background: #304156; color: #bfcbd9; overflow-y: auto; }
 .bonus510-brand { height: 50px; display: grid; place-items: center; color: #fff; font-weight: 600; font-size: 15px; background: #2b3a4d; }
 .bonus510-sidebar nav { display: block; }
@@ -92,6 +92,8 @@
 .bonus510-history .bonus510-tabs { margin-bottom: 16px; }
 .bonus510-app .bonus510-compact-filters { padding: 14px 12px 12px; margin-bottom: 14px; border-radius: 4px; }
 .bonus510-app .bonus510-compact-filters .bonus510-filters { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px 12px; }
+.bonus510-app .bonus510-compact-filters .bonus510-history-common { grid-template-columns: repeat(4,minmax(0,1fr)); }
+.bonus510-app .bonus510-compact-filters .bonus510-history-dates { grid-template-columns: repeat(2,minmax(0,1fr)); }
 .bonus510-app .bonus510-compact-filters .bonus510-filters + .bonus510-filters { margin-top: 10px; }
 .bonus510-app .bonus510-compact-filters .risk-field { margin: 0; gap: 4px; min-width: 0; }
 .bonus510-app .bonus510-compact-filters .risk-field > label { margin: 0; color: #606266; line-height: 18px; }
@@ -113,7 +115,9 @@
 .bonus510-table-heading { padding: 4px 15px 14px 36px; display: flex; justify-content: space-between; align-items: center; }
 .bonus510-table-heading h2 { margin: 0; color: #606266; font-size: 14px; font-weight: 600; }
 .bonus510-table-heading > span { color: #909399; font-size: 12px; }
-.bonus510-table-wrap { width: 100%; max-height: 465px; overflow: auto; }
+.bonus510-history-total { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px; padding: 10px 14px; border-top: 1px solid #ebeef5; background: #f5f7fa; color: #606266; font-size: 13px; }
+.bonus510-history-total strong { color: #409eff; font-size: 16px; }
+.bonus510-table-wrap { width: 100%; max-height: none; overflow-x: auto; overflow-y: hidden; }
 .bonus510-app .risk-table { width: 100%; }
 .bonus510-app .risk-table th,.bonus510-app .risk-table td { height: 41px; padding: 8px 13px; border: 1px solid #ebeef5; font-size: 13px; color: #606266; text-align: center; font-weight: 400; white-space: nowrap; }
 .bonus510-app .risk-table th { background: #f5f7fa; font-weight: 600; height: 40px; }
@@ -245,6 +249,7 @@
 @container (max-width: 660px) {
   .bonus510-app .bonus510-compact-filters .bonus510-filters { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .bonus510-app .bonus510-compact-filters .bonus510-filter-date-row > .bonus510-date { grid-column: 1 / -1; width: min(330px,100%); }
+  .bonus510-app .bonus510-compact-filters .bonus510-history-dates > .bonus510-date { grid-column: 1 / -1; width: min(360px,100%); }
   .bonus510-app .bonus510-compact-filters .bonus510-report-dates { grid-template-columns: minmax(0,330px); }
 }
 @container (max-width: 420px) {

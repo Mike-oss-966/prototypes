@@ -1,0 +1,9 @@
+.component-badge[data-note-hidden="true"] { display: none !important; }
+.notes-text-card { cursor: default; }
+.notes-managed-list li, .notes-managed-list .annotation-summary, .notes-managed-list h3 { white-space: pre-wrap; overflow-wrap: anywhere; }
+.notes-local-toolbar { order: 4; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #dce2de; font-size: 12px; }
+.notes-local-toolbar button { padding: 5px 9px; border: 1px solid #cbd8d0; border-radius: 4px; background: #fff; color: #186b4d; font: inherit; cursor: pointer; }
+.notes-local-toolbar button:disabled { opacity: .5; cursor: default; }
+.notes-status { flex: 1 0 100%; color: #66716b; line-height: 1.5; }
+.notes-error { color: #b6382d; }
+.notes-empty { color: #66716b; padding: 15px 0; font-size: 13px; }
