@@ -2011,33 +2011,33 @@ VIP等级: {{VIP等级}}
 
 (function registerFinance971() {
   const pendingQuestions = [];
-  const timeRules = ["默认今日，支持快捷范围、选择起止日期和时分秒、清空；点击筛选后生效，取消不修改已选范围，重置恢复今日", "按业务时区统计，起止边界均包含；开始不得晚于结束，清空表示不限时间"];
+  const timeRules = ["默认本月，只能选择单个自然月；最晚可选择到本月，不能选择未来月份", "点击筛选后生效，重置恢复本月；统计边界为所选月份首日00:00:00至末日23:59:59"];
   const venueRules = ["展示当前已开启的场馆，即使本期费用为0也展示；本期曾产生费用但当前关闭的场馆也展示；关闭且本期无费用的不展示", "费率读取总控配置，历史费率口径按费用产生时保存的历史费率执行", "费率按费用产生时保存的历史费率和费用记录汇总；跨费率时展示对应历史费率，不以当前费率重算", "总输赢按平台视角：正数为平台盈利、负数为平台亏损；实际场馆费以费用记录为准", "总计计算所有筛选结果，不受分页影响；上下总计的标题与金额紧邻靠左", "默认每页20条，支持最多200条/页的选项"];
-  const channelRules = ["默认展示存款手续费，可切换提款手续费；各类型的明细与总计分别统计", "渠道来自生产充值通道、提款通道配置及pay_type字典；已开启的零费用渠道也展示，关闭但本期产生费用的渠道保留", "原型覆盖源码可确认的支付类型：支付宝、微信、银行卡、USDT、EBPay、TronPay、钱能钱包；存款另含代理代存和EZT（原NEXUS）", "HiPay、XMFPay、佳运支付是上游服务商，不作为固定支付类型；实际通道名称、数量和开启状态以数据库配置为准，本地原型未连接生产数据库", "同类型有多个实际通道时按通道分别展示，不得只按支付类型合并；停用通道的历史费用仍按统计范围保留", "费率按费用产生时保存的历史费率和费用记录汇总；跨费率时展示历史费率，不以当前费率重算", "总计计算所有筛选结果，不受分页影响；上下总计的标题与金额紧邻靠左", "默认每页20条，支持最多200条/页的选项"];
+  const channelRules = ["默认展示充值手续费，可切换提现手续费；各类型的明细与总计分别统计", "渠道来自生产充值通道、提现通道配置及pay_type字典；已开启的零费用渠道也展示，关闭但本期产生费用的渠道保留", "原型覆盖源码可确认的支付类型：支付宝、微信、银行卡、USDT、EBPay、TronPay、钱能钱包；充值另含代理代存和EZT（原NEXUS）", "HiPay、XMFPay、佳运支付是上游服务商，不作为固定支付类型；实际通道名称、数量和开启状态以数据库配置为准，本地原型未连接生产数据库", "同类型有多个实际通道时按通道分别展示，不得只按支付类型合并；停用通道的历史费用仍按统计范围保留", "费率按费用产生时保存的历史费率和费用记录汇总；跨费率时展示历史费率，不以当前费率重算", "总计计算所有筛选结果，不受分页影响；上下总计的标题与金额紧邻靠左", "默认每页20条，支持最多200条/页的选项"];
   const reportAnnotations = (portal) => [
     { id: "N01", name: "新增财务报表菜单", type: "导航", summary: "", rules: [portal === "代理" ? "代理后台【财务管理】下新增二级菜单【财务报表】" : "站点后台【代理模块】下新增二级菜单【财务报表】"] },
-    { id: "F01", name: "统计时间筛选", type: "时间筛选", summary: "", rules: timeRules },
-    { id: "P01", name: "费用统计", type: "统计区域", summary: "", rules: [portal === "代理" ? "只展示当前登录代理权限范围内的费用，不提供站点筛选" : "只展示当前登录站点权限范围内的费用，不提供跨站筛选", "信息块标题为【场馆费比例】和【存提手续费比例】，卡片金额等于对应明细总计", "点击标题旁问号弹窗提示：仅展示比例和金额，不代表承担的费用"] },
-    { id: "M01", name: "场馆费明细", type: "明细弹窗", summary: "", rules: ["弹窗顶部显示报表当前生效的统计时间范围", ...venueRules] },
-    { id: "M02", name: "存提手续费明细", type: "明细弹窗", summary: "", rules: ["弹窗顶部显示报表当前生效的统计时间范围", channelRules[0], channelRules[1], channelRules[2], channelRules[5], channelRules[6], channelRules[7]] }
+    { id: "F01", name: "统计月份筛选", type: "月份筛选", summary: "", rules: timeRules },
+    { id: "P01", name: "费用统计", type: "统计区域", summary: "", rules: [portal === "代理" ? "只展示当前登录代理权限范围内的费用，不提供站点筛选" : "只展示当前登录站点权限范围内的费用，不提供跨站筛选", "信息块标题为【场馆费比例】和【充提手续费比例】，卡片金额等于对应明细总计", "点击标题旁问号弹窗提示：仅展示比例和金额，不代表承担的费用"] },
+    { id: "M01", name: "场馆费明细", type: "明细弹窗", summary: "", rules: ["弹窗顶部显示报表当前生效的统计月份", ...venueRules] },
+    { id: "M02", name: "充提手续费明细", type: "明细弹窗", summary: "", rules: ["弹窗顶部显示报表当前生效的统计月份", channelRules[0], channelRules[1], channelRules[5], channelRules[6], channelRules[7]] }
   ];
   const controlAnnotations = [
-    { id: "N01", name: "返佣方案三级Tab", type: "三级菜单", summary: "", rules: ["【代理管理】-【返佣方案】内展示【返佣方案】【场馆费比例】【存提手续费比例】三个Tab；原返佣方案页面无修改"] },
-    ...["场馆费比例", "存提手续费比例"].map((tab) => ({ id: "F01", name: "站点与统计时间筛选", type: "组合筛选", tab, summary: "", rules: ["所属站点默认全选，支持逐项勾选、取消和一键全选；", "代理账号/ID支持联想输入，候选同时展示代理账号和代理ID；不输入代理时按选中站点汇总，输入代理后只展示该代理的数据", "按选中站点汇总，未选任何站点时展示空数据与0总计", ...timeRules] })),
-    { id: "T01", name: "存提手续费切换", type: "左右切换", tab: "存提手续费比例", summary: "", rules: ["默认展示存款手续费，切换提款手续费时保留已生效的站点和时间筛选"] },
-    { id: "T02", name: "场馆费比例明细", type: "数据表格", tab: "场馆费比例", summary: "", rules: [venueRules[0], venueRules[1], ...venueRules.slice(2), "多站点汇总时费率不同显示【多种费率】，悬停查看各站点费率；场馆费按各站点记录分别计算后累加"] },
-    { id: "T03", name: "存提手续费比例明细", type: "数据表格", tab: "存提手续费比例", summary: "", rules: [channelRules[0], channelRules[1], channelRules[4], channelRules[5], channelRules[6], channelRules[7], "多站点汇总时费率不同显示【多种费率】，悬停查看各站点费率；手续费按各站点记录分别计算后累加"] }
+    { id: "N01", name: "返佣方案三级Tab", type: "三级菜单", summary: "", rules: ["【代理管理】-【返佣方案】内展示【返佣方案】【场馆费比例】【充提手续费比例】三个Tab；原返佣方案页面无修改"] },
+    ...["场馆费比例", "充提手续费比例"].map((tab) => ({ id: "F01", name: "站点与统计月份筛选", type: "组合筛选", tab, summary: "", rules: ["所属站点默认展示全部站点，支持单选一个站点；", "代理账号/ID支持联想输入，候选同时展示代理账号和代理ID；不输入代理时按选中站点汇总，输入代理后只展示该代理的数据", "按选中站点汇总，未选具体站点时展示全部站点数据与0总计", ...timeRules] })),
+    { id: "T01", name: "充提手续费切换", type: "左右切换", tab: "充提手续费比例", summary: "", rules: ["默认展示充值手续费，切换提现手续费时保留已生效的站点和时间筛选"] },
+    { id: "T02", name: "场馆费比例明细", type: "数据表格", tab: "场馆费比例", summary: "", rules: [venueRules[0], venueRules[1], ...venueRules.slice(2), "未选择具体站点或代理时，多种费率仅展示文字；选择单一站点或输入代理后，可点击多种费率展开查看各费率金额和费用"] },
+    { id: "T03", name: "充提手续费比例明细", type: "数据表格", tab: "充提手续费比例", summary: "", rules: [channelRules[0], channelRules[1], channelRules[4], channelRules[5], channelRules[6], channelRules[7], "未选择具体站点或代理时，多种费率仅展示文字；选择单一站点或输入代理后，可点击多种费率展开查看各费率金额和费用"] }
   ];
   window.PROTOTYPE_DATA.requirements.push({
-    id: "#971", title: "代理/站点/总控后台增加场馆费明细、存提手续费明细", owner: "Mike", status: "进行中", priority: "P1",
-    startDate: "2026-09-14", completionDate: "-", updatedAt: "2026-09-16 13:18",
+    id: "#971", title: "代理/站点/总控后台增加场馆费明细、充提手续费明细", owner: "Mike", status: "进行中", priority: "P1",
+    startDate: "2026-09-14", completionDate: "-", updatedAt: "2026-09-18 19:16",
     summary: "代理、站点新增财务报表；总控返佣方案下增加可按站点和时间筛选的费用明细。",
     moduleName: "财务报表", workspaceName: "总控后台、代理后台、站点后台", roleName: "总控管理员、代理、站点管理员",
     questions: pendingQuestions, defaultPageKey: "agent-financial-report-971",
     pages: [
       { id: "P03", key: "agent-financial-report-971", name: "财务报表", menuGroup: "财务管理", role: "代理", portal: "代理", pageType: "new", annotations: reportAnnotations("代理") },
       { id: "P04", key: "site-financial-report-971", name: "财务报表", menuGroup: "代理模块", role: "站点管理员", portal: "站点", pageType: "new", annotations: reportAnnotations("站点") },
-      { id: "P05", key: "control-rebate-plan-971", name: "返佣方案", menuGroup: "代理管理", role: "总控管理员", portal: "总控", pageType: "existing-change", tabs: ["返佣方案", "场馆费比例", "存提手续费比例"], annotations: controlAnnotations }
+      { id: "P05", key: "control-rebate-plan-971", name: "返佣方案", menuGroup: "代理管理", role: "总控管理员", portal: "总控", pageType: "existing-change", tabs: ["返佣方案", "场馆费比例", "充提手续费比例"], annotations: controlAnnotations }
     ]
   });
   window.PROTOTYPE_DATA.requirements.sort((a, b) => Number(b.id.replace(/\D/g, "")) - Number(a.id.replace(/\D/g, "")));

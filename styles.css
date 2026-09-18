@@ -3311,8 +3311,11 @@ td { border-top: 1px solid #e8ece9; padding: 18px; font-size: 13px; vertical-ali
 .finance971-app .finance971-filters .risk-field { display: flex; flex-direction: column; gap: 8px; margin: 0; min-width: 0; }
 .finance971-app .finance971-filters .risk-field > label { font-size: 13px; font-weight: 400; color: #606266; }
 .finance971-app .finance971-filters .site-multi-field { width: 200px; }
+.finance971-app .finance971-filters .finance971-site-field { width: 200px; }
+.finance971-app .finance971-filters .finance971-site-field select { width: 100%; height: 40px; padding: 0 10px; border: 1px solid #dcdfe6; border-radius: 4px; color: #606266; background: #fff; box-shadow: none; font: inherit; }
 .finance971-app .finance971-filters .site-multi-trigger { height: 40px; min-height: 40px; border-radius: 4px; border: 1px solid #dcdfe6; background: #fff; color: #606266; box-shadow: none; }
 .finance971-app .finance971-date { max-width: 100%; }
+.finance971-app .finance971-date input[type="month"] { width: 200px; height: 40px; padding: 0 10px; border: 1px solid #dcdfe6; border-radius: 4px; color: #606266; background: #fff; box-shadow: none; font: inherit; }
 .finance971-app .finance971-date .date-range-field { width: 326px; max-width: 100%; min-width: 0; }
 .finance971-app .finance971-date .risk-range { display: flex; align-items: center; gap: 6px; height: 40px; min-height: 40px; padding: 0 25px 0 10px; border: 1px solid #dcdfe6; border-radius: 4px; color: #606266; background: #fff; font-weight: 400; }
 .finance971-app .finance971-date .risk-range > span { flex: 1; min-width: 0; white-space: normal; text-align: center; line-height: 16px; font-size: 12px; }
@@ -3368,7 +3371,7 @@ td { border-top: 1px solid #e8ece9; padding: 18px; font-size: 13px; vertical-ali
 .finance971-modal-tabs button:focus-visible { outline: 2px solid #337ecc; outline-offset: -3px; }
 .finance971-total-bar { display: flex; justify-content: flex-start; align-items: baseline; flex-wrap: wrap; gap: 6px; padding: 12px 14px; margin: 0; color: #606266; background: #f5f7fa; font-size: 13px; }
 .finance971-total-bar strong { color: #409eff; font-size: 16px; }
-.finance971-modal-table-wrap { max-height: 445px; overflow: auto; border: 1px solid #ebeef5; border-radius: 0; }
+.finance971-modal-table-wrap { max-height: none; overflow: visible; border: 1px solid #ebeef5; border-radius: 0; }
 .finance971-modal-table { width: 100%; min-width: 590px; border-collapse: separate; border-spacing: 0; }
 .finance971-modal-table th,.finance971-modal-table td { height: 42px; padding: 10px 12px; border-right: 1px solid #ebeef5; border-bottom: 1px solid #ebeef5; text-align: center; white-space: nowrap; color: #606266; font-size: 13px; }
 .finance971-modal-table th:last-child,.finance971-modal-table td:last-child { border-right: 0; }
@@ -3377,6 +3380,16 @@ td { border-top: 1px solid #e8ece9; padding: 18px; font-size: 13px; vertical-ali
 .finance971-modal-table tbody tr:hover td { background: #f5f7fa; }
 .finance971-modal-table td strong { color: #606266; font-size: 14px; }
 .finance971-rate { border-bottom: 1px dashed #909399; cursor: help; }
+.finance971-rate-toggle { padding: 0 0 2px; border: 0; border-bottom: 1px dashed #409eff; color: #409eff; background: transparent; cursor: pointer; font: inherit; }
+.finance971-rate-toggle b { display: inline-block; margin-left: 5px; font-size: 12px; font-weight: 400; }
+.finance971-rate-disabled { color: inherit; border: 0; cursor: default; }
+.finance971-rate-detail-row td { padding: 0 12px 10px; background: #f8fafc !important; }
+.finance971-rate-breakdown { padding: 11px 14px 9px; border-left: 3px solid #409eff; color: #606266; font-size: 12px; text-align: left; white-space: normal; }
+.finance971-rate-breakdown > strong { display: block; margin-bottom: 8px; color: #606266; font-size: 12px; font-weight: 600; }
+.finance971-rate-breakdown > div { display: grid; grid-template-columns: minmax(100px, .8fr) minmax(150px, 1fr) minmax(150px, 1fr); gap: 16px; align-items: center; padding: 7px 0; border-top: 1px solid #ebeef5; }
+.finance971-rate-breakdown > div:not(.finance971-rate-breakdown-head) span, .finance971-rate-breakdown > div:not(.finance971-rate-breakdown-head) > b { color: #303133; font-weight: 600; }
+.finance971-rate-breakdown > div em { display: inline-block; margin-right: 6px; padding: 1px 5px; border-radius: 2px; color: #606266; background: #e9eef5; font-size: 11px; font-style: normal; font-weight: 400; }
+.finance971-rate-breakdown .finance971-rate-breakdown-head { padding: 0 0 5px; border-top: 0; color: #909399; font-weight: 400; }
 .finance971-empty td { height: 100px; color: #909399; }
 .finance971-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; padding: 18px 0 4px; color: #606266; font-size: 13px; }
 .finance971-pagination button,.finance971-pagination select,.finance971-pagination input { height: 30px; min-width: 30px; padding: 0 8px; border: 1px solid #dcdfe6; border-radius: 3px; background: #fff; color: #606266; font: inherit; }
