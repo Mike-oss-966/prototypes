@@ -2,13 +2,7 @@
   const pad = (value) => String(value).padStart(2, "0");
   const dateText = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
   const today = dateText(new Date());
-  const currentMonth = today.slice(0, 7);
-  const monthRange = (month) => {
-    const [year, monthNumber] = month.split("-").map(Number);
-    const lastDay = new Date(year, monthNumber, 0).getDate();
-    return { month, start: `${month}-01 00:00:00`, end: `${month}-${pad(lastDay)} 23:59:59` };
-  };
-  const defaults = () => monthRange(currentMonth);
+  const defaults = () => ({ start: `${today} 00:00:00`, end: `${today} 23:59:59` });
   const state = Object.fromEntries(["agent", "site", "control"].map((portal) => [portal, { ...defaults(), draft: defaults(), sites: null, agent: "", draftAgent: "", kind: "deposit", page: 1, size: 20, menuOpen: true }]));
   const money = (value) => Number(value).toLocaleString("en-US", { maximumFractionDigits: 2 });
   const round = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
@@ -83,8 +77,8 @@
     groups.set(item.rate, group);
     return groups;
   }, new Map()).values()].map((group) => ({ ...group, base: round(group.base), fee: round(group.fee) }));
-  const periodText = (portal) => `${state[portal].month.slice(0, 4)}年${Number(state[portal].month.slice(5))}月`;
-  const period = (portal) => `<div class="finance971-modal-period"><span>统计月份：</span><strong>${escape(periodText(portal))}</strong></div>`;
+  const periodText = (portal) => state[portal].start ? `${state[portal].start} 至 ${state[portal].end}` : "全部时间";
+  const period = (portal) => `<div class="finance971-modal-period"><span>统计时间：</span><strong>${escape(periodText(portal))}</strong></div>`;
 
   function sidebar(page) {
     const portal = page.portal === "总控" ? "control" : page.portal === "站点" ? "site" : "agent";
@@ -103,7 +97,8 @@
   }
   function filters(portal) {
     const range = state[portal].draft;
-    return `<section class="finance971-filters annotated" data-component-id="F01">${helpers.badge("F01")}${portal === "control" ? controlSiteSelect() : ""}${agentFilter(portal)}<div class="risk-field finance971-date"><label for="finance971-month">统计月份</label><input id="finance971-month" type="month" value="${escape(range.month)}" max="${currentMonth}" required /></div><div class="finance971-filter-actions"><button type="button" class="main-action" data-finance971-search>筛选</button><button type="button" class="secondary-action" data-finance971-reset>重置</button></div></section>`;
+    const date = new Date(`${(range.start || today).slice(0, 10)}T12:00:00`);
+    return `<section class="finance971-filters annotated" data-component-id="F01">${helpers.badge("F01")}${portal === "control" ? controlSiteSelect() : ""}${agentFilter(portal)}<div class="risk-field finance971-date"><label>统计时间</label>${helpers.dateControl({ year: date.getFullYear(), month: date.getMonth() + 1, startDay: date.getDate(), endDay: date.getDate(), empty: !range.start })}</div><div class="finance971-filter-actions"><button type="button" class="main-action" data-finance971-search>筛选</button><button type="button" class="secondary-action" data-finance971-reset>重置</button></div></section>`;
   }
   function feeCard(label, type, value, withTip = false) {
     const id = type === "venue" ? "M01" : "M02";
@@ -130,23 +125,13 @@
     const count = Math.max(1, Math.ceil(data.length / pager.size));
     pager.page = Math.min(pager.page, count);
     const offset = (pager.page - 1) * pager.size;
-    pager.rateExpanded ||= {};
     const amountLabel = kind === "venue" ? "总输赢" : kind === "deposit" ? "充值金额" : "提现金额";
     const feeLabel = kind === "venue" ? "场馆费" : "手续费";
-    const canExpandRate = portal !== "control" || Boolean(state.control.agent) || state.control.sites?.length === 1;
     const totalBar = `<div class="finance971-total-bar"><span>${label}总计（CNY）：</span><strong>${amount}</strong></div>`;
     const tableRows = data.slice(offset, offset + pager.size).map((row, index) => {
       const groups = rateGroups(row);
-      const multi = groups.length > 1;
-      const rateKey = `${kind}:${row.name}`;
-      const expanded = Boolean(pager.rateExpanded[rateKey]);
-      const rateCell = multi
-        ? canExpandRate
-          ? `<button type="button" class="finance971-rate finance971-rate-toggle" data-finance971-rate-key="${escape(rateKey)}" aria-expanded="${expanded}">${expanded ? "收起费率" : "多种费率"}<b aria-hidden="true">${expanded ? "⌃" : "⌄"}</b></button>`
-          : `<span class="finance971-rate finance971-rate-disabled" aria-disabled="true">多种费率</span>`
-        : `<span>${row.rate}%</span>`;
-      const detail = expanded ? `<tr class="finance971-rate-detail-row"><td></td><td colspan="4"><div class="finance971-rate-breakdown"><strong>费率明细</strong><div class="finance971-rate-breakdown-head"><span>费率</span><span>${amountLabel}</span><span>${feeLabel}</span></div>${groups.map((group) => `<div><span>${group.periods?.length ? `<em>${escape([...new Set(group.periods)].join("/"))}</em>` : ""}<b>${group.rate}%</b></span><span>${money(group.base)}</span><b>${money(group.fee)}</b></div>`).join("")}</div></td></tr>` : "";
-      return `<tr><td>${offset + index + 1}</td><td>${escape(row.name)}</td><td>${money(row.base)}</td><td>${rateCell}</td><td><strong>${money(row.fee)}</strong></td></tr>${detail}`;
+      const highestRate = Math.max(...groups.map((group) => group.rate));
+      return `<tr><td>${offset + index + 1}</td><td>${escape(row.name)}</td><td>${money(row.base)}</td><td><span>${highestRate}%</span></td><td><strong>${money(row.fee)}</strong></td></tr>`;
     }).join("");
     return `<div class="finance971-table-panel">${totalBar}<div class="risk-table-wrap finance971-modal-table-wrap"><table class="risk-table finance971-modal-table"><thead><tr><th>序号</th><th>${kind === "venue" ? "场馆名称" : kind === "deposit" ? "充值渠道" : "提现渠道"}</th><th>${amountLabel}（CNY）</th><th>${kind === "venue" ? "场馆费率" : "费率"}</th><th>${feeLabel}（CNY）</th></tr></thead><tbody>${tableRows || '<tr class="finance971-empty"><td colspan="5">暂无数据</td></tr>'}</tbody></table></div>${totalBar}<div class="finance971-pagination"><span>共 ${data.length} 条</span><select aria-label="每页数量" data-finance971-size>${[10, 20, 50, 100, 200].map((size) => `<option value="${size}"${pager.size === size ? " selected" : ""}>${size}条/页</option>`).join("")}</select><button type="button" data-finance971-page="${pager.page - 1}" aria-label="上一页"${pager.page === 1 ? " disabled" : ""}>‹</button>${Array.from({ length: count }, (_, index) => `<button type="button" data-finance971-page="${index + 1}" class="${pager.page === index + 1 ? "active" : ""}"${pager.page === index + 1 ? ' aria-current="page"' : ""}>${index + 1}</button>`).join("")}<button type="button" data-finance971-page="${pager.page + 1}" aria-label="下一页"${pager.page === count ? " disabled" : ""}>›</button><label>前往 <input type="number" min="1" max="${count}" value="${pager.page}" aria-label="跳转页码" /> 页</label></div></div>`;
   }
@@ -158,11 +143,6 @@
       try { root.innerHTML = detailTable(kind, portal, pager); bindTable(root, kind, portal, pager); }
       finally { delete root.dataset.finance971Updating; }
     };
-    root.querySelectorAll("[data-finance971-rate-key]").forEach((button) => button.addEventListener("click", () => {
-      const key = button.dataset.finance971RateKey;
-      pager.rateExpanded[key] = !pager.rateExpanded[key];
-      refresh();
-    }));
     root.querySelectorAll("[data-finance971-page]").forEach((button) => button.addEventListener("click", () => { pager.page = Number(button.dataset.finance971Page); refresh(); }));
     root.querySelector("[data-finance971-size]").addEventListener("change", (event) => { pager.size = Number(event.target.value); pager.page = 1; refresh(); });
     root.querySelector('input[aria-label="跳转页码"]').addEventListener("change", (event) => {
@@ -213,14 +193,34 @@
       next.click(); next.focus();
     }));
   }
-  function bindMonth() {
-    const input = document.querySelector("#finance971-month");
-    if (!input) return;
-    input.addEventListener("change", () => {
-      const month = input.value && input.value <= currentMonth ? input.value : currentMonth;
-      input.value = month;
-      Object.assign(state[activePortal].draft, monthRange(month));
+  function bindDate() {
+    const field = document.querySelector(".finance971-date");
+    if (!field) return;
+    helpers.bindDates();
+    const range = state[activePortal].draft;
+    const trigger = field.querySelector(".agent-498-date");
+    const popover = field.querySelector(".agent-498-date-popover");
+    const refreshLabel = () => { trigger.innerHTML = `<span>${escape(range.start || "开始时间")}</span><b>至</b><span>${escape(range.end || "结束时间")}</span>`; };
+    refreshLabel();
+    trigger.addEventListener("click", () => {
+      if (popover.hidden) return;
+      popover.querySelectorAll(".calendar-panel").forEach((panel) => {
+        const value = (panel.dataset.rangeSide === "start" ? range.start : range.end) || `${today} ${panel.dataset.rangeSide === "start" ? "00:00:00" : "23:59:59"}`;
+        const date = new Date(value.replace(" ", "T"));
+        const year = date.getFullYear(); const month = date.getMonth() + 1;
+        Object.assign(panel.dataset, { year, month });
+        panel.querySelector("header strong").textContent = `${year}年${month}月`;
+        panel.querySelector(".calendar-days").innerHTML = '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) + Array.from({ length: new Date(year, month, 0).getDate() }, (_, index) => `<button type="button" class="calendar-day${index + 1 === date.getDate() ? " selected" : ""}" data-day="${index + 1}">${index + 1}</button>`).join("");
+        panel.querySelector("input[type='time']").value = value.slice(11);
+      });
     });
+    field.querySelector(".date-apply").addEventListener("click", () => {
+      if (!popover.hidden) return;
+      const spans = trigger.querySelectorAll("span");
+      range.start = spans[0].textContent; range.end = spans[1].textContent;
+    });
+    field.querySelector(".site-695-date-clear").addEventListener("click", () => { range.start = ""; range.end = ""; refreshLabel(); });
+    popover.addEventListener("keydown", (event) => { if (event.key === "Escape") field.querySelector(".date-close").click(); });
   }
   function bind() {
     const range = state[activePortal];
@@ -284,7 +284,7 @@
     const panel = document.querySelector(".finance971-control-detail .finance971-fee-table-panel");
     if (panel) bindTable(panel, activeTab === "场馆费比例" ? "venue" : range.kind, "control", range);
     bindTabKeys(document.querySelector(".finance971-page"));
-    bindMonth();
+    bindDate();
   }
   window.Finance971 = { render, bind, sidebar };
 })();
