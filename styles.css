@@ -4515,6 +4515,7 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .agent1027-field > label,
 .agent1027-field > #agent1027-site-label { display: block; margin-bottom: 7px; color: #606266; font-size: 13px; }
 .agent1027-field > input,
+.agent1027-field > select,
 .agent1027-multi > summary,
 .agent1027-date-range {
   width: 100%;
@@ -4525,11 +4526,14 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
   background: #fff;
   font-size: 13px;
 }
-.agent1027-field > input { height: 36px; padding: 0 11px; outline: none; }
+.agent1027-field > input,
+.agent1027-field > select { height: 36px; padding: 0 11px; outline: none; }
 .agent1027-field > input:hover,
+.agent1027-field > select:hover,
 .agent1027-multi > summary:hover,
 .agent1027-date-range:hover { border-color: #c0c4cc; }
-.agent1027-field > input:focus { border-color: #409eff; }
+.agent1027-field > input:focus,
+.agent1027-field > select:focus { border-color: #409eff; }
 .agent1027-multi { position: relative; }
 .agent1027-multi > summary {
   display: flex;

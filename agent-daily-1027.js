@@ -2,6 +2,7 @@
   "use strict";
 
   const sites = ["XY体育", "拉布布", "WC体育", "CS体育", "YY体育", "NS体育", "DW体育"];
+  const agentTypes = ["星级代理", "层级代理", "返水代理", "团队主线", "团队副线", "团队单线"];
   const teams = [
     { id: "TM10001", name: "华东团队", site: "XY体育" },
     { id: "TM10002", name: "江南单线", site: "XY体育" },
@@ -13,19 +14,24 @@
     { id: "TM70001", name: "卓越团队", site: "DW体育" }
   ];
   const agents = [
-    ["XY体育", "agent_mike", "AG10086", "团队代理（团队负责人/多线）", "华东团队", "TM10001", true, "2025-11-06 10:18:22", "2026-01-03 09:20:10"],
-    ["XY体育", "east_sub_01", "AG10112", "团队代理（副线）", "华东团队", "TM10001", false, "2026-01-19 14:08:35", "2026-02-01 12:03:18"],
-    ["XY体育", "south_line", "AG10201", "团队代理（团队负责人/单线）", "江南单线", "TM10002", true, "2026-02-05 16:30:42", "2026-02-05 16:30:42"],
-    ["拉布布", "north_leader", "AG20116", "团队代理（团队负责人/多线）", "北辰团队", "TM20001", true, "2025-12-16 08:46:30", "2026-01-01 10:00:00"],
-    ["拉布布", "north_sub_02", "AG20208", "团队代理（副线）", "北辰团队", "TM20001", false, "2026-03-11 15:06:19", "2026-03-15 09:12:22"],
-    ["WC体育", "voyage_main", "AG30107", "团队代理（团队负责人/多线）", "远航团队", "TM30001", true, "2025-10-28 09:50:13", "2025-12-01 10:20:00"],
-    ["CS体育", "pioneer_main", "AG40108", "团队代理（团队负责人/单线）", "先锋团队", "TM40001", true, "2026-01-11 13:20:16", "2026-01-11 13:20:16"],
-    ["YY体育", "morning_main", "AG50102", "团队代理（团队负责人/多线）", "启明星团队", "TM50001", true, "2025-09-21 12:10:09", "2025-11-06 09:30:00"],
-    ["YY体育", "morning_sub", "AG50219", "团队代理（副线）", "启明星团队", "TM50001", false, "2026-02-14 20:18:33", "2026-02-18 11:40:08"],
-    ["NS体育", "ocean_main", "AG60104", "团队代理（团队负责人/多线）", "海岚团队", "TM60001", true, "2025-12-06 18:25:40", "2026-01-09 14:10:00"],
-    ["DW体育", "excellent_main", "AG70101", "团队代理（团队负责人/单线）", "卓越团队", "TM70001", true, "2026-01-07 11:58:02", "2026-01-07 11:58:02"]
-  ].map(([site, account, id, type, teamName, teamId, leader, registeredAt, joinedAt]) => ({ site, account, id, type, teamName, teamId, leader, registeredAt, joinedAt }))
-    .map((agent) => ({ ...agent, type: agent.type.includes("副线") ? "团队副线" : agent.type.includes("单线") ? "团队单线" : "团队主线" }));
+    ["XY体育", "agent_mike", "AG10086", "团队主线", "华东团队", "TM10001", true, "2025-11-06 10:18:22", "2026-01-03 09:20:10"],
+    ["XY体育", "east_sub_01", "AG10112", "团队副线", "华东团队", "TM10001", false, "2026-01-19 14:08:35", "2026-02-01 12:03:18"],
+    ["XY体育", "south_line", "AG10201", "团队单线", "江南单线", "TM10002", true, "2026-02-05 16:30:42", "2026-02-05 16:30:42"],
+    ["XY体育", "star_alpha", "AG10318", "星级代理", "", "", false, "2026-04-09 11:22:18", "-"],
+    ["拉布布", "north_leader", "AG20116", "团队主线", "北辰团队", "TM20001", true, "2025-12-16 08:46:30", "2026-01-01 10:00:00"],
+    ["拉布布", "north_sub_02", "AG20208", "团队副线", "北辰团队", "TM20001", false, "2026-03-11 15:06:19", "2026-03-15 09:12:22"],
+    ["拉布布", "level_north", "AG20326", "层级代理", "", "", false, "2026-03-26 09:40:12", "-"],
+    ["WC体育", "voyage_main", "AG30107", "团队主线", "远航团队", "TM30001", true, "2025-10-28 09:50:13", "2025-12-01 10:20:00"],
+    ["WC体育", "rebate_west", "AG30215", "返水代理", "", "", false, "2026-02-22 17:08:35", "-"],
+    ["CS体育", "pioneer_main", "AG40108", "团队单线", "先锋团队", "TM40001", true, "2026-01-11 13:20:16", "2026-01-11 13:20:16"],
+    ["CS体育", "star_pioneer", "AG40211", "星级代理", "", "", false, "2026-05-03 12:11:46", "-"],
+    ["YY体育", "morning_main", "AG50102", "团队主线", "启明星团队", "TM50001", true, "2025-09-21 12:10:09", "2025-11-06 09:30:00"],
+    ["YY体育", "morning_sub", "AG50219", "团队副线", "启明星团队", "TM50001", false, "2026-02-14 20:18:33", "2026-02-18 11:40:08"],
+    ["YY体育", "level_morning", "AG50309", "层级代理", "", "", false, "2026-04-17 16:35:29", "-"],
+    ["NS体育", "ocean_main", "AG60104", "团队主线", "海岚团队", "TM60001", true, "2025-12-06 18:25:40", "2026-01-09 14:10:00"],
+    ["NS体育", "rebate_ocean", "AG60228", "返水代理", "", "", false, "2026-06-08 10:16:03", "-"],
+    ["DW体育", "excellent_main", "AG70101", "团队单线", "卓越团队", "TM70001", true, "2026-01-07 11:58:02", "2026-01-07 11:58:02"]
+  ].map(([site, account, id, type, teamName, teamId, leader, registeredAt, joinedAt]) => ({ site, account, id, type, teamName, teamId, leader, registeredAt, joinedAt }));
 
   const pad = (value) => String(value).padStart(2, "0");
   const dateText = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -40,7 +46,7 @@
   const money = (value) => Number(value || 0).toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const rounded = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
   const compareText = (left, right) => String(left).localeCompare(String(right), "zh-CN", { numeric: true });
-  const defaultFilter = () => ({ sites: [...sites], agent: "", team: "", start: yesterday, end: yesterday });
+  const defaultFilter = () => ({ sites: [...sites], type: "", agent: "", team: "", start: yesterday, end: yesterday });
   const state = { draft: defaultFilter(), applied: defaultFilter(), page: 1, size: 20, error: "", menuOpen: true };
   let context = {};
   let activePage = null;
@@ -116,6 +122,7 @@
     const teamTerm = filter.team.trim().toLowerCase();
     return allRows.filter((row) => {
       if (!filter.sites.includes(row.site)) return false;
+      if (filter.type && row.type !== filter.type) return false;
       if (agentTerm && !`${row.account} ${row.id}`.toLowerCase().includes(agentTerm)) return false;
       if (teamTerm && !`${row.teamName} ${row.teamId}`.toLowerCase().includes(teamTerm)) return false;
       if (row.date < filter.start || row.date > filter.end) return false;
@@ -145,8 +152,12 @@
     return `<div class="agent1027-field agent1027-suggest-field" data-agent1027-suggest-field="${kind}"><label for="agent1027-${kind}">${label}</label><input id="agent1027-${kind}" type="text" value="${escape(value)}" placeholder="${escape(placeholder)}" autocomplete="off" data-agent1027-input="${kind}" /><div class="agent1027-suggestions" role="listbox" aria-label="${label}候选" hidden></div></div>`;
   }
 
+  function typeSelector() {
+    return `<div class="agent1027-field"><label for="agent1027-type">代理类型</label><select id="agent1027-type" data-agent1027-type><option value="">全部类型</option>${agentTypes.map((type) => `<option value="${type}"${state.draft.type === type ? " selected" : ""}>${type}</option>`).join("")}</select></div>`;
+  }
+
   function filterPanel() {
-    return `<section class="agent1027-filter annotated" data-component-id="F01">${context.badge?.("F01") || ""}<div class="agent1027-filter-grid">${siteSelector()}${suggestionField("agent", "代理账号/ID", "请输入代理账号或ID")}${suggestionField("team", "团队名称/ID", "请输入团队名称或ID")}<div class="agent1027-field agent1027-date-field"><div class="field-title-row agent1027-date-title"><label>日期范围</label>${quickSelector()}</div><div class="agent1027-date-range"><input type="date" value="${state.draft.start}" max="${yesterday}" aria-label="开始日期" data-agent1027-date="start" /><span>至</span><input type="date" value="${state.draft.end}" max="${yesterday}" aria-label="结束日期" data-agent1027-date="end" /></div>${state.error ? `<p class="agent1027-error" role="alert">${escape(state.error)}</p>` : ""}</div><div class="agent1027-actions"><button type="button" class="main-action" data-agent1027-search>筛选</button><button type="button" class="secondary-action" data-agent1027-reset>重置</button><button type="button" class="secondary-action agent1027-export annotated" data-component-id="B01" data-agent1027-export>${context.badge?.("B01") || ""}导出</button></div></div></section>`;
+    return `<section class="agent1027-filter annotated" data-component-id="F01">${context.badge?.("F01") || ""}<div class="agent1027-filter-grid">${siteSelector()}${typeSelector()}${suggestionField("agent", "代理账号/ID", "请输入代理账号或ID")}${suggestionField("team", "团队名称/ID", "请输入团队名称或ID")}<div class="agent1027-field agent1027-date-field"><div class="field-title-row agent1027-date-title"><label>日期范围</label>${quickSelector()}</div><div class="agent1027-date-range"><input type="date" value="${state.draft.start}" max="${yesterday}" aria-label="开始日期" data-agent1027-date="start" /><span>至</span><input type="date" value="${state.draft.end}" max="${yesterday}" aria-label="结束日期" data-agent1027-date="end" /></div>${state.error ? `<p class="agent1027-error" role="alert">${escape(state.error)}</p>` : ""}</div><div class="agent1027-actions"><button type="button" class="main-action" data-agent1027-search>筛选</button><button type="button" class="secondary-action" data-agent1027-reset>重置</button><button type="button" class="secondary-action agent1027-export annotated" data-component-id="B01" data-agent1027-export>${context.badge?.("B01") || ""}导出</button></div></div></section>`;
   }
 
   const columns = [100, 110, 150, 130, 140, 100, 110, 110, 110, 120, 140, 140, 190, 140, 150, 140, 140, 180, 180];
@@ -256,7 +267,7 @@
     try {
       const xlsx = await excel();
       const headers = ["日期", "所属站点", "代理账号", "代理类型", "团队名称", "下级会员", "日注册人数", "日首存人数", "日活跃人数", "日新增活跃", "日存款金额 CNY", "日提款金额 CNY", "日总输赢(平台视角) CNY", "日运营费用 CNY", "日充提手续费 CNY", "日净输赢 CNY", "欠站点总额 CNY", "注册代理时间", "加入团队时间"];
-      const data = [headers, ...job.rows.map((row) => [excelDate(row.date), row.site, `${row.account}\n${row.id}`, row.type, row.teamName || "-", row.directMembers, row.registrations, row.firstDeposits, row.active, row.newActive, row.deposit, row.withdraw, row.totalWinLoss, row.operatingExpense, row.paymentFee, row.netWinLoss, row.siteDebt, excelDate(row.registeredAt), excelDate(row.joinedAt)])];
+      const data = [headers, ...job.rows.map((row) => [excelDate(row.date), row.site, `${row.account}\n${row.id}`, row.type, row.teamName || "-", row.directMembers, row.registrations, row.firstDeposits, row.active, row.newActive, row.deposit, row.withdraw, row.totalWinLoss, row.operatingExpense, row.paymentFee, row.netWinLoss, row.siteDebt, excelDate(row.registeredAt), row.joinedAt === "-" ? "-" : excelDate(row.joinedAt)])];
       const sheet = xlsx.utils.aoa_to_sheet(data, { cellDates: true });
       sheet["!cols"] = [12, 12, 22, 12, 16, 12, 12, 12, 12, 12, 18, 18, 24, 18, 18, 18, 18, 22, 22].map((wch) => ({ wch }));
       sheet["!autofilter"] = { ref: `A1:S${data.length}` };
@@ -364,6 +375,8 @@
     const term = state.draft[kind].trim().toLowerCase();
     const linkedTerm = state.draft[kind === "agent" ? "team" : "agent"].trim().toLowerCase();
     return source.filter((item) => selectedSites.includes(item.site)).filter((item) => {
+      if (kind === "agent" && state.draft.type && item.type !== state.draft.type) return false;
+      if (kind === "team" && state.draft.type && !state.draft.type.startsWith("团队")) return false;
       const text = kind === "agent" ? `${item.account} ${item.id}` : `${item.name} ${item.id}`;
       return !term || text.toLowerCase().includes(term);
     }).filter((item) => {
@@ -449,6 +462,9 @@
   function bindFilters(root) {
     bindSiteSelector(root);
     bindSuggestions(root);
+    root.querySelector("[data-agent1027-type]")?.addEventListener("change", (event) => {
+      state.draft.type = event.target.value;
+    });
     root.querySelectorAll("[data-agent1027-date]").forEach((input) => input.addEventListener("change", () => {
       state.draft[input.dataset.agent1027Date] = input.value;
       state.error = "";
