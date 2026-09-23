@@ -38,7 +38,33 @@
 
   function readonlyBody(entry) {
     const screenshot = entry?.screenshot;
-    return `<div class="production-comparison-498-modal is-readonly"><section class="production-comparison-498-image"><header><strong>生产对应页面</strong></header>${screenshot?.path ? `<figure><img src="${escapeHtml(screenshot.path)}" alt="${escapeHtml(screenshot.originalName || entry.pageName || "生产页面截图")}" /></figure>` : '<div class="production-comparison-498-empty">暂未提供生产页面截图</div>'}</section><section class="production-comparison-498-description"><header><strong>生产与原型差异</strong></header>${entry?.description?.trim() ? `<p>${escapeHtml(entry.description)}</p>` : '<div class="production-comparison-498-empty">暂无差异说明</div>'}</section></div>`;
+    const imageTitle = screenshot?.originalName || entry.pageName || "生产页面截图";
+    return `<div class="production-comparison-498-modal is-readonly"><section class="production-comparison-498-image"><header><strong>生产对应页面</strong></header>${screenshot?.path ? `<figure><button type="button" class="production-comparison-498-preview-trigger" data-production-comparison-preview aria-label="查看${escapeHtml(imageTitle)}大图"><img src="${escapeHtml(screenshot.path)}" alt="${escapeHtml(imageTitle)}" /></button></figure>` : '<div class="production-comparison-498-empty">暂未提供生产页面截图</div>'}</section><section class="production-comparison-498-description"><header><strong>生产与原型差异</strong></header>${entry?.description?.trim() ? `<p>${escapeHtml(entry.description)}</p>` : '<div class="production-comparison-498-empty">暂无差异说明</div>'}</section></div>`;
+  }
+
+  function bindReadonlyPreview() {
+    const trigger = document.querySelector("[data-production-comparison-preview]");
+    if (!trigger) return;
+    trigger.addEventListener("click", () => {
+      const sourceImage = trigger.querySelector("img");
+      const modalRoot = document.getElementById("modal-root");
+      if (!sourceImage || !modalRoot) return;
+      const preview = document.createElement("div");
+      preview.className = "production-comparison-498-lightbox";
+      preview.innerHTML = `<section role="dialog" aria-modal="true" aria-label="${escapeHtml(sourceImage.alt || "生产页面截图大图")}"><header><strong>${escapeHtml(sourceImage.alt || "生产页面截图")}</strong><button type="button" aria-label="关闭大图">×</button></header><figure></figure></section>`;
+      preview.querySelector("figure")?.append(sourceImage.cloneNode(true));
+      modalRoot.append(preview);
+      const close = () => preview.remove();
+      preview.querySelector("button")?.addEventListener("click", close);
+      preview.addEventListener("click", (event) => { if (event.target === preview) close(); });
+      const onKeydown = (event) => {
+        if (event.key !== "Escape" || !preview.isConnected) return;
+        close();
+        document.removeEventListener("keydown", onKeydown);
+      };
+      document.addEventListener("keydown", onKeydown);
+      preview.querySelector("button")?.focus();
+    });
   }
 
   function editorBody(scopeKey) {
@@ -150,7 +176,10 @@
     const scopeKey = scopeKeyOf(page.key, tabName);
     if (!local) {
       const entry = releasedScopes[scopeKey];
-      if (hasContent(entry)) modal(`生产页面对照 · ${escapeHtml(entry.pageName || page.name)}${entry.tabName ? ` / ${escapeHtml(entry.tabName)}` : ""}`, readonlyBody(entry), "关闭");
+      if (hasContent(entry)) {
+        modal(`生产页面对照 · ${escapeHtml(entry.pageName || page.name)}${entry.tabName ? ` / ${escapeHtml(entry.tabName)}` : ""}`, readonlyBody(entry), "关闭");
+        bindReadonlyPreview();
+      }
       return;
     }
     trigger.disabled = true;
