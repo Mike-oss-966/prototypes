@@ -51,11 +51,37 @@
       if (!sourceImage || !modalRoot) return;
       const preview = document.createElement("div");
       preview.className = "production-comparison-498-lightbox";
-      preview.innerHTML = `<section role="dialog" aria-modal="true" aria-label="${escapeHtml(sourceImage.alt || "生产页面截图大图")}"><header><strong>${escapeHtml(sourceImage.alt || "生产页面截图")}</strong><button type="button" aria-label="关闭大图">×</button></header><figure></figure></section>`;
-      preview.querySelector("figure")?.append(sourceImage.cloneNode(true));
+      preview.innerHTML = `<section role="dialog" aria-modal="true" aria-label="${escapeHtml(sourceImage.alt || "生产页面截图大图")}"><header><strong>${escapeHtml(sourceImage.alt || "生产页面截图")}</strong><div class="production-comparison-498-lightbox-actions"><button type="button" data-production-comparison-zoom-out aria-label="缩小" title="缩小">−</button><button type="button" data-production-comparison-zoom-fit>适应窗口</button><button type="button" data-production-comparison-zoom-reset>1:1</button><button type="button" data-production-comparison-zoom-in aria-label="放大" title="放大">+</button><button type="button" data-production-comparison-zoom-close aria-label="关闭大图">×</button></div></header><figure></figure></section>`;
+      const image = sourceImage.cloneNode(true);
+      preview.querySelector("figure")?.append(image);
       modalRoot.append(preview);
       const close = () => preview.remove();
-      preview.querySelector("button")?.addEventListener("click", close);
+      const figure = preview.querySelector("figure");
+      let scale = 1;
+      let fitScale = 1;
+      const updateZoomLabel = () => {
+        const label = preview.querySelector("[data-production-comparison-zoom-fit]");
+        if (label) label.textContent = `${Math.round(scale * 100)}%`;
+      };
+      const applyScale = (nextScale) => {
+        scale = Math.max(Math.min(nextScale, 4), Math.max(fitScale, 0.1));
+        if (image.naturalWidth) image.style.width = `${Math.round(image.naturalWidth * scale)}px`;
+        updateZoomLabel();
+      };
+      const calculateFitScale = () => {
+        if (!image.naturalWidth || !image.naturalHeight || !figure) return;
+        const availableWidth = Math.max(1, figure.clientWidth - 36);
+        const availableHeight = Math.max(1, figure.clientHeight - 36);
+        fitScale = Math.min(1, availableWidth / image.naturalWidth, availableHeight / image.naturalHeight);
+        applyScale(fitScale);
+      };
+      image.addEventListener("load", calculateFitScale, { once: true });
+      if (image.complete) calculateFitScale();
+      preview.querySelector("[data-production-comparison-zoom-out]")?.addEventListener("click", () => applyScale(scale / 1.25));
+      preview.querySelector("[data-production-comparison-zoom-fit]")?.addEventListener("click", () => applyScale(fitScale));
+      preview.querySelector("[data-production-comparison-zoom-reset]")?.addEventListener("click", () => applyScale(1));
+      preview.querySelector("[data-production-comparison-zoom-in]")?.addEventListener("click", () => applyScale(scale * 1.25));
+      preview.querySelector("[data-production-comparison-zoom-close]")?.addEventListener("click", close);
       preview.addEventListener("click", (event) => { if (event.target === preview) close(); });
       const onKeydown = (event) => {
         if (event.key !== "Escape" || !preview.isConnected) return;
@@ -63,7 +89,7 @@
         document.removeEventListener("keydown", onKeydown);
       };
       document.addEventListener("keydown", onKeydown);
-      preview.querySelector("button")?.focus();
+      preview.querySelector("[data-production-comparison-zoom-close]")?.focus();
     });
   }
 
