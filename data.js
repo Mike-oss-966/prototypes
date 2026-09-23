@@ -811,16 +811,15 @@
         ]
       },
       {
-        id: "#498-基础",
-        title: "代理后台改造",
+        id: "#981",
+        title: "代理后台 二期",
         owner: "Mike",
         status: "进行中",
         priority: "P0",
         startDate: "2026-07-30",
         completionDate: "—",
-        updatedAt: "2026-08-06 09:40",
+        updatedAt: "2026-09-21 15:00",
         summary: "包含代理后台数据看板、下级管理、财务中心、个人中心改造及对应总控后台能力。",
-        localOnly: true,
         moduleName: "代理业务",
         defaultPageKey: "agent-dashboard-498",
         pages: [
@@ -872,11 +871,6 @@
             { id: "F01", name: "活跃会员筛选", type: "组合筛选", summary: "按月份和活跃类型查询。", rules: ["统计月份按自然月", "新增活跃会员和活跃会员的判定标准读取【总控后台 → 代理管理 → 返佣方案 → 负盈利返佣方案】当前生效配置"] },
             { id: "T01", name: "活跃会员表", type: "数据表格", summary: "展示命中的会员和活跃类型。", rules: ["同一类型内按会员去重；同一会员可同时命中多种活跃类型，并以多个标签展示", "默认每页20条"] },
             { id: "B01", name: "导出活跃会员", type: "导出操作", summary: "导出当前筛选结果。", rules: ["导出全部筛选结果，不限当前页"] }
-          ] }),
-          agent498Page({ id: "P08", key: "agent-list-498", name: "代理列表", menuGroup: "下级管理", role: "团队主线", questions: [], annotations: [
-            { id: "F01", name: "代理列表筛选", type: "生产现有筛选", summary: "生产团队代理只读代理列表保持不变。", rules: ["仅团队负责人可查看本人及直接副线"] },
-            { id: "T01", name: "代理列表", type: "生产现有页面", summary: "保留团队代理列表及开副线申请能力。", rules: ["移除传统新增下级代理入口；团队负责人保留【开副线申请】，副线仍按现有审批流程创建", "列表不提供直接编辑代理", "默认每页20条"] },
-            { id: "B01", name: "导出代理列表", type: "导出操作", summary: "导出当前筛选结果。", rules: ["导出全部筛选结果，不限当前页"] }
           ] }),
           agent498Page({ id: "P09", key: "agent-withdrawal-498", name: "提款申请", menuGroup: "财务中心", role: "普通代理、团队主线、团队副线", questions: ["代理可绑定多少个USDT或EBPAY账户，更换和删除是否有冷静期？"], annotations: [
             { id: "P01", name: "提款申请", type: "资金操作", summary: "使用佣金钱包申请提款。", rules: ["可用佣金默认隐藏，输入支付密码并验证成功后展示；刷新页面后重新隐藏", "查看余额和提交提款分别授权", "提交保存通道、费率、手续费和预计到账快照"] },
@@ -1274,7 +1268,7 @@
     }));
   });
 
-  const requirement498 = window.PROTOTYPE_DATA.requirements.find((requirement) => requirement.id === "#498-基础");
+  const requirement498 = window.PROTOTYPE_DATA.requirements.find((requirement) => requirement.id === "#981");
   const simulatorIndex = requirement498?.pages.findIndex((page) => page.key === "profit-simulator-498") ?? -1;
   const simulatorPage = simulatorIndex >= 0 ? requirement498.pages.splice(simulatorIndex, 1)[0] : null;
   if (simulatorPage) {

@@ -1062,6 +1062,50 @@ td { border-top: 1px solid #e8ece9; padding: 18px; font-size: 13px; vertical-ali
 .agent-498-heading { align-items: flex-end; margin-bottom: 14px; }
 .agent-498-heading h1 { margin: 0; font-size: 20px; }
 .agent-498-heading span { display: block; margin-top: 5px; color: #76827b; font-size: 11px; }
+.production-comparison-498-button { min-height: 34px; padding: 0 14px; color: #315efb; background: #fff; border-color: #b8c8f5; border-radius: 4px; font-size: 12px; font-weight: 600; }
+.production-comparison-498-button:hover,.production-comparison-498-button:focus-visible { color: #244bd4; background: #f2f5ff; border-color: #7f9aeb; outline: none; }
+.risk-modal:has(.production-comparison-498-modal) { box-sizing: border-box; width: min(1120px, calc(100vw - 48px)); max-height: calc(100vh - 24px); border-radius: 4px; overflow: hidden; }
+.risk-modal:has(.production-comparison-498-modal) .modal-body { min-height: 0; max-height: calc(100vh - 164px); padding: 18px; overflow: auto; }
+.production-comparison-498-context { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 14px; padding: 8px 12px; background: #f5f7fa; border-left: 3px solid #315efb; }
+.production-comparison-498-context > div { display: flex; align-items: baseline; gap: 9px; }
+.production-comparison-498-context span { color: #909399; font-size: 11px; }
+.production-comparison-498-context strong { color: #303133; font-size: 13px; }
+.production-comparison-498-release-state { flex: 0 0 auto; }
+.production-comparison-498-release-state.is-finalized { color: #17865b; }
+.production-comparison-498-grid { min-width: 0; display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(320px, .75fr); gap: 16px; }
+.production-comparison-498-grid > section,.production-comparison-498-modal.is-readonly > section { min-width: 0; border: 1px solid #dcdfe6; background: #fff; }
+.production-comparison-498-grid section > header,.production-comparison-498-modal.is-readonly section > header { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; background: #f5f7fa; border-bottom: 1px solid #ebeef5; }
+.production-comparison-498-grid header > div { display: grid; gap: 2px; }
+.production-comparison-498-grid header strong,.production-comparison-498-modal.is-readonly header strong { color: #303133; font-size: 13px; }
+.production-comparison-498-grid header small { color: #909399; font-size: 11px; font-weight: 400; }
+.production-comparison-498-grid header > span { color: #909399; font-size: 11px; white-space: nowrap; }
+.production-comparison-498-image figure { min-height: 300px; max-height: 52vh; display: grid; place-items: center; margin: 0; padding: 12px; overflow: auto; background: #eef1f4; }
+.production-comparison-498-image img { display: block; max-width: 100%; height: auto; object-fit: contain; box-shadow: 0 2px 10px rgba(30, 42, 57, .12); }
+.production-comparison-498-file { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px 0; color: #606266; font-size: 11px; }
+.production-comparison-498-file span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.production-comparison-498-file small { flex: 0 0 auto; color: #909399; }
+.production-comparison-498-image-actions { display: flex; align-items: center; gap: 12px; padding: 10px 12px 12px; }
+.production-comparison-498-image-actions label { min-height: 32px; display: inline-flex; align-items: center; padding: 0 12px; cursor: pointer; }
+.production-comparison-498-image-actions .danger-link { color: #f56c6c; }
+.production-comparison-498-description textarea { box-sizing: border-box; width: 100%; min-height: 360px; display: block; padding: 12px; resize: vertical; color: #303133; background: #fff; border: 0; outline: none; font: 13px/1.75 "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif; }
+.production-comparison-498-empty { min-height: 300px; display: grid; place-items: center; padding: 24px; color: #909399; background: #f8fafb; font-size: 12px; text-align: center; }
+.production-comparison-498-status { min-height: 20px; margin: 10px 0 0; color: #17865b; font-size: 11px; }
+.production-comparison-498-status.is-error { color: #f56c6c; }
+.production-comparison-498-footer { align-items: center; }
+.production-comparison-498-footer > span { margin-right: auto; color: #909399; font-size: 11px; }
+.production-comparison-498-modal.is-readonly { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(320px, .75fr); gap: 16px; }
+.production-comparison-498-modal.is-readonly .production-comparison-498-description p { min-height: 300px; margin: 0; padding: 14px; color: #303133; white-space: pre-wrap; overflow-wrap: anywhere; }
+.production-comparison-498-connect-error { display: grid; gap: 7px; padding: 4px 0; }
+.production-comparison-498-connect-error strong { color: #303133; font-size: 14px; }
+.production-comparison-498-connect-error p { margin: 0; color: #f56c6c; }
+.production-comparison-498-connect-error small { color: #909399; }
+@media (max-width: 860px) {
+  .production-comparison-498-grid,.production-comparison-498-modal.is-readonly { grid-template-columns: 1fr; }
+  .production-comparison-498-image figure,.production-comparison-498-empty { min-height: 240px; }
+  .production-comparison-498-description textarea { min-height: 240px; }
+  .production-comparison-498-context { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .production-comparison-498-footer > span { display: none; }
+}
 .agent-menu-tree { position: relative; display: grid; gap: 5px; }
 .agent-menu-tree > .component-badge { top: -10px; right: -5px; }
 .agent-menu-group { display: grid; gap: 2px; }

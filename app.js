@@ -129,10 +129,10 @@
     "agent-overflow-498", "agent-notices-498", "agent-downloads-498"
   ];
   const agent498IdentityConfig = {
-    STAR: { label: "星级代理", account: "star_agent", description: "看板不统计下级代理，且不可新增下级代理。", pages: ["agent-list-498", "agent-correction-report-498", "agent-reversal-repayment-498", "agent-activity-management-498", "agent-venue-fee-detail-498"] },
-    MULTI_LEVEL: { label: "多层级代理", account: "multi_agent", description: "可管理下级代理，并查看冲正、回款、活动和场馆费用。", pages: ["agent-list-498", "agent-correction-report-498", "agent-reversal-repayment-498", "agent-activity-management-498", "agent-venue-fee-detail-498"] },
-    TEAM_LEADER_MULTI: { label: "团队负责人（多线）", account: "agent_mike", description: "可查看团队汇总、团队代理列表、团队冲正和场馆费用。", pages: ["agent-team-498", "agent-list-498", "agent-transfer-498", "agent-negative-profit-report-498", "agent-correction-report-498", "agent-venue-fee-detail-498"] },
-    TEAM_LEADER_SINGLE: { label: "团队负责人（单线）", account: "single_leader", description: "具备团队负责人权限，但团队代理列表仅展示负责人本人。", pages: ["agent-team-498", "agent-list-498", "agent-transfer-498", "agent-negative-profit-report-498", "agent-correction-report-498", "agent-venue-fee-detail-498"] },
+    STAR: { label: "星级代理", account: "star_agent", description: "看板不统计下级代理，且不可新增下级代理。", pages: ["agent-correction-report-498", "agent-reversal-repayment-498", "agent-activity-management-498", "agent-venue-fee-detail-498"] },
+    MULTI_LEVEL: { label: "多层级代理", account: "multi_agent", description: "可查看冲正、回款、活动和场馆费用。", pages: ["agent-correction-report-498", "agent-reversal-repayment-498", "agent-activity-management-498", "agent-venue-fee-detail-498"] },
+    TEAM_LEADER_MULTI: { label: "团队负责人（多线）", account: "agent_mike", description: "可查看团队汇总、团队冲正和场馆费用。", pages: ["agent-team-498", "agent-transfer-498", "agent-negative-profit-report-498", "agent-correction-report-498", "agent-venue-fee-detail-498"] },
+    TEAM_LEADER_SINGLE: { label: "团队负责人（单线）", account: "single_leader", description: "具备团队负责人权限，团队相关数据仅统计负责人本人。", pages: ["agent-team-498", "agent-transfer-498", "agent-negative-profit-report-498", "agent-correction-report-498", "agent-venue-fee-detail-498"] },
     TEAM_SUBLINE: { label: "团队副线", account: "subline_a", description: "只查看个人经营数据及自身负盈利贡献，不可查看团队管理功能。", pages: ["agent-negative-profit-report-498"] }
   };
   const site695IdentityConfig = {
@@ -385,7 +385,7 @@
   }
 
   function isAgent498Requirement(id = currentRequirementId) {
-    return ["#498-基础", "#498", "#498复制"].includes(id);
+    return ["#981", "#498", "#498复制"].includes(id);
   }
 
   function agent498IsTeamLeader(identity = agent498Identity) {
@@ -424,7 +424,6 @@
     const label = agent498IdentityConfig[identity]?.label || "当前代理模式";
     const reasons = {
       "agent-team-498": "仅团队负责人可查看团队信息",
-      "agent-list-498": identity === "TEAM_SUBLINE" ? "团队副线不可查看团队代理列表" : "当前代理模式无代理列表权限",
       "agent-transfer-498": "仅团队负责人可向同团队副线转账",
       "agent-negative-profit-report-498": "仅团队代理使用负盈利佣金报表",
       "agent-correction-report-498": identity === "TEAM_SUBLINE" ? "团队副线不可查看冲正统计" : "当前代理模式无冲正统计权限",
@@ -436,7 +435,7 @@
   }
 
   function agent498PageDisplayName(page) {
-    return page.key === "agent-list-498" && agent498IsTeamLeader() ? "团队代理" : page.name;
+    return page.name;
   }
 
   function activePageTab(page) {
@@ -539,8 +538,7 @@
           { key: "agent-bonuses-498", name: "红利记录" },
           { key: "agent-games-498", name: "游戏记录" },
           { key: "agent-team-498", name: "团队信息" },
-          { key: "agent-active-members-498", name: "活跃会员" },
-          { key: "agent-list-498", name: "代理列表" }
+          { key: "agent-active-members-498", name: "活跃会员" }
         ] },
         { name: "运营中心", children: [
           { key: "agent-activity-management-498", name: "活动管理" }
@@ -579,7 +577,7 @@
         if (!visibleChildren.length) return "";
         const children = visibleChildren.map((child) => {
           const allowed = allowedPages.has(child.key);
-          const displayName = child.key === "agent-list-498" && agent498IsTeamLeader() ? "团队代理" : child.name;
+          const displayName = child.name;
           if (!allowed) return `<span class="agent-menu-level-two is-permission-hidden" title="${escapeHtml(agent498HiddenReason(child.key))}" aria-disabled="true"><span class="agent-menu-lock" aria-hidden="true">×</span><span class="menu-name">${escapeHtml(displayName)}</span><small>${escapeHtml(agent498HiddenReason(child.key))}</small></span>`;
           return `<a href="#requirement/${encodeURIComponent(requirement.id)}/page/${child.key}" class="agent-menu-level-two ${page.key === child.key ? "active" : ""}"><span></span><span class="menu-name">${escapeHtml(displayName)}</span></a>`;
         }).join("");
@@ -3824,7 +3822,7 @@
       ? `<select${transactionAttribute}>${selectOptions.map((item) => `<option>${escapeHtml(item)}</option>`).join("")}</select>`
       : type === "date"
         ? agent498DateControl(options || {})
-        : `<input type="text"${transactionAttribute}${transactionField ? ` value="${escapeHtml(transactionField[1])}"` : label === "会员账号" && ["#498-基础", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember ? ` value="${escapeHtml(agent498QuickQueryMember)}"` : ""} placeholder="请输入${escapeHtml(label)}" />`;
+        : `<input type="text"${transactionAttribute}${transactionField ? ` value="${escapeHtml(transactionField[1])}"` : label === "会员账号" && ["#981", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember ? ` value="${escapeHtml(agent498QuickQueryMember)}"` : ""} placeholder="请输入${escapeHtml(label)}" />`;
     return `<div class="risk-field ${type === "date" ? "risk-field-wide agent-498-date-wrapper " : ""}${className}"><label>${escapeHtml(label)}</label>${control}</div>`;
   }
 
@@ -3832,7 +3830,7 @@
     const showSiteField = currentPageKey.startsWith("control-") || (currentRequirementId === "#498" && agent498Portal === "CONTROL");
     const normalizedFields = showSiteField ? fields : fields.filter((field) => !["所属站点", "站点", "站点名称"].includes(field[0]));
     const exportButton = exportable ? `<button type="button" class="secondary-action annotated" data-component-id="B01">${componentBadge("B01")}导出表格</button>` : "";
-    const quickApplied = ["#498-基础", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember && ["agent-deposits-498", "agent-bonuses-498", "agent-games-498"].includes(currentPageKey)
+    const quickApplied = ["#981", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember && ["agent-deposits-498", "agent-bonuses-498", "agent-games-498"].includes(currentPageKey)
       ? `<div class="agent-copy-filter-applied"><span>已从会员列表快捷查询带入</span><strong>会员：${escapeHtml(agent498QuickQueryMember)}</strong><button type="button" class="link-action agent-copy-clear-filter">清除</button></div>` : "";
     return `${quickApplied}<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid agent-498-filter-grid${compactActions ? " compact-filter-actions" : ""}${className ? ` ${className}` : ""}">${normalizedFields.map((field) => agent498Field(...field)).join("")}<div class="risk-filter-actions"><button type="button" class="main-action primary-filter">筛选</button><button type="button" class="secondary-action reset-action">重置</button>${exportButton}</div></div></section>`;
   }
@@ -3842,7 +3840,10 @@
   }
 
   function agent498PageHeading(title, subtitle = "") {
-    return `<div class="risk-page-heading agent-498-heading"><div><h1>${escapeHtml(title)}</h1>${subtitle ? `<span>${escapeHtml(subtitle)}</span>` : ""}</div></div>`;
+    const comparisonPage = currentRequirementId === "#981" ? requirements.find((item) => item.id === currentRequirementId)?.pages.find((item) => item.key === currentPageKey) : null;
+    const comparisonTab = comparisonPage?.tabs?.length > 1 ? activePageTab(comparisonPage) : "";
+    const productionComparison = comparisonPage ? window.ProductionComparison498?.button(currentPageKey, comparisonTab) || "" : "";
+    return `<div class="risk-page-heading agent-498-heading"><div><h1>${escapeHtml(title)}</h1>${subtitle ? `<span>${escapeHtml(subtitle)}</span>` : ""}</div>${productionComparison}</div>`;
   }
 
   function agent498DashboardContent(page) {
@@ -4010,15 +4011,6 @@
   }
 
   function agent498SubordinateContent(page, tab) {
-    if (tab === "代理列表") {
-      if (agent498IsTeamLeader()) {
-        const rows = agent498Identity === "TEAM_LEADER_SINGLE"
-          ? [["1086", "agent_mike", agent498TeamIdentity === "OFFICIAL" ? "官方代理" : "普通代理", "负责人", "单线", "328", "2026-05-01 10:12:30", '<span class="result-tag approved">正常</span>']]
-          : [["1086", "agent_mike", agent498TeamIdentity === "OFFICIAL" ? "官方代理" : "普通代理", "负责人", "多线", "328", "2026-05-01 10:12:30", '<span class="result-tag approved">正常</span>'], ["1102", "subline_a", agent498TeamIdentity === "OFFICIAL" ? "官方代理" : "普通代理", "副线", "多线", "186", "2026-06-01 10:00:00", '<span class="result-tag approved">正常</span>']];
-        return `<div class="unchanged-production"><div class="agent-list-toolbar"><button type="button" class="main-action agent-open-subline">开副线申请</button></div>${agent498Filter([["代理账号/编号", "input"], ["代理类型", "select", ["全部类型", "官方代理", "普通代理"]], ["代理状态", "select", ["全部状态", "正常", "禁用"]]], true)}${agent498Table("团队代理", ["代理ID", "代理账号", "代理类型", "团队角色", "团队模式", "直属会员数", "加入团队时间", "状态"], rows, rows.length)}</div>`;
-      }
-      return `<div class="unchanged-production">${agent498Filter([["代理账号/编号", "input"], ["代理状态", "select", ["全部状态", "正常", "禁用"]]], true)}${agent498Table("代理列表", ["代理ID", "代理账号", "代理模式", "注册时间", "上级代理账号", "上级代理编号", "代理状态", "直属会员数", "佣金方案", "代理钱包余额（CNY）", "最后登录"], [["1086", agent498IdentityConfig[agent498Identity].account, agent498IdentityConfig[agent498Identity].label, "2026-05-01 10:12:30", "parent_agent", "AG10001", '<span class="result-tag approved">正常</span>', agent498Identity === "STAR" ? "0" : "86", "传统佣金方案A", "128,600", "2026-07-31 00:18:06"]], 8)}</div>`;
-    }
     if (currentRequirementId === "#498复制" && ["会员列表", "团队会员列表"].includes(tab)) return agent498CopyMemberContent(tab);
     if (currentRequirementId === "#498" && ["下级会员列表", "团队会员列表"].includes(tab)) return agent498CopyMemberContent(tab);
     if (["会员管理", "团队会员"].includes(tab)) {
@@ -4028,14 +4020,14 @@
       return `${agent498Filter(fields)}${agent498Table(tab, headers, agent498MemberRows(team), team ? 328 : 186, "agent-member-table")}`;
     }
     if (tab === "存款管理") {
-      const quick = ["#498-基础", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember;
+      const quick = ["#981", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember;
       const rows = quick
         ? [["1", agent498QuickQueryMember, "agent_mike", "AG10086", "DP202608070086", "5,000", "5,000", "2026-08-07 08:20:06", "2026-08-07 08:21:30", '<span class="result-tag approved">成功</span>', "代理代存"]]
         : [["1", "member_087", "agent_mike", "AG10086", "DP202608040086", "5,000", "5,000", "2026-08-04 08:20:06", "2026-08-04 08:21:30", '<span class="result-tag approved">成功</span>', "代理代存"], ["2", "member_102", "subline_a", "AG10102", "DP202608040072", "2,000", "0", "2026-08-04 07:12:40", "2026-08-04 07:15:08", '<span class="result-tag rejected">用户取消</span>', "USDT"]];
       return `${agent498Filter([["会员账号", "input"], ["支付方式", "select", ["全部方式", "USDT", "支付宝", "代理代存"]], ["状态", "select", ["全部状态", "待支付", "确认中", "成功", "确认失败", "用户取消"]], ["存款申请时间", "date"]], true, true)}${agent498Table("存款记录", ["序号", "会员账号", "上级代理账号", "上级代理编号", "单号", "订单金额（CNY）", "实际到账（CNY）", "存款申请时间", "完成时间", "状态", "支付方式"], rows, quick ? 1 : 236)}`;
     }
     if (tab === "红利记录") {
-      const quick = ["#498-基础", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember;
+      const quick = ["#981", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember;
       const rows = quick
         ? [["1", agent498QuickQueryMember, "agent_mike", "AG10086", "中心钱包", "主钱包", "VIP周礼金", "188", "1倍", "2026-08-07 08:00:00", "2026-08-07 08:36:18"]]
         : [["1", "member_087", "agent_mike", "AG10086", "中心钱包", "主钱包", "VIP周礼金", "188", "1倍", "2026-08-04 08:00:00", "2026-08-04 08:36:18"], ["2", "member_102", "subline_a", "AG10102", "中心钱包", "主钱包", "活动彩金", "500", "3倍", "2026-08-04 09:20:00", "2026-08-04 09:25:06"]];
@@ -4052,7 +4044,7 @@
         ["5", "BET202608040106", "member_422", "subline_a", "VIP2", "DB彩票", "时时彩", member493BetDetail(["期号：20260804058", "玩法：五星直选", "投注号码：1,3,5,7,9"], "时时彩"), "300", "300", "2026-08-04 09:46:22", '<span class="result-tag approved">已结算</span>', "540"],
         ["6", "BET202608040091", "member_536", "agent_mike", "VIP5", "PA捕鱼", "深海捕鱼", member493BetDetail(null, "深海捕鱼"), "1,200", "1,180", "2026-08-04 10:05:49", '<span class="result-tag approved">已结算</span>', "920"]
       ];
-      const quick = ["#498-基础", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember;
+      const quick = ["#981", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember;
       const visibleRows = quick
         ? [[...rows[0].slice(0, 2), agent498QuickQueryMember, ...rows[0].slice(3)]] : rows;
       return `${agent498Filter([["会员账号", "input"], ["场馆名称", "select", ["全部场馆", ...rebateVenueCatalog.map((item) => item.name)]], ["注单状态", "select", ["全部状态", "未结算", "已结算", "已取消", "已作废"]], ["时间类型", "select", ["下注时间", "结算时间", "开赛时间"]], ["时间范围", "date"]], true)}${agent498Table("游戏记录", ["序号", "投注单号", "会员账号", "代理账号", "VIP等级", "场馆名称", "游戏名称", "下注详情", "总投注（CNY）", "有效投注（CNY）", "下注时间", "注单状态", "派彩（CNY）"], visibleRows, quick ? 1 : 568)}`;
@@ -5611,7 +5603,6 @@
       ["游戏记录", "agent-games-498"],
       ["团队信息", "agent-team-498"],
       ["活跃会员", "agent-active-members-498"],
-      ["代理列表 / 团队代理", "agent-list-498"],
       ["活动管理", "agent-activity-management-498"],
       ["提款申请", "agent-withdrawal-498"],
       ["代理代存", "agent-deposit-service-498"],
@@ -5635,7 +5626,6 @@
       if (key === "team-view") return agent498IsTeamLeader(identity) ? '<span class="permission-state is-team">可见 · 团队范围</span>' : '<span class="permission-state is-hidden">隐藏</span>';
       if (key === "agent-members-498") return identity === "TEAM_SUBLINE" ? '<span class="permission-state is-personal">仅个人</span>' : '<span class="permission-state is-visible">可见</span>';
       if (key === "agent-negative-profit-report-498" && identity === "TEAM_SUBLINE") return '<span class="permission-state is-personal">仅自身贡献</span>';
-      if (key === "agent-list-498" && agent498IsTeamLeader(identity)) return `<span class="permission-state is-team">${identity === "TEAM_LEADER_SINGLE" ? "仅负责人" : "负责人+副线"}</span>`;
       return agent498PageIsAllowed(key, identity) ? '<span class="permission-state is-visible">可见</span>' : '<span class="permission-state is-hidden">隐藏</span>';
     };
     return `<div class="risk-table-wrap agent-498-matrix-wrap"><table class="risk-table agent-498-matrix"><thead><tr><th>功能</th>${identities.map(([, config]) => `<th>${escapeHtml(config.label)}</th>`).join("")}</tr></thead><tbody>${rows.map(([label, key]) => `<tr><td>${escapeHtml(label)}</td>${identities.map(([identity]) => `<td>${cell(key, identity)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
@@ -5791,6 +5781,7 @@
     bindRisk784Behavior(page);
     bindRisk830Behavior(page);
     if (agent498Mode || control498Mode) bindAgent498DatePickers();
+    window.ProductionComparison498?.mount({ requirement, page, tabName: page.tabs?.length > 1 ? activePageTab(page) : "", modal });
     normalizeTableCurrencyUnits(app);
     applyTableRowLimits(app);
   }
@@ -7438,7 +7429,6 @@
       modal("下级会员详情", `<div class="agent-team-member-filters"><label>会员账号<input type="text" placeholder="请输入会员账号" /></label><label>存款金额区间<span><input type="number" placeholder="最低" /><b>至</b><input type="number" placeholder="最高" /></span></label><label>提款金额区间<span><input type="number" placeholder="最低" /><b>至</b><input type="number" placeholder="最高" /></span></label><label class="agent-team-member-time">统计时间<input type="text" value="2026-08-04 00:00:00 至 2026-08-04 10:30:00" readonly /></label><div class="agent-team-member-actions"><button type="button" class="main-action">筛选</button><button type="button" class="secondary-action">重置</button></div></div><div class="risk-table-wrap"><table class="risk-table"><thead><tr><th>会员账号</th><th>存款（CNY）</th><th>提款（CNY）</th><th>总输赢（CNY）</th><th>最后登录时间</th><th>注册时间</th></tr></thead><tbody>${rows}</tbody></table></div>${pagination(10, 86)}`, "关闭");
     }));
     document.querySelectorAll(".agent-team-note").forEach((button) => button.addEventListener("click", () => modal("修改团队备注", '<label class="modal-field">备注内容<textarea placeholder="请输入备注">体育线</textarea></label>', "保存")));
-    document.querySelector(".agent-open-subline")?.addEventListener("click", () => modal("开副线申请", '<div class="agent-profile-form"><label>副线代理账号<input type="text" placeholder="请输入代理账号" /></label><label>申请原因<textarea placeholder="请输入开副线原因"></textarea></label></div>', "提交申请"));
     document.querySelectorAll(".agent-team-report").forEach((button) => button.addEventListener("click", () => {
       const targetPage = button.dataset.report === "财务报表" ? "agent-financial-report-498" : "agent-commission-report-498";
       const targetTab = button.dataset.report === "财务报表" ? "团队财务" : "团队佣金";
