@@ -177,6 +177,7 @@
   let member739AccountView = "list";
   let member739AccountAddress = "QW8H9K2P4M6T7X3Z1A";
   let memberVipConfigSite = "总控默认配置";
+  const venue599TabState = {};
   const memberVipIndependentSites = new Set(["WC体育", "XY体育"]);
   const profitSimulatorDefaults = {
     view: "journey",
@@ -443,6 +444,8 @@
       ? agent498ActiveTab(page)
       : page.key.endsWith("-784")
       ? risk784TabState[page.key] || page.tabs?.[0]
+      : page.key.endsWith("-599")
+      ? venue599TabState[page.key] || page.tabs?.[0]
       : financeTabState[page.key] || page.tabs?.[0];
   }
 
@@ -455,6 +458,7 @@
   }
 
   function sidebar(requirement, page) {
+    if (requirement.id === "#599") return window.VenueManagement599.sidebar(page);
     if (requirement.id === "#1027") return window.AgentDaily1027.sidebar(page);
     if (requirement.id === "#911") return window.Commission911.sidebar(page);
     if (requirement.id === "#971") return window.Finance971.sidebar(page);
@@ -4799,7 +4803,7 @@
       return `<section class="risk784-edit-condition"><div class="risk784-edit-condition-heading"><strong>条件 ${methodIndex + 1}</strong><label>预警频次<select data-risk784-edit-frequency aria-label="条件${methodIndex + 1}预警频次">${risk784FrequencyOptions(methods[methodIndex].frequency)}</select></label></div><div class="risk784-inline-sentence">${sentence}</div></section>`;
     }).join("");
     const sites = risk784State.siteRules[key] || siteOptions;
-    return `<div class="risk784-rule-edit-form risk784-readable-edit annotated" data-component-id="M02">${componentBadge("M02")}<dl class="risk784-edit-meta"><div><dt>预警规则</dt><dd>${escapeHtml(rule.name)}</dd></div><div><dt>预警类型</dt><dd>${escapeHtml(rule.type)}</dd></div></dl>${content}<div class="risk784-judgment"><strong>判定要求</strong><span>${escapeHtml(rule.note)}</span></div><div class="risk784-edit-sites"><span>生效站点</span><div>${escapeHtml(sites.join("、") || "未配置")}</div></div><section class="risk784-tag-section"><h3>用户标签</h3>${risk784TagPicker(config.tagIds)}</section><p class="risk784-form-error" data-risk784-rule-error role="alert" hidden>数值不能为空或小于0；天数须为大于0的整数。</p></div>`;
+    return `<div class="risk784-rule-edit-form risk784-readable-edit annotated" data-component-id="M02">${componentBadge("M02")}<div class="risk784-edit-section-title"><h3>规则信息</h3></div><dl class="risk784-edit-meta"><div><dt>预警规则</dt><dd>${escapeHtml(rule.name)}</dd></div><div><dt>预警类型</dt><dd>${escapeHtml(rule.type)}</dd></div></dl><div class="risk784-edit-section-title risk784-edit-condition-title"><h3>触发条件配置</h3></div>${content}<section class="risk784-edit-scope"><div class="risk784-edit-section-title"><h3>判定与生效范围</h3></div><div class="risk784-edit-scope-body"><div class="risk784-judgment"><strong>判定要求</strong><span>${escapeHtml(rule.note)}</span></div><div class="risk784-edit-sites"><span>生效站点</span><div>${escapeHtml(sites.join("、") || "未配置")}</div></div></div></section><section class="risk784-tag-section risk784-edit-tags"><div class="risk784-edit-section-title"><h3>用户标签</h3></div>${risk784TagPicker(config.tagIds)}</section><p class="risk784-form-error" data-risk784-rule-error role="alert" hidden>数值不能为空或小于0；天数须为大于0的整数。</p></div>`;
   }
 
   function risk784RelationRows(rule, kind, start = "", end = "") {
@@ -5033,7 +5037,7 @@
   }
 
   function risk784RefreshPage() {
-    const selectors = [".prototype-canvas", ".risk-content", ".spec-scroll", ".risk784-compact-wrap"];
+    const selectors = [".prototype-canvas", ".risk-content", ".spec-scroll"];
     const positions = selectors.map((selector) => { const el = document.querySelector(selector); return el ? [el.scrollLeft,el.scrollTop] : [0,0]; });
     render();
     selectors.forEach((selector,index) => document.querySelector(selector)?.scrollTo(...positions[index]));
@@ -5149,7 +5153,6 @@
       risk784State.configPage = Math.max(1,Math.min(Math.ceil(total / risk784State.configPageSize), Math.trunc(Number(value)) || 1));
       risk784State.expandedRule = null;
       refreshRisk784(page);
-      document.querySelector(".risk784-compact-wrap")?.scrollTo(0,0);
     };
     root.querySelectorAll("[data-risk784-page]").forEach((button) => button.addEventListener("click", () => go(button.dataset.risk784Page)));
     root.querySelector("[data-risk784-page-jump]")?.addEventListener("change", (event) => go(event.target.value));
@@ -5301,6 +5304,7 @@
   }
 
   function pageContent(page) {
+    if (currentRequirementId === "#599") return window.VenueManagement599.render(page, { badge: componentBadge, modal, select: selectComponent, bindLinks: bindComponentLinks, activeTab: activePageTab(page), setTab: (tab) => { window.location.hash = `#requirement/%23599/page/${page.key}/menu/${encodeURIComponent(tab)}`; }, rerender: () => detailView(requirements.find((item) => item.id === currentRequirementId), page.key) });
     if (currentRequirementId === "#1027") return window.AgentDaily1027.render(page, { badge: componentBadge, bindLinks: bindComponentLinks, select: selectComponent, modal });
     if (currentRequirementId === "#911") return window.Commission911.render(page, { badge: componentBadge, dateControl: agent498DateControl, modal });
     if (currentRequirementId === "#971") return finance971DashboardContent(page);
@@ -5510,7 +5514,7 @@
       else if (!pageKey.includes("bet-records") && next === "订单号") next = "单号";
 
       const siteSpecific = requirementId === "#427" && pageKey === "site-transactions";
-      if (!siteSpecific && requirementId !== "#828" && ["站点", "站点名称"].includes(next)) next = "所属站点";
+      if (!siteSpecific && !["#599", "#828"].includes(requirementId) && ["站点", "站点名称"].includes(next)) next = "所属站点";
       if (siteSpecific && next === "所属站点" && element.tagName === "TH") next = "站点名称";
 
       if (requirementId === "#406" && ["withdraw-review", "hold-review", "review-history"].includes(pageKey) && next === "申请时间") next = "提款申请时间";
@@ -5662,6 +5666,10 @@
   }
 
   function prototypeEndpointSwitch(requirement, page) {
+    if (requirement.id === "#599") {
+      const siteActive = page.portal === "站点";
+      return `<div class="prototype-endpoint-switch"><a href="#requirement/%23599/page/control-venue-management-599" class="${siteActive ? "" : "active"}">总控后台</a><a href="#requirement/%23599/page/site-venue-management-599" class="${siteActive ? "active" : ""}">站点后台</a></div><span class="current-page-label">${escapeHtml(page.name)}</span>`;
+    }
     if (requirement.id === "#911") return window.Commission911.endpoints(page);
     if (requirement.id === "#971") {
       const controlActive = page.portal === "总控";
@@ -5735,6 +5743,8 @@
     const control498Mode = isAgent498Requirement(requirement.id) && page.key.startsWith("control-");
     const finance971Mode = requirement.id === "#971";
     const agent1027Mode = requirement.id === "#1027";
+    const venue599Mode = requirement.id === "#599";
+    const venue599SiteMode = venue599Mode && page.portal === "站点";
     const risk680Mode = isP0RiskRequirement(requirement.id);
     const risk784Mode = isRisk784Requirement(requirement.id);
     const risk830Mode = requirement.id === "#830";
@@ -5762,16 +5772,17 @@
       ? `<div class="member-mobile-stage">${memberMobilePrototypeNav(page.key)}${renderedPageContent}</div>`
       : vipAlgorithmMode
         ? `<div class="vip-algorithm-stage">${renderedPageContent}</div>`
-      : `<div class="risk-app${memberModuleMode ? " member-module-mode production-admin-ui-488" : ""}${member493Mode ? " member-493-mode" : ""}${memberDetailMode ? " member-detail-mode" : ""}${agent498Mode || control498Mode ? ` agent-498-app${publicAgent498Mode ? " production-admin-ui-488" : ""}` : ""}${finance971Mode ? " finance971-app production-admin-ui-488" : ""}${agent1027Mode ? " agent-daily-1027-app production-admin-ui-488" : ""}${risk680Mode ? " risk-680-app" : ""}${risk784Mode ? " risk-784-app production-admin-ui-488" : ""}${risk830Mode ? " risk-784-app risk-830-app production-admin-ui-488" : ""}${privacy862Mode ? " privacy-862-app" : ""}${site695Mode || siteAgent736Mode || agent776Mode || site828Mode ? " site-member-695-app production-site-ui-695" : ""}${control828Mode ? " production-admin-ui-488 control-828-app" : ""}${site828Mode ? " site-828-app" : ""}${agent776Mode ? " agent-776-app" : ""}">${sidebar(requirement,page)}<section class="risk-main">${risk680Mode ? `<header class="risk-topbar risk-680-topbar"><button type="button" class="risk-680-sidebar-toggle" data-risk-680-sidebar-toggle aria-label="收起或展开侧栏"><i></i><i></i><i></i></button><nav aria-label="面包屑"><span>风控中心</span><b>/</b><strong>${displayPageName}</strong></nav><div class="risk-680-top-actions"><button type="button" class="risk-680-top-icon" aria-label="全屏预览" title="全屏预览"></button><span class="risk-680-avatar">M</span><strong>Mike</strong><i aria-hidden="true"></i></div></header>` : `<header class="risk-topbar"><div>${publicAgent498Mode ? '<button type="button" class="agent-498-sidebar-toggle" aria-label="收起或展开侧栏" title="收起或展开侧栏"><span></span><span></span><span></span>' : ""}<span>${control498Mode ? `总控后台 / ${page.menuGroup}` : agent498Mode ? (requirement.id === "#498" ? `${agent498PortalLabel()} / ${agent498Portal === "AGENT" ? page.menuGroup : "会员管理"}` : page.key === "agent-dashboard-498" ? "代理后台" : `${page.menuGroup} / ${page.name}`) : moduleName} /</span><strong>${displayPageName}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header>`}<div class="risk-content">${renderedPageContent}</div></section></div>`;
+      : `<div class="risk-app${memberModuleMode ? " member-module-mode production-admin-ui-488" : ""}${member493Mode ? " member-493-mode" : ""}${memberDetailMode ? " member-detail-mode" : ""}${agent498Mode || control498Mode ? ` agent-498-app${publicAgent498Mode ? " production-admin-ui-488" : ""}` : ""}${finance971Mode ? " finance971-app production-admin-ui-488" : ""}${agent1027Mode ? " agent-daily-1027-app production-admin-ui-488" : ""}${venue599Mode ? ` venue599-app ${venue599SiteMode ? "production-site-ui-695" : "production-admin-ui-488"}` : ""}${risk680Mode ? " risk-680-app" : ""}${risk784Mode ? " risk-784-app production-admin-ui-488" : ""}${risk830Mode ? " risk-784-app risk-830-app production-admin-ui-488" : ""}${privacy862Mode ? " privacy-862-app" : ""}${site695Mode || siteAgent736Mode || agent776Mode || site828Mode ? " site-member-695-app production-site-ui-695" : ""}${control828Mode ? " production-admin-ui-488 control-828-app" : ""}${site828Mode ? " site-828-app" : ""}${agent776Mode ? " agent-776-app" : ""}">${sidebar(requirement,page)}<section class="risk-main">${risk680Mode ? `<header class="risk-topbar risk-680-topbar"><button type="button" class="risk-680-sidebar-toggle" data-risk-680-sidebar-toggle aria-label="收起或展开侧栏"><i></i><i></i><i></i></button><nav aria-label="面包屑"><span>风控中心</span><b>/</b><strong>${displayPageName}</strong></nav><div class="risk-680-top-actions"><button type="button" class="risk-680-top-icon" aria-label="全屏预览" title="全屏预览"></button><span class="risk-680-avatar">M</span><strong>Mike</strong><i aria-hidden="true"></i></div></header>` : `<header class="risk-topbar"><div>${publicAgent498Mode ? '<button type="button" class="agent-498-sidebar-toggle" aria-label="收起或展开侧栏" title="收起或展开侧栏"><span></span><span></span><span></span>' : ""}<span>${control498Mode ? `总控后台 / ${page.menuGroup}` : agent498Mode ? (requirement.id === "#498" ? `${agent498PortalLabel()} / ${agent498Portal === "AGENT" ? page.menuGroup : "会员管理"}` : page.key === "agent-dashboard-498" ? "代理后台" : `${page.menuGroup} / ${page.name}`) : moduleName} /</span><strong>${displayPageName}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header>`}<div class="risk-content">${renderedPageContent}</div></section></div>`;
     const permissionReview = agent498Mode ? agent498PermissionReviewControls() : site695Mode ? site695IdentityReviewControls() : "";
     const agent498Role = requirement.id === "#498" && agent498Portal !== "AGENT" ? (agent498Portal === "CONTROL" ? "总控管理员" : "站点管理员") : agent498IdentityConfig[agent498Identity]?.label;
-    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav${["#509", "#643", "#828", "#971"].includes(requirement.id) || isAgent498Requirement(requirement.id) ? ' class="prototype-endpoint-nav"' : ""} aria-label="当前原型页面">${prototypeEndpointSwitch(requirement, page)}</nav></header><div class="prototype-canvas${memberMobileMode ? " member-mobile-canvas" : ""}${vipAlgorithmMode ? " vip-algorithm-canvas" : ""}${profitSimulatorMode ? " profit-simulator-canvas" : ""}${risk680Mode ? " risk-680-canvas" : ""}${risk784Mode || risk830Mode ? " risk-784-canvas" : ""}${privacy862Mode ? " privacy-862-canvas" : ""}">${prototypeBody}</div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${agent498Mode ? escapeHtml(agent498Role) : site695Mode ? escapeHtml(site695IdentityConfig[site695Identity].label) : page.role}</span>${privacy862Mode ? "" : `<span>页面：${page.id}</span>`}</div><div class="spec-title-row"><div><h2>${displayPageName}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll">${permissionReview}<div class="spec-top-notices">${topSpecNotices}</div><div class="questions-slot">${questionsBlock(page)}</div>${pageNoteBlock(page)}${pageLogic}${extraNotice}${adjustmentNotice}${exportNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${cardAnnotations.length} 项</span></div><div class="annotation-list">${cardAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"${memberModuleMode || publicAgent498Mode || risk784Mode || risk830Mode || requirement.id === "#828" || finance971Mode || agent1027Mode ? ' class="production-admin-ui-488"' : risk680Mode ? ' class="risk-680-modal-root"' : ""}></div>`;
+    app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav${["#509", "#599", "#643", "#828", "#971"].includes(requirement.id) || isAgent498Requirement(requirement.id) ? ' class="prototype-endpoint-nav"' : ""} aria-label="当前原型页面">${prototypeEndpointSwitch(requirement, page)}</nav></header><div class="prototype-canvas${memberMobileMode ? " member-mobile-canvas" : ""}${vipAlgorithmMode ? " vip-algorithm-canvas" : ""}${profitSimulatorMode ? " profit-simulator-canvas" : ""}${risk680Mode ? " risk-680-canvas" : ""}${risk784Mode || risk830Mode ? " risk-784-canvas" : ""}${privacy862Mode ? " privacy-862-canvas" : ""}">${prototypeBody}</div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${agent498Mode ? escapeHtml(agent498Role) : site695Mode ? escapeHtml(site695IdentityConfig[site695Identity].label) : page.role}</span>${privacy862Mode ? "" : `<span>页面：${page.id}</span>`}</div><div class="spec-title-row"><div><h2>${displayPageName}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll">${permissionReview}<div class="spec-top-notices">${topSpecNotices}</div><div class="questions-slot">${questionsBlock(page)}</div>${pageNoteBlock(page)}${pageLogic}${extraNotice}${adjustmentNotice}${exportNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${cardAnnotations.length} 项</span></div><div class="annotation-list">${cardAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"${memberModuleMode || publicAgent498Mode || risk784Mode || risk830Mode || requirement.id === "#828" || finance971Mode || agent1027Mode || venue599Mode ? ` class="${venue599SiteMode ? "production-site-ui-695" : "production-admin-ui-488"}"` : risk680Mode ? ' class="risk-680-modal-root"' : ""}></div>`;
     if (requirement.id === "#911") {
       window.Commission911.bind({ rerender: () => detailView(requirement, page.key) });
       bindAgent498DatePickers();
     }
     if (finance971Mode) bindFinance971();
     if (agent1027Mode) window.AgentDaily1027.bind();
+    if (venue599Mode) window.VenueManagement599.bind();
     if (exportNotice) bindExportStandardLink(app, exportLinkId);
     if (page.key === "withdraw-monitor") renderMonitorView(false);
     addTopPaginators();
@@ -7738,6 +7749,13 @@
       if (targetPage?.tabs) {
         const tab = match[3] ? decodeURIComponent(match[3]) : targetPage.tabs[0];
         financeTabState[targetPage.key] = targetPage.tabs.includes(tab) ? tab : targetPage.tabs[0];
+      }
+    }
+    if (requirement.id === "#599") {
+      const targetPage = requirement.pages.find((item) => item.key === match[2]);
+      if (targetPage?.tabs) {
+        const tab = match[3] ? decodeURIComponent(match[3]) : targetPage.tabs[0];
+        venue599TabState[targetPage.key] = targetPage.tabs.includes(tab) ? tab : targetPage.tabs[0];
       }
     }
     detailView(requirement, match[2] || requirement.defaultPageKey || visiblePages(requirement)[0].key);
