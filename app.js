@@ -121,10 +121,11 @@
   let agent498ShowHidden = false;
   let agent498TeamIdentity = "NORMAL";
   let agent498QuickQueryMember = "";
+  let agent1073AccountType = "USDT";
   const agent498CommonPageKeys = [
     "agent-dashboard-498", "agent-members-498", "agent-deposits-498", "agent-bonuses-498",
     "agent-games-498", "agent-active-members-498", "agent-withdrawal-498",
-    "agent-deposit-service-498", "agent-balance-recharge-498", "agent-financial-report-498",
+    "agent-deposit-service-498", "agent-balance-recharge-498", "agent-finance-management-1073", "agent-financial-report-498",
     "agent-commission-report-498", "agent-wallet-ledger-498", "agent-profile-498",
     "agent-overflow-498", "agent-notices-498", "agent-downloads-498"
   ];
@@ -286,7 +287,7 @@
   }
 
   function componentBadge(id) {
-    return `<span class="component-badge" aria-hidden="true">${id}</span>`;
+    return window.PrototypeUI?.componentBadge(id) || `<span class="component-badge" aria-hidden="true">${escapeHtml(id)}</span>`;
   }
 
   function listView() {
@@ -386,7 +387,7 @@
   }
 
   function isAgent498Requirement(id = currentRequirementId) {
-    return ["#981", "#498", "#498复制"].includes(id);
+    return ["#1073", "#498", "#498复制"].includes(id);
   }
 
   function agent498IsTeamLeader(identity = agent498Identity) {
@@ -418,7 +419,7 @@
   function agent498ActiveTab(page) {
     const visibleTabs = agent498VisibleTabs(page);
     const requested = agent498SubViewState[page.key];
-    return visibleTabs.includes(requested) ? requested : visibleTabs[0];
+    return visibleTabs.includes(requested) ? requested : visibleTabs.includes(page.defaultTab) ? page.defaultTab : visibleTabs[0];
   }
 
   function agent498HiddenReason(key, identity = agent498Identity) {
@@ -460,6 +461,7 @@
   function sidebar(requirement, page) {
     if (requirement.id === "#599") return window.VenueManagement599.sidebar(page);
     if (requirement.id === "#1027") return window.AgentDaily1027.sidebar(page);
+    if (requirement.id === "#1025") return window.SiteRbac1025.sidebar(page);
     if (requirement.id === "#911") return window.Commission911.sidebar(page);
     if (requirement.id === "#971") return window.Finance971.sidebar(page);
     if (["#862", "#946"].includes(requirement.id)) {
@@ -534,7 +536,15 @@
       return `<aside class="risk-sidebar agent-498-sidebar"><div class="risk-brand"><span>${controlPortal ? "C" : "S"}</span><div><strong>${controlPortal ? "ControlCenter" : "SitePortal"}</strong><small>${portalLabel}</small></div></div><div class="risk-menu-label">功能导航</div><nav class="agent-menu-tree"><section class="agent-menu-group active is-expanded"><button type="button" class="agent-menu-level-one" data-agent-menu-toggle aria-expanded="true"><span class="menu-symbol">■</span><span class="menu-name">会员管理</span><span class="agent-menu-arrow" aria-hidden="true"></span></button><div class="agent-menu-children"><a href="#requirement/${encodeURIComponent(requirement.id)}/page/agent-active-members-498" class="agent-menu-level-two active"><span></span><span class="menu-name">活跃会员</span></a></div></section></nav><div class="risk-user"><span>MK</span><div><strong>Mike</strong><small>${controlPortal ? "总控管理员" : "站点管理员"}</small></div></div></aside>`;
     }
     if (isAgent498Requirement(requirement.id) && page.key !== "profit-simulator-498") {
-      const groups = [
+      const groups = requirement.id === "#1073" ? [
+        { name: "会员管理", children: [
+          { key: "agent-bonuses-498", name: "红利记录" }
+        ] },
+        { name: "财务中心", children: [
+          { key: "agent-finance-management-1073", name: "财务管理" },
+          { key: "agent-financial-report-498", name: "财务报表" }
+        ] }
+      ] : [
         { key: "agent-dashboard-498", name: "数据看板", children: [] },
         { name: "下级管理", children: [
           { key: "agent-members-498", name: "会员管理" },
@@ -3826,7 +3836,7 @@
       ? `<select${transactionAttribute}>${selectOptions.map((item) => `<option>${escapeHtml(item)}</option>`).join("")}</select>`
       : type === "date"
         ? agent498DateControl(options || {})
-        : `<input type="text"${transactionAttribute}${transactionField ? ` value="${escapeHtml(transactionField[1])}"` : label === "会员账号" && ["#981", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember ? ` value="${escapeHtml(agent498QuickQueryMember)}"` : ""} placeholder="请输入${escapeHtml(label)}" />`;
+        : `<input type="text"${transactionAttribute}${transactionField ? ` value="${escapeHtml(transactionField[1])}"` : label === "会员账号" && ["#1073", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember ? ` value="${escapeHtml(agent498QuickQueryMember)}"` : ""} placeholder="请输入${escapeHtml(label)}" />`;
     return `<div class="risk-field ${type === "date" ? "risk-field-wide agent-498-date-wrapper " : ""}${className}"><label>${escapeHtml(label)}</label>${control}</div>`;
   }
 
@@ -3834,7 +3844,7 @@
     const showSiteField = currentPageKey.startsWith("control-") || (currentRequirementId === "#498" && agent498Portal === "CONTROL");
     const normalizedFields = showSiteField ? fields : fields.filter((field) => !["所属站点", "站点", "站点名称"].includes(field[0]));
     const exportButton = exportable ? `<button type="button" class="secondary-action annotated" data-component-id="B01">${componentBadge("B01")}导出表格</button>` : "";
-    const quickApplied = ["#981", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember && ["agent-deposits-498", "agent-bonuses-498", "agent-games-498"].includes(currentPageKey)
+    const quickApplied = ["#1073", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember && ["agent-deposits-498", "agent-bonuses-498", "agent-games-498"].includes(currentPageKey)
       ? `<div class="agent-copy-filter-applied"><span>已从会员列表快捷查询带入</span><strong>会员：${escapeHtml(agent498QuickQueryMember)}</strong><button type="button" class="link-action agent-copy-clear-filter">清除</button></div>` : "";
     return `${quickApplied}<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid agent-498-filter-grid${compactActions ? " compact-filter-actions" : ""}${className ? ` ${className}` : ""}">${normalizedFields.map((field) => agent498Field(...field)).join("")}<div class="risk-filter-actions"><button type="button" class="main-action primary-filter">筛选</button><button type="button" class="secondary-action reset-action">重置</button>${exportButton}</div></div></section>`;
   }
@@ -3844,10 +3854,7 @@
   }
 
   function agent498PageHeading(title, subtitle = "") {
-    const comparisonPage = currentRequirementId === "#981" ? requirements.find((item) => item.id === currentRequirementId)?.pages.find((item) => item.key === currentPageKey) : null;
-    const comparisonTab = comparisonPage?.tabs?.length > 1 ? activePageTab(comparisonPage) : "";
-    const productionComparison = comparisonPage ? window.ProductionComparison498?.button(currentPageKey, comparisonTab) || "" : "";
-    return `<div class="risk-page-heading agent-498-heading"><div><h1>${escapeHtml(title)}</h1>${subtitle ? `<span>${escapeHtml(subtitle)}</span>` : ""}</div>${productionComparison}</div>`;
+    return `<div class="risk-page-heading agent-498-heading"><div><h1>${escapeHtml(title)}</h1>${subtitle ? `<span>${escapeHtml(subtitle)}</span>` : ""}</div></div>`;
   }
 
   function agent498DashboardContent(page) {
@@ -4024,18 +4031,18 @@
       return `${agent498Filter(fields)}${agent498Table(tab, headers, agent498MemberRows(team), team ? 328 : 186, "agent-member-table")}`;
     }
     if (tab === "存款管理") {
-      const quick = ["#981", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember;
+      const quick = ["#1073", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember;
       const rows = quick
         ? [["1", agent498QuickQueryMember, "agent_mike", "AG10086", "DP202608070086", "5,000", "5,000", "2026-08-07 08:20:06", "2026-08-07 08:21:30", '<span class="result-tag approved">成功</span>', "代理代存"]]
         : [["1", "member_087", "agent_mike", "AG10086", "DP202608040086", "5,000", "5,000", "2026-08-04 08:20:06", "2026-08-04 08:21:30", '<span class="result-tag approved">成功</span>', "代理代存"], ["2", "member_102", "subline_a", "AG10102", "DP202608040072", "2,000", "0", "2026-08-04 07:12:40", "2026-08-04 07:15:08", '<span class="result-tag rejected">用户取消</span>', "USDT"]];
       return `${agent498Filter([["会员账号", "input"], ["支付方式", "select", ["全部方式", "USDT", "支付宝", "代理代存"]], ["状态", "select", ["全部状态", "待支付", "确认中", "成功", "确认失败", "用户取消"]], ["存款申请时间", "date"]], true, true)}${agent498Table("存款记录", ["序号", "会员账号", "上级代理账号", "上级代理编号", "单号", "订单金额（CNY）", "实际到账（CNY）", "存款申请时间", "完成时间", "状态", "支付方式"], rows, quick ? 1 : 236)}`;
     }
     if (tab === "红利记录") {
-      const quick = ["#981", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember;
+      const quick = ["#1073", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember;
       const rows = quick
         ? [["1", agent498QuickQueryMember, "agent_mike", "AG10086", "中心钱包", "主钱包", "VIP周礼金", "188", "1倍", "2026-08-07 08:00:00", "2026-08-07 08:36:18"]]
         : [["1", "member_087", "agent_mike", "AG10086", "中心钱包", "主钱包", "VIP周礼金", "188", "1倍", "2026-08-04 08:00:00", "2026-08-04 08:36:18"], ["2", "member_102", "subline_a", "AG10102", "中心钱包", "主钱包", "活动彩金", "500", "3倍", "2026-08-04 09:20:00", "2026-08-04 09:25:06"]];
-      return `${agent498Filter([["会员账号", "input"], ["红利类型", "select", ["全部类型", ...bonusTypeOptions]], ["领取时间", "date"]], true, true)}${agent498Table("红利记录", ["序号", "会员账号", "上级代理账号", "上级代理编号", "钱包类型", "钱包名称", "红利类型", "金额（CNY）", "流水倍数", "发放时间", "领取时间"], rows, quick ? 1 : 92)}`;
+      return `<div class="agent-production-record-page agent-bonus-record-page">${agent498Filter([["会员账号", "input"], ["红利类型", "select", ["全部类型", ...bonusTypeOptions]], ["领取时间", "date"]], true, true)}${agent498Table("红利记录", ["序号", "会员账号", "上级代理账号", "上级代理编号", "钱包类型", "钱包名称", "红利类型", "金额（CNY）", "流水倍数", "发放时间", "领取时间"], rows, quick ? 1 : 92)}</div>`;
     }
     if (tab === "游戏记录") {
       const detailA = member493BetDetail(["厅别：国际厅", "玩法：英超 · 全场让球", "盘口：主队 -0.5", "赔率：1.86", "赛果：2 : 1", "结算结果：全赢"], "英超联赛", true);
@@ -4048,7 +4055,7 @@
         ["5", "BET202608040106", "member_422", "subline_a", "VIP2", "DB彩票", "时时彩", member493BetDetail(["期号：20260804058", "玩法：五星直选", "投注号码：1,3,5,7,9"], "时时彩"), "300", "300", "2026-08-04 09:46:22", '<span class="result-tag approved">已结算</span>', "540"],
         ["6", "BET202608040091", "member_536", "agent_mike", "VIP5", "PA捕鱼", "深海捕鱼", member493BetDetail(null, "深海捕鱼"), "1,200", "1,180", "2026-08-04 10:05:49", '<span class="result-tag approved">已结算</span>', "920"]
       ];
-      const quick = ["#981", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember;
+      const quick = ["#1073", "#498复制"].includes(currentRequirementId) && agent498QuickQueryMember;
       const visibleRows = quick
         ? [[...rows[0].slice(0, 2), agent498QuickQueryMember, ...rows[0].slice(3)]] : rows;
       return `${agent498Filter([["会员账号", "input"], ["场馆名称", "select", ["全部场馆", ...rebateVenueCatalog.map((item) => item.name)]], ["注单状态", "select", ["全部状态", "未结算", "已结算", "已取消", "已作废"]], ["时间类型", "select", ["下注时间", "结算时间", "开赛时间"]], ["时间范围", "date"]], true)}${agent498Table("游戏记录", ["序号", "投注单号", "会员账号", "代理账号", "VIP等级", "场馆名称", "游戏名称", "下注详情", "总投注（CNY）", "有效投注（CNY）", "下注时间", "注单状态", "派彩（CNY）"], visibleRows, quick ? 1 : 568)}`;
@@ -4089,10 +4096,60 @@
     const componentId = page.tabComponentId || "N02";
     const hiddenTabs = agent498ShowHidden ? page.tabs.filter((tab) => !visibleTabs.includes(tab)) : [];
     const annotated = page.annotations?.some((annotation) => annotation.id === componentId);
-    return `<nav class="inner-tabs agent-498-tertiary-tabs${annotated ? " annotated" : ""}"${annotated ? ` data-component-id="${componentId}"` : ""}>${annotated ? componentBadge(componentId) : ""}${visibleTabs.map((option) => `<button type="button" class="${option === active ? "active" : ""}" data-agent-498-subview="${escapeHtml(page.key)}" data-agent-498-subview-value="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("")}${hiddenTabs.map((option) => `<button type="button" class="is-permission-hidden" disabled title="当前代理模式无${escapeHtml(option)}数据权限">${escapeHtml(option)} · 已隐藏</button>`).join("")}</nav>`;
+    return `<nav class="inner-tabs agent-498-tertiary-tabs${annotated ? " annotated" : ""}"${annotated ? ` data-component-id="${componentId}"` : ""}>${annotated ? componentBadge(componentId) : ""}${visibleTabs.map((option) => `<button type="button" class="${option === active ? "active" : ""}${currentRequirementId === "#1073" && option !== "团队财务" ? " unchanged-production" : ""}" data-agent-498-subview="${escapeHtml(page.key)}" data-agent-498-subview-value="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("")}${hiddenTabs.map((option) => `<button type="button" class="is-permission-hidden" disabled title="当前代理模式无${escapeHtml(option)}数据权限">${escapeHtml(option)} · 已隐藏</button>`).join("")}</nav>`;
+  }
+
+  function agent1073FinanceManagementContent() {
+    const accounts = {
+      USDT: { label: "USDT", value: "TJ8k...9r2K", meta: "TRC20" },
+      支付宝: { label: "支付宝", value: "mike.agent@pay", meta: "账户姓名：麦克" },
+      EBPay: { label: "EBPay", value: "EBP96652018", meta: "账户持有人：麦克" },
+      钱能钱包: { label: "钱能钱包", value: "QN202609280086", meta: "默认提现账户" }
+    };
+    const activeAccount = accounts[agent1073AccountType] || accounts.USDT;
+    const accountTabs = Object.keys(accounts).map((type) => `<button type="button" class="${type === agent1073AccountType ? "active" : ""}${type === "USDT" ? " finance-1073-unchanged" : ""}" data-agent-1073-account-tab="${escapeHtml(type)}">${escapeHtml(type)}</button>`).join("");
+    const rows = [
+      ["FC202609280086", "—", '<span class="data-tag tag-green">佣金结算</span>', '<strong class="finance-1073-income">+ 32,680.00</strong>', "—", "—", "2026-09-28 09:18:26", '<button type="button" class="link-action finance-1073-detail" data-finance-order="FC202609280086">详情</button>'],
+      ["FT202609270018", "—", '<span class="data-tag">内部转账</span>', '<strong class="finance-1073-expense">- 8,000.00</strong>', "subline_a", "东区副线", "2026-09-27 18:32:10", '<button type="button" class="link-action finance-1073-detail" data-finance-order="FT202609270018">详情</button>'],
+      ["FT202609260066", "member_087", '<span class="data-tag">内部转账</span>', '<strong class="finance-1073-expense">- 5,000.00</strong>', "member_087", "陈**", "2026-09-26 14:06:32", '<button type="button" class="link-action finance-1073-detail" data-finance-order="FT202609260066">详情</button>'],
+      ["FW202609250028", "—", '<span class="data-tag tag-amber">提现</span>', '<strong class="finance-1073-expense">- 12,000.00</strong>', "—", "—", "2026-09-25 11:20:06", '<button type="button" class="link-action finance-1073-detail" data-finance-order="FW202609250028">详情</button>'],
+      ["FR202609240039", "—", '<span class="data-tag tag-green">充值</span>', '<strong class="finance-1073-income">+ 20,000.00</strong>', "—", "—", "2026-09-24 10:12:08", '<button type="button" class="link-action finance-1073-detail" data-finance-order="FR202609240039">详情</button>']
+    ];
+    const body = rows.map((row) => `<tr>${row.map((cell, index) => `<td class="${[4, 5].includes(index) ? "" : "finance-1073-unchanged"}">${cell}</td>`).join("")}</tr>`).join("");
+    return `<div class="finance-1073-page finance-1073-production-page">
+        <header class="finance-1073-toolbar finance-1073-unchanged">
+        <label class="finance-1073-search"><span aria-hidden="true">⌕</span><input type="text" placeholder="搜索流水单号或会员名" /></label>
+        <button type="button" class="finance-1073-refresh" aria-label="刷新">↻</button>
+      </header>
+      <div class="finance-1073-overview">
+        <section class="finance-1073-primary-card">
+          <div class="finance-1073-balance-label finance-1073-unchanged"><span class="finance-1073-wallet-icon">▣</span><span>可用余额</span></div>
+          <strong class="finance-1073-balance finance-1073-unchanged">¥ 186,580.00</strong>
+          <div class="finance-1073-balance-meta finance-1073-unchanged"><span>代理佣金钱包</span><span>冻结金额 ¥ 12,000.00</span></div>
+          <div class="finance-1073-actions" aria-label="快捷资金操作">
+            <button type="button" class="is-primary finance-1073-unchanged" data-finance-1073-action="充值"><span class="finance-1073-action-icon">ϟ</span>快捷充值</button>
+            <button type="button" class="finance-1073-unchanged" data-finance-1073-action="提现"><span class="finance-1073-action-icon">↓</span>提现</button>
+            <button type="button" class="annotated" data-component-id="M02" data-finance-1073-action="内部转账">${componentBadge("M02")}<span class="finance-1073-action-icon">⇄</span>内部转账</button>
+            <button type="button" class="is-danger finance-1073-unchanged" data-finance-1073-action="发红包"><span class="finance-1073-action-icon">▣</span>发红包</button>
+          </div>
+        </section>
+        <section class="finance-1073-account annotated" data-component-id="P01">${componentBadge("P01")}
+          <header><div class="finance-1073-unchanged"><h2>提现账号</h2><span>维护各渠道默认提现账户</span></div><button type="button" class="link-action${agent1073AccountType === "USDT" ? " finance-1073-unchanged" : ""}" data-agent-1073-account-edit>编辑</button></header>
+          <nav>${accountTabs}</nav>
+          <div class="finance-1073-account-body${agent1073AccountType === "USDT" ? " finance-1073-unchanged" : ""}"><span>${escapeHtml(activeAccount.label)}账户</span><strong>${escapeHtml(activeAccount.value)}</strong><small>${escapeHtml(activeAccount.meta)}</small></div>
+          <p class="finance-1073-account-tip finance-1073-unchanged">提现时将使用当前渠道的默认账户</p>
+        </section>
+      </div>
+      <section class="finance-1073-record-card annotated" data-component-id="T01">${componentBadge("T01")}
+        <header class="finance-1073-record-header"><div class="finance-1073-record-title finance-1073-unchanged"><i></i><h2>近期收支明细</h2></div><div class="finance-1073-record-actions finance-1073-unchanged"><div class="finance-1073-date-filter"><span>创建时间</span>${agent498DateControl({ month: 9, startDay: 1, endDay: 28, endTime: "23:59:59" })}</div><button type="button" class="finance-1073-filter">⌄ 筛选</button><button type="button" class="finance-1073-export">⇩ 导出报表</button><button type="button" class="finance-1073-refresh is-small" aria-label="刷新流水">↻</button></div></header>
+        <div class="finance-1073-table-wrap"><table class="risk-table finance-1073-table"><thead><tr><th class="finance-1073-unchanged">流水单号</th><th class="finance-1073-unchanged">会员名 / 代理</th><th class="finance-1073-unchanged">业务类型</th><th class="finance-1073-unchanged">主体变动额度</th><th>转入账号</th><th>账号名</th><th class="finance-1073-unchanged">时间</th><th class="finance-1073-unchanged">操作</th></tr></thead><tbody>${body}</tbody></table></div>
+        <div class="finance-1073-unchanged finance-1073-pagination">${pagination(20, 86)}</div>
+      </section>
+    </div>`;
   }
 
   function agent498FinanceContent(page) {
+    if (page.key === "agent-finance-management-1073") return agent1073FinanceManagementContent();
     const menu = page.contentKey || page.name;
     const active = agent498ActiveTab(page) || menu;
     if (menu === "负盈利佣金报表") {
@@ -4118,11 +4175,11 @@
       return `${agent498WalletPanel("transfer", "转账支付账户")} ${agent498Filter([["代理账号/编号", "input"], ["状态", "select", ["全部状态", "成功", "失败"]], ["操作时间", "date"]], true)}${agent498Table("转账记录", ["序号", "单号", "代理账号", "支付账户", "转账金额（CNY）", "状态", "备注", "操作时间"], rows, 32)}`;
     }
     if (menu === "财务报表") {
-      const metrics = ["存款", "提款", "红利", "返水", "场馆费", "总输赢", "净输赢", "账户调整", "存提手续费", "有效投注"].map((name, index) => `<article><span>${name}</span><strong>${index === 1 ? "-" : "+"}${money((index + 2) * 3860)}</strong></article>`).join("");
-      const teamTable = active === "团队财务" ? agent498Table("团队财务", ["序号", "代理账号", "存款（CNY）", "提款（CNY）", "总输赢（CNY）", "场馆费（CNY）", "红利（CNY）", "返水（CNY）", "净输赢（CNY）", "补单输赢（CNY）", "存提手续费（CNY）"], [["—", "团队总数据", "286,000", "86,000", "+128,600", "12,800", "18,600", "22,400", "+74,800", "+2,600", "8,200"], ["1", "subline_a", "168,000", "52,000", "+78,000", "7,600", "10,200", "13,000", "+44,600", "+1,200", "4,800"], ["2", "subline_b", "118,000", "34,000", "+50,600", "5,200", "8,400", "9,400", "+30,200", "+1,400", "3,400"]], 8) : "";
-      const overview = active === "团队财务" ? "" : `<section class="agent-finance-metrics annotated" data-component-id="P01">${componentBadge("P01")}${metrics}</section>`;
-      const notice = '<section class="agent-finance-reference-note"><strong>提示</strong><span>总输赢、净输赢中正数表示公司盈利，负数表示公司亏损；每天数据只作普通参考，不作为实际佣金派发标准。</span></section>';
-      return `${agent498Filter(active === "团队财务" ? [["代理账号/编号", "input"], ["统计月份", "select", ["2026-07", "2026-06", "2026-05"]]] : [["统计时间", "date"]], true)}${notice}${overview}${teamTable}`;
+      const reportFilter = `<section class="finance-report-1073-filter"><div class="finance-report-1073-date-field"><span>统计时间</span>${agent498DateControl({ month: 9, startDay: 1, endDay: 28, endTime: "23:59:59" })}</div>${active === "团队财务" ? '<label><span>代理账号/编号</span><input type="text" placeholder="请输入代理账号或编号" /></label>' : ""}<button type="button" class="main-action">搜索</button><button type="button" class="secondary-action">重置</button></section>`;
+      const feeCards = `<section class="finance-report-1073-cards unchanged-production"><article><header><strong>场馆费比例</strong><button type="button" class="finance-report-1073-help" aria-label="查看说明">?</button></header><p>¥12,800.00</p><button type="button" class="link-action agent-1073-fee-detail">查看明细</button></article><article><header><strong>充提手续费比例</strong><button type="button" class="finance-report-1073-help" aria-label="查看说明">?</button></header><p>¥8,200.00</p><button type="button" class="link-action agent-1073-fee-detail">查看明细</button></article></section>`;
+      const teamRows = [["—", "团队总数据", "286,000", "86,000", "+128,600", "12,800", "18,600", "22,400", "+74,800", "+2,600", "8,200"], ["1", "subline_a", "168,000", "52,000", "+78,000", "7,600", "10,200", "13,000", "+44,600", "+1,200", "4,800"], ["2", "subline_b", "118,000", "34,000", "+50,600", "5,200", "8,400", "9,400", "+30,200", "+1,400", "3,400"]];
+      const teamTable = `<section class="finance-report-1073-table annotated" data-component-id="T01">${componentBadge("T01")}<header><div><h2>团队财务</h2><span>团队总数据及下级代理经营数据</span></div><button type="button" class="secondary-action annotated" data-component-id="B01">${componentBadge("B01")}导出表格</button></header><div class="finance-report-1073-table-wrap"><table class="risk-table"><thead><tr>${["序号", "代理账号", "充值（CNY）", "提现（CNY）", "总输赢（CNY）", "场馆费（CNY）", "红利（CNY）", "返水（CNY）", "净输赢（CNY）", "补单输赢（CNY）", "充提手续费（CNY）"].map((header) => `<th>${header}</th>`).join("")}</tr></thead><tbody>${teamRows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${pagination(20, 8)}</section>`;
+      return `<div class="finance-report-1073 production-finance-report-1073">${reportFilter}${active === "团队财务" ? teamTable : feeCards}</div>`;
     }
     if (menu === "佣金报表") {
       const commissionItems = [["佣金", "32,680"], ["佣金比例", "35%"], ["活跃会员", "328"], ["新增活跃会员", "42"], ["总输赢", "+128,600"], ["净输赢", "+96,800"], ["冲正后净输赢", "+92,800"], ["上月结余", "12,000"], ["场馆费", "12,800"], ["红利", "18,600"], ["返水", "22,400"], ["账户调整", "+500"], ["补单输赢", "+2,600"], ["佣金调整", "+800"]].map(([name, value]) => `<article><span>${name}</span><strong>${value}</strong></article>`).join("");
@@ -4185,7 +4242,7 @@
     const menuGroup = currentRequirementId === "#498" && agent498Portal !== "AGENT" ? "会员管理" : page.menuGroup;
     const content = page.key === "agent-dashboard-498"
       ? agent498DashboardContent(page)
-      : page.menuGroup === "下级管理"
+      : ["下级管理", "会员管理"].includes(page.menuGroup)
         ? `${agent498PageHeading(pageName, menuGroup)}${tertiaryTabs}<div class="agent-498-tab-body">${agent498SubordinateContent(page, activeView)}</div>`
         : page.menuGroup === "运营中心"
           ? `${agent498PageHeading(pageName, page.menuGroup)}<div class="agent-498-tab-body">${agent498OperationsContent()}</div>`
@@ -5306,6 +5363,7 @@
   function pageContent(page) {
     if (currentRequirementId === "#599") return window.VenueManagement599.render(page, { badge: componentBadge, modal, select: selectComponent, bindLinks: bindComponentLinks, activeTab: activePageTab(page), setTab: (tab) => { window.location.hash = `#requirement/%23599/page/${page.key}/menu/${encodeURIComponent(tab)}`; }, rerender: () => detailView(requirements.find((item) => item.id === currentRequirementId), page.key) });
     if (currentRequirementId === "#1027") return window.AgentDaily1027.render(page, { badge: componentBadge, bindLinks: bindComponentLinks, select: selectComponent, modal });
+    if (currentRequirementId === "#1025") return window.SiteRbac1025.render(page, { badge: componentBadge, modal, rerender: () => detailView(requirements.find((item) => item.id === currentRequirementId), page.key) });
     if (currentRequirementId === "#911") return window.Commission911.render(page, { badge: componentBadge, dateControl: agent498DateControl, modal });
     if (currentRequirementId === "#971") return finance971DashboardContent(page);
     if (page.mergedInto) return mergedRequirementContent(page);
@@ -5327,7 +5385,7 @@
     if (page.key === "agent-finance-management-776") return '<section class="reserved-area unchanged-page agent-776-unchanged"><div><strong>和生产一致，无任何修改</strong></div></section>';
     if (page.key === "agent-withdraw-records-776") return agent776WithdrawRecordsContent(page);
     if (page.key.startsWith("control-") && page.key.endsWith("-498")) return control498Content(page);
-    if (page.key.startsWith("agent-") && page.key.endsWith("-498")) return agentBackend498Content(page);
+    if (page.key.startsWith("agent-") && (page.key.endsWith("-498") || page.key === "agent-finance-management-1073")) return agentBackend498Content(page);
     if (page.key.endsWith("-509") || page.key.endsWith("-643")) return vipOptimizationContent(page);
     if (page.key.endsWith("-739")) return member739Content(page);
     if (page.key.endsWith("-736")) return siteAgent736Content(page);
@@ -5687,6 +5745,7 @@
       if (requirement.id === "#498") {
         return `<a class="current-page-label" href="#requirement/${encodeURIComponent(requirement.id)}/page/agent-dashboard-498">代理后台改造</a>`;
       }
+      if (requirement.id === "#1073") return `<span class="current-page-label">代理后台</span>`;
       const annotated = page.annotations?.some((annotation) => annotation.id === "N09");
       return `<div class="prototype-endpoint-switch${annotated ? " annotated" : ""}"${annotated ? ' data-component-id="N09"' : ""}>${annotated ? componentBadge("N09") : ""}<a href="#requirement/${encodeURIComponent(requirement.id)}/page/agent-dashboard-498" class="${page.key.startsWith("agent-") ? "active" : ""}">代理后台改造</a><a href="#requirement/${encodeURIComponent(requirement.id)}/page/control-agent-quota-498" class="${page.key.startsWith("control-") ? "active" : ""}">总控后台改造</a></div>`;
     }
@@ -5747,6 +5806,7 @@
     const control498Mode = isAgent498Requirement(requirement.id) && page.key.startsWith("control-");
     const finance971Mode = requirement.id === "#971";
     const agent1027Mode = requirement.id === "#1027";
+    const siteRbac1025Mode = requirement.id === "#1025";
     const venue599Mode = requirement.id === "#599";
     const venue599SiteMode = venue599Mode && page.portal === "站点";
     const risk680Mode = isP0RiskRequirement(requirement.id);
@@ -5759,7 +5819,7 @@
     const site828Mode = requirement.id === "#828" && page.key.startsWith("site-");
     const control828Mode = requirement.id === "#828" && page.key.startsWith("control-");
     const agent498Mode = isAgent498Requirement(requirement.id) && !profitSimulatorMode && !control498Mode;
-    const publicAgent498Mode = requirement.id === "#498" && agent498Mode;
+    const publicAgent498Mode = ["#498", "#1073"].includes(requirement.id) && agent498Mode;
     const agent498ActiveMenu = agent498Mode && page.key !== "agent-dashboard-498" ? activePageTab(page) : "";
     const displayPageName = agent498ActiveMenu || (finance971Mode && page.key === "control-rebate-plan-971" ? activePageTab(page) : (agent498Mode ? agent498PageDisplayName(page) : page.name));
     const renderedPageContent = pageContent(page);
@@ -5778,16 +5838,18 @@
       ? `<div class="member-mobile-stage">${memberMobilePrototypeNav(page.key)}${renderedPageContent}</div>`
       : vipAlgorithmMode
         ? `<div class="vip-algorithm-stage">${renderedPageContent}</div>`
-      : `<div class="risk-app${memberModuleMode ? " member-module-mode production-admin-ui-488" : ""}${member493Mode ? " member-493-mode" : ""}${memberDetailMode ? " member-detail-mode" : ""}${agent498Mode || control498Mode ? ` agent-498-app${publicAgent498Mode ? " production-admin-ui-488" : ""}` : ""}${finance971Mode ? " finance971-app production-admin-ui-488" : ""}${agent1027Mode ? " agent-daily-1027-app production-admin-ui-488" : ""}${venue599Mode ? ` venue599-app ${venue599SiteMode ? "production-site-ui-695" : "production-admin-ui-488"}` : ""}${risk680Mode ? " risk-680-app" : ""}${risk784Mode ? " risk-784-app production-admin-ui-488" : ""}${risk830Mode ? " risk-784-app risk-830-app production-admin-ui-488" : ""}${privacy862Mode ? " privacy-862-app" : ""}${site695Mode || siteAgent736Mode || agent776Mode || site828Mode ? " site-member-695-app production-site-ui-695" : ""}${control828Mode ? " production-admin-ui-488 control-828-app" : ""}${site828Mode ? " site-828-app" : ""}${agent776Mode ? " agent-776-app" : ""}">${sidebar(requirement,page)}<section class="risk-main">${risk680Mode ? `<header class="risk-topbar risk-680-topbar"><button type="button" class="risk-680-sidebar-toggle" data-risk-680-sidebar-toggle aria-label="收起或展开侧栏"><i></i><i></i><i></i></button><nav aria-label="面包屑"><span>风控中心</span><b>/</b><strong>${displayPageName}</strong></nav><div class="risk-680-top-actions"><button type="button" class="risk-680-top-icon" aria-label="全屏预览" title="全屏预览"></button><span class="risk-680-avatar">M</span><strong>Mike</strong><i aria-hidden="true"></i></div></header>` : `<header class="risk-topbar"><div>${publicAgent498Mode ? '<button type="button" class="agent-498-sidebar-toggle" aria-label="收起或展开侧栏" title="收起或展开侧栏"><span></span><span></span><span></span>' : ""}<span>${control498Mode ? `总控后台 / ${page.menuGroup}` : agent498Mode ? (requirement.id === "#498" ? `${agent498PortalLabel()} / ${agent498Portal === "AGENT" ? page.menuGroup : "会员管理"}` : page.key === "agent-dashboard-498" ? "代理后台" : `${page.menuGroup} / ${page.name}`) : moduleName} /</span><strong>${displayPageName}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header>`}<div class="risk-content">${renderedPageContent}</div></section></div>`;
-    const permissionReview = agent498Mode ? agent498PermissionReviewControls() : site695Mode ? site695IdentityReviewControls() : "";
+      : `<div class="risk-app${memberModuleMode ? " member-module-mode production-admin-ui-488" : ""}${member493Mode ? " member-493-mode" : ""}${memberDetailMode ? " member-detail-mode" : ""}${agent498Mode || control498Mode ? ` agent-498-app${publicAgent498Mode ? " production-admin-ui-488" : ""}` : ""}${finance971Mode ? " finance971-app production-admin-ui-488" : ""}${agent1027Mode ? " agent-daily-1027-app production-admin-ui-488" : ""}${siteRbac1025Mode ? " site-rbac-1025-app site-member-695-app production-site-ui-695" : ""}${venue599Mode ? ` venue599-app ${venue599SiteMode ? "production-site-ui-695" : "production-admin-ui-488"}` : ""}${risk680Mode ? " risk-680-app" : ""}${risk784Mode ? " risk-784-app production-admin-ui-488" : ""}${risk830Mode ? " risk-784-app risk-830-app production-admin-ui-488" : ""}${privacy862Mode ? " privacy-862-app" : ""}${site695Mode || siteAgent736Mode || agent776Mode || site828Mode ? " site-member-695-app production-site-ui-695" : ""}${control828Mode ? " production-admin-ui-488 control-828-app" : ""}${site828Mode ? " site-828-app" : ""}${agent776Mode ? " agent-776-app" : ""}">${sidebar(requirement,page)}<section class="risk-main">${risk680Mode ? `<header class="risk-topbar risk-680-topbar"><button type="button" class="risk-680-sidebar-toggle" data-risk-680-sidebar-toggle aria-label="收起或展开侧栏"><i></i><i></i><i></i></button><nav aria-label="面包屑"><span>风控中心</span><b>/</b><strong>${displayPageName}</strong></nav><div class="risk-680-top-actions"><button type="button" class="risk-680-top-icon" aria-label="全屏预览" title="全屏预览"></button><span class="risk-680-avatar">M</span><strong>Mike</strong><i aria-hidden="true"></i></div></header>` : `<header class="risk-topbar"><div>${publicAgent498Mode ? '<button type="button" class="agent-498-sidebar-toggle" aria-label="收起或展开侧栏" title="收起或展开侧栏"><span></span><span></span><span></span>' : ""}<span>${control498Mode ? `总控后台 / ${page.menuGroup}` : agent498Mode ? (requirement.id === "#498" ? `${agent498PortalLabel()} / ${agent498Portal === "AGENT" ? page.menuGroup : "会员管理"}` : page.key === "agent-dashboard-498" ? "代理后台" : `${page.menuGroup}`) : moduleName} /</span><strong>${displayPageName}</strong></div><div><span class="environment-tag">产品原型</span><strong>Mike</strong></div></header>`}<div class="risk-content">${renderedPageContent}</div></section></div>`;
+    const permissionReview = agent498Mode && requirement.id !== "#1073" ? agent498PermissionReviewControls() : site695Mode ? site695IdentityReviewControls() : "";
     const agent498Role = requirement.id === "#498" && agent498Portal !== "AGENT" ? (agent498Portal === "CONTROL" ? "总控管理员" : "站点管理员") : agent498IdentityConfig[agent498Identity]?.label;
     app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${requirement.id}</strong><span>${requirement.title}</span></div><nav${["#509", "#599", "#643", "#828", "#971"].includes(requirement.id) || isAgent498Requirement(requirement.id) ? ' class="prototype-endpoint-nav"' : ""} aria-label="当前原型页面">${prototypeEndpointSwitch(requirement, page)}</nav></header><div class="prototype-canvas${memberMobileMode ? " member-mobile-canvas" : ""}${vipAlgorithmMode ? " vip-algorithm-canvas" : ""}${profitSimulatorMode ? " profit-simulator-canvas" : ""}${risk680Mode ? " risk-680-canvas" : ""}${risk784Mode || risk830Mode ? " risk-784-canvas" : ""}${privacy862Mode ? " privacy-862-canvas" : ""}">${prototypeBody}</div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${agent498Mode ? escapeHtml(agent498Role) : site695Mode ? escapeHtml(site695IdentityConfig[site695Identity].label) : page.role}</span>${privacy862Mode ? "" : `<span>页面：${page.id}</span>`}</div><div class="spec-title-row"><div><h2>${displayPageName}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll">${permissionReview}<div class="spec-top-notices">${topSpecNotices}</div><div class="questions-slot">${questionsBlock(page)}</div>${pageNoteBlock(page)}${pageLogic}${extraNotice}${adjustmentNotice}${exportNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${cardAnnotations.length} 项</span></div><div class="annotation-list">${cardAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"${memberModuleMode || publicAgent498Mode || risk784Mode || risk830Mode || requirement.id === "#828" || finance971Mode || agent1027Mode || venue599Mode ? ` class="${venue599SiteMode ? "production-site-ui-695" : "production-admin-ui-488"}"` : risk680Mode ? ' class="risk-680-modal-root"' : ""}></div>`;
+    window.PrototypeUI?.bindMenuToggles(app);
     if (requirement.id === "#911") {
       window.Commission911.bind({ rerender: () => detailView(requirement, page.key) });
       bindAgent498DatePickers();
     }
     if (finance971Mode) bindFinance971();
     if (agent1027Mode) window.AgentDaily1027.bind();
+    if (siteRbac1025Mode) window.SiteRbac1025.bind({ modal, rerender: () => detailView(requirement, page.key) });
     if (venue599Mode) window.VenueManagement599.bind();
     if (exportNotice) bindExportStandardLink(app, exportLinkId);
     if (page.key === "withdraw-monitor") renderMonitorView(false);
@@ -7247,8 +7309,53 @@
     document.querySelectorAll("[data-site-agent-736-open-withdraw]").forEach((button) => button.addEventListener("click", openModal));
   }
 
+  function bindAgent1073FinanceManagement(page, rerender) {
+    if (page.key !== "agent-finance-management-1073") return;
+    document.querySelectorAll("[data-agent-1073-account-tab]").forEach((button) => button.addEventListener("click", () => {
+      agent1073AccountType = button.getAttribute("data-agent-1073-account-tab") || "USDT";
+      rerender(page.key);
+    }));
+    document.querySelector("[data-agent-1073-account-edit]")?.addEventListener("click", () => {
+      const fieldSets = {
+        USDT: '<label class="modal-field"><span>钱包地址</span><input type="text" value="TJ8k96652018AGENT9r2K" /></label><label class="modal-field"><span>协议</span><select><option>TRC20</option><option>ERC20</option></select></label>',
+        支付宝: '<label class="modal-field"><span>支付宝账号</span><input type="text" value="mike.agent@pay" /></label><label class="modal-field"><span>账户姓名</span><input type="text" value="麦克" /></label>',
+        EBPay: '<label class="modal-field"><span>EBPay账号</span><input type="text" value="EBP96652018" /></label><label class="modal-field"><span>账户持有人</span><input type="text" value="麦克" /></label>',
+        钱能钱包: '<label class="modal-field"><span>钱包地址</span><input type="text" value="QN202609280086" /></label>'
+      };
+      modal(`编辑${agent1073AccountType}提现账号`, `<div class="finance-1073-dialog-form annotated" data-component-id="P01">${componentBadge("P01")}${fieldSets[agent1073AccountType]}</div>`, "保存");
+    });
+    document.querySelectorAll("[data-finance-1073-action]").forEach((button) => button.addEventListener("click", () => {
+      const action = button.getAttribute("data-finance-1073-action") || "";
+      if (action !== "内部转账") {
+        modal(action, `<div class="finance-1073-production-dialog"><strong>${escapeHtml(action)}</strong><p>此操作沿用生产财务管理现有流程，本次无修改。</p></div>`, "关闭");
+        return;
+      }
+      modal("内部转账", `<div class="finance-1073-transfer-dialog annotated" data-component-id="M02">${componentBadge("M02")}
+        <div class="finance-1073-transfer-balance"><span>当前可用余额</span><strong>186,580.00 CNY</strong></div>
+        <div class="finance-1073-form-label">转账对象</div>
+        <div class="finance-1073-transfer-target"><button type="button" class="active" data-finance-transfer-target="会员">会员</button><button type="button" data-finance-transfer-target="代理">代理</button></div>
+        <section data-finance-transfer-panel="会员"><label class="finance-1073-form-field"><span>会员账号或ID</span><div class="finance-1073-input-wrap"><input type="text" placeholder="请输入直属会员账号或ID" /><i>⌕</i></div></label><label class="finance-1073-form-field"><span>提款流水倍数</span><div class="finance-1073-amount-wrap"><input type="number" value="1" min="0" /><b>倍</b></div></label></section>
+        <section data-finance-transfer-panel="代理" hidden><label class="finance-1073-form-field"><span>代理账号或ID</span><div class="finance-1073-input-wrap"><input type="text" placeholder="请输入副线代理账号或ID" /><i>⌕</i></div></label></section>
+        <label class="finance-1073-form-field"><span>转账金额</span><div class="finance-1073-amount-wrap is-large"><input type="number" min="0.01" step="0.01" placeholder="0.00" /><b>CNY</b></div></label>
+      </div>`, "确认转账");
+      document.querySelectorAll("[data-finance-transfer-target]").forEach((target) => target.addEventListener("click", () => {
+        document.querySelectorAll("[data-finance-transfer-target]").forEach((item) => item.classList.toggle("active", item === target));
+        document.querySelectorAll("[data-finance-transfer-panel]").forEach((panel) => { panel.hidden = panel.dataset.financeTransferPanel !== target.dataset.financeTransferTarget; });
+      }));
+    }));
+    document.querySelectorAll(".finance-1073-detail").forEach((button) => button.addEventListener("click", () => {
+      const financeOrder = button.getAttribute("data-finance-order") || "";
+      const internal = financeOrder.startsWith("FT");
+      const details = internal
+        ? [["流水编号", financeOrder], ["名称", "东区副线"], ["所属站点", "WC体育"], ["业务类型", "内部转账"], ["主体变动额度", "-8,000.00 CNY"], ["主体变动后余额", "178,580.00 CNY"], ["转入账号", "subline_a"], ["账号名", "东区副线"], ["变动额度", "+8,000.00 CNY"], ["变动后余额", "42,680.00 CNY"], ["关联方资金池额度变动", "+8,000.00 CNY"], ["关联方资金池变动后额度", "42,680.00 CNY"], ["时间", "2026-09-27 18:32:10"], ["备注", "团队运营资金"]]
+        : [["流水编号", financeOrder], ["名称", "—"], ["所属站点", "WC体育"], ["业务类型", "佣金结算"], ["主体变动额度", "+32,680.00 CNY"], ["主体变动后余额", "186,580.00 CNY"], ["关联方名称", "—"], ["变动额度", "—"], ["变动后余额", "—"], ["关联方资金池额度变动", "—"], ["关联方资金池变动后额度", "—"], ["时间", "2026-09-28 09:18:26"], ["备注", "佣金结算到账"]];
+      const changedDetailLabels = new Set(["转入账号", "账号名", "关联方资金池额度变动", "关联方资金池变动后额度"]);
+      modal("收支详情", `<div class="finance-1073-detail-dialog"><div class="finance-1073-detail-grid annotated" data-component-id="M01">${componentBadge("M01")}${details.map(([label, value]) => `<div class="finance-1073-detail-item${label === "备注" ? " is-wide" : ""}${changedDetailLabels.has(label) ? "" : " finance-1073-unchanged"}"><span>${label}</span><strong>${value}</strong></div>`).join("")}</div></div>`, "关闭");
+    }));
+  }
+
   function bindAgent498Behavior(page) {
-    if (!isAgent498Requirement() || !page.key.endsWith("-498") || page.key === "profit-simulator-498") return;
+    if (!isAgent498Requirement() || (!page.key.endsWith("-498") && page.key !== "agent-finance-management-1073") || page.key === "profit-simulator-498") return;
     const rerenderAgent498 = (preferredKey = page.key) => {
       const requirement = requirements.find((item) => item.id === currentRequirementId);
       const targetKey = agent498PageIsAllowed(preferredKey) ? preferredKey : "agent-dashboard-498";
@@ -7256,6 +7363,7 @@
       if (window.location.hash !== targetHash) window.location.hash = targetHash;
       else detailView(requirement, targetKey);
     };
+    bindAgent1073FinanceManagement(page, rerenderAgent498);
     document.getElementById("agent-498-portal")?.addEventListener("change", (event) => {
       agent498Portal = event.target.value;
       const targetKey = agent498Portal === "AGENT" ? page.key : "agent-active-members-498";
@@ -7477,6 +7585,7 @@
       modal("提交确认", '<p class="danger-confirm">请确认当前操作信息。</p><label class="modal-field">支付密码<input type="password" placeholder="请输入支付密码" /></label>', "确认提交");
     }));
     document.querySelector(".agent-fee-detail")?.addEventListener("click", () => modal("存提手续费详情", `<div class="risk-table-wrap"><table class="risk-table"><thead><tr><th>费用来源</th><th>支付方式</th><th>金额（CNY）</th><th>费率</th><th>手续费（CNY）</th></tr></thead><tbody><tr><td>会员存款</td><td>支付宝</td><td>50,000</td><td>1.2%</td><td>600</td></tr><tr><td>代理额度充值</td><td>USDT</td><td>20,000</td><td>0.8%</td><td>160</td></tr><tr><td>会员提款</td><td>银行卡</td><td>30,000</td><td>1.0%</td><td>300</td></tr></tbody></table></div>`, "关闭"));
+    document.querySelectorAll(".agent-1073-fee-detail").forEach((button) => button.addEventListener("click", () => modal("费用明细", `<div class="finance-report-1073-detail"><p>统计时间（北京时间）：2026-09-01 00:00:00 至 2026-09-28 23:59:59</p><div class="finance-report-1073-switch"><button type="button" class="active">充值手续费</button><button type="button">提现手续费</button></div><div class="risk-table-wrap"><table class="risk-table"><thead><tr><th>序号</th><th>实际通道</th><th>金额（CNY）</th><th>当前站点报价</th><th>费用（CNY）</th></tr></thead><tbody><tr><td>1</td><td>支付宝</td><td>50,000.00</td><td>1.20%</td><td>600.00</td></tr><tr><td>2</td><td>USDT</td><td>20,000.00</td><td>0.80%</td><td>160.00</td></tr></tbody></table></div><p class="finance-report-1073-total">总计：760.00 CNY</p></div>`, "关闭")));
     document.querySelector(".agent-overflow-submit")?.addEventListener("click", () => modal("提交溢出申请", '<p>确认提交当前会员的溢出申请？提交后进入总控或站点审核。</p>', "确认提交"));
     document.querySelectorAll("[data-agent-profile-tab]").forEach((button) => button.addEventListener("click", () => { agent498ProfileTab = button.dataset.agentProfileTab; rerenderAgent498(page.key); }));
     document.querySelector(".agent-profile-unlock")?.addEventListener("click", () => {

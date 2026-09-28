@@ -811,17 +811,17 @@
         ]
       },
       {
-        id: "#981",
+        id: "#1073",
         title: "代理后台 二期",
         owner: "Mike",
         status: "进行中",
         priority: "P0",
         startDate: "2026-07-30",
         completionDate: "—",
-        updatedAt: "2026-09-21 15:00",
-        summary: "包含代理后台数据看板、下级管理、财务中心、个人中心改造及对应总控后台能力。",
+        updatedAt: "2026-09-28 18:30",
+        summary: "在生产代理后台中增加团队财务、红利记录，并改造财务管理的提现账户与内部转账能力。",
         moduleName: "代理业务",
-        defaultPageKey: "agent-dashboard-498",
+        defaultPageKey: "agent-finance-management-1073",
         pages: [
           {
             id: "P01",
@@ -1268,7 +1268,7 @@
     }));
   });
 
-  const requirement498 = window.PROTOTYPE_DATA.requirements.find((requirement) => requirement.id === "#981");
+  const requirement498 = window.PROTOTYPE_DATA.requirements.find((requirement) => requirement.id === "#1073");
   const simulatorIndex = requirement498?.pages.findIndex((page) => page.key === "profit-simulator-498") ?? -1;
   const simulatorPage = simulatorIndex >= 0 ? requirement498.pages.splice(simulatorIndex, 1)[0] : null;
   if (simulatorPage) {
@@ -1325,6 +1325,62 @@
     }
     window.PROTOTYPE_DATA.requirements.push(requirement498Copy);
     window.PROTOTYPE_DATA.requirements.sort((left, right) => Number(right.id.replace(/\D/g, "")) - Number(left.id.replace(/\D/g, "")));
+  }
+
+  if (requirement498) {
+    const bonusPage = requirement498.pages.find((page) => page.key === "agent-bonuses-498");
+    const financialReportPage = requirement498.pages.find((page) => page.key === "agent-financial-report-498");
+    if (bonusPage) {
+      Object.assign(bonusPage, {
+        id: "P03",
+        menuGroup: "会员管理",
+        role: "代理、团队主线、团队副线",
+        pageType: "existing-change",
+        showPageGoal: false,
+        purpose: "",
+        questions: []
+      });
+      bonusPage.annotations = bonusPage.annotations.filter((annotation) => annotation.id !== "N09");
+    }
+    if (financialReportPage) {
+      Object.assign(financialReportPage, {
+        id: "P02",
+        menuGroup: "财务中心",
+        role: "团队主线",
+        tabs: ["个人财务", "团队财务"],
+        defaultTab: "团队财务",
+        pageType: "existing-change",
+        questions: [],
+        annotations: [
+          { id: "N02", name: "财务报表视图", type: "三级Tab", summary: "在生产财务报表内增加团队财务。", rules: ["【个人财务】保持生产一致；新增三级Tab【团队财务】", "团队财务仅向具备团队数据权限的团队主线展示"] },
+          { id: "F01", tab: "团队财务", name: "团队财务筛选", type: "组合筛选", summary: "按团队副线和统计月份查询。", rules: ["代理账号/编号支持联想匹配", "可查询最近三个自然月；完整月净输赢使用已结算数据"] },
+          { id: "T01", tab: "团队财务", name: "团队财务表", type: "数据表格", summary: "团队主线查看团队总数据及各副线贡献。", rules: ["团队总数据包含主线本人及全部有效副线的归属业务", "每笔业务按发生时的直属代理归属统计一次，不重复汇总", "默认每页20条"] },
+          { id: "B01", tab: "团队财务", name: "导出团队财务", type: "导出操作", summary: "导出当前统计结果。", rules: ["导出全部筛选结果，不受分页限制", "导出内容包含团队总计"] }
+        ]
+      });
+    }
+    const financeManagementPage = agent498Page({
+      id: "P01",
+      key: "agent-finance-management-1073",
+      name: "财务管理",
+      menuGroup: "财务中心",
+      role: "代理、团队主线、团队副线",
+      pageType: "existing-change",
+      questions: [],
+      annotations: [
+        { id: "N01", name: "菜单调整", type: "菜单与页面范围", summary: "在生产代理后台现有菜单中承载本次改造。", rules: ["财务中心保留生产【财务管理】并改造提现账户与内部转账能力", "财务中心 → 财务报表增加三级Tab【团队财务】", "会员管理增加【红利记录】"] },
+        { id: "P01", name: "提现账户管理", type: "账户类型切换", summary: "在生产USDT账户基础上增加三类提现账户。", rules: ["支持USDT、支付宝、EBPay、钱能钱包四类账户，通过Tab切换查看和编辑", "每种类型维护一个默认提现账户；编辑时按账户类型展示对应字段", "账户信息保存后供代理提款时选择，敏感账号按生产安全策略展示"] },
+        { id: "T01", name: "近期收支明细", type: "数据表格", summary: "补充内部转账的收款方识别信息。", rules: ["内部转账记录在列表直接展示转入账号和账号名", "非内部转账无转入账户时显示“—”", "列表按发生时间倒序，默认每页20条"] },
+        { id: "M01", name: "收支详情", type: "详情弹窗", summary: "查看单笔收支的完整资金流信息。", rules: ["内部转账详情展示转账方向、转入账号、账号名、代理编号、所属站点、转账前后余额及备注", "金额、账户和关联对象均读取交易成功时的业务快照"] },
+        { id: "M02", name: "内部转账", type: "资金操作弹窗", summary: "在生产内部转账基础上支持团队主线向副线代理转账。", rules: ["保留生产向会员转账能力；代理类型目标仅允许团队主线选择当前有效团队关系内的副线代理", "团队副线及其他代理不可向代理账户转账", "提交时校验同站点、有效团队关系、目标代理状态和可用余额", "转账成功即时到账，不需要副线确认且不可撤销", "代理转代理不设置会员提款流水倍数；同一业务单号必须幂等"] }
+      ]
+    });
+    financeManagementPage.annotations = financeManagementPage.annotations.filter((annotation) => annotation.id !== "N09");
+    Object.assign(requirement498, {
+      annotationEditing: true,
+      defaultPageKey: "agent-finance-management-1073",
+      pages: [financeManagementPage, financialReportPage, bonusPage].filter(Boolean)
+    });
   }
 
   window.PROTOTYPE_DATA.localTools = window.PROTOTYPE_DATA.localTools || [];
@@ -1930,6 +1986,67 @@ VIP等级: {{VIP等级}}
   if (requirement643) requirement643.updatedAt = "2026-09-14 18:42";
   const requirement784 = window.PROTOTYPE_DATA.requirements.find((requirement) => requirement.id === "#784");
   if (requirement784) requirement784.updatedAt = "2026-09-24 23:37";
+})();
+
+(function registerSiteRbac1025() {
+  window.PROTOTYPE_DATA.requirements.push({
+    id: "#1025",
+    title: "站点可配置新增角色",
+    summary: "站点最高权限账号在系统管理的角色管理中创建自定义角色，并配置本站点业务页面和操作权限。",
+    owner: "Mike",
+    status: "进行中",
+    priority: "P1",
+    startDate: "2026-09-26",
+    completionDate: "-",
+    updatedAt: "2026-09-26 10:20",
+    annotationEditing: true,
+    moduleName: "系统管理",
+    workspaceName: "站点后台",
+    roleName: "站点最高权限账号",
+    defaultPageKey: "site-rbac-role-1025",
+    pages: [{
+      id: "P01",
+      key: "site-rbac-role-1025",
+      name: "角色管理",
+      menuGroup: "系统管理",
+      portal: "站点",
+      role: "站点最高权限账号",
+      pageType: "new",
+      purpose: "",
+      annotations: [
+        { id: "N01", name: "菜单与使用权限", type: "导航与权限", summary: "在系统管理中新增角色管理能力。", rules: [
+          "【角色管理】位于站点后台【系统管理】菜单下，仅站点最高权限账号可以进入、创建和维护角色。",
+          "系统管理及其下级页面不进入角色授权树，不能授权给任何自定义角色；普通账号直接访问页面或接口也必须被拒绝。",
+          "可授权业务范围以站点后台 RBAC 权限树为准，共 25 个业务页面；角色只能访问当前站点数据。"
+        ] },
+        { id: "F01", name: "角色筛选", type: "组合筛选", summary: "按角色名称和状态查询当前站点角色。", rules: [
+          "角色名称支持模糊匹配，查询前去除首尾空格。",
+          "角色状态包含【全部】【启用】【停用】；点击查询后生效，重置恢复默认条件。"
+        ] },
+        { id: "T01", name: "角色列表", type: "数据表格", summary: "展示当前站点已创建的角色和使用情况。", rules: [
+          "字段为序号、角色名称、角色说明、状态、关联账号、更新时间、操作；列表与汇总不拆分权限，统一使用【查看列表】。",
+          "站点主账号为系统内置角色，不允许编辑、停用、删除或复制；自定义角色可编辑权限并启用或停用。",
+          "停用角色后，关联账号立即失去该角色权限，角色配置和历史授权记录保留。"
+        ] },
+        { id: "B01", name: "新增角色", type: "页面操作", summary: "创建一个新的站点自定义角色。", rules: [
+          "角色名称必填，最多30个字符；角色说明非必填，最多60个字符。",
+          "新增角色默认不勾选任何业务权限，保存前必须完成权限配置。角色数据范围默认固定为当前站点。"
+        ] },
+        { id: "M01", name: "新增/编辑角色", type: "表单弹窗", summary: "维护角色基础信息、数据范围和业务权限。", rules: [
+          "权限树按会员管理、运营数据看板、财务管理、运营报表、代理模块、合营配置、活动管理分组。",
+          "页面权限统一显示为【查看列表】；页面操作权限单独勾选。未勾选【查看列表】时，该页面的其他操作不可选；取消查看时同步清空该页面操作权限。",
+          "数据范围与功能权限分开配置；站点角色只能访问当前站点，招商人员等受限账号可配置指定代理范围，但不得扩大到其他站点。",
+          "系统管理及其下级页面在弹窗内以不可授权状态展示，不提供复选框。",
+          "保存时校验角色名称必填和同站点唯一；取消或关闭不保存修改。"
+        ] },
+        { id: "B02", name: "停用/启用角色", type: "二次确认", summary: "控制自定义角色是否继续生效。", rules: [
+          "停用前弹窗说明会立即影响关联账号；确认后角色状态变为停用，重新启用后恢复原权限。",
+          "系统内置站点主账号不提供停用入口。"
+        ] }
+      ]
+    }]
+  });
+  window.PROTOTYPE_DATA.requirements.sort((a, b) => Number(b.id.replace(/\D/g, "")) - Number(a.id.replace(/\D/g, "")));
 })();
 
 (function registerCommission911() {

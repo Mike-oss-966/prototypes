@@ -1,6 +1,6 @@
 window.PROTOTYPE_COMPARISONS_498 = {
   "version": 2,
-  "requirementId": "#981",
+  "requirementId": "#1073",
   "finalizedAt": "2026-09-23 18:15:35",
   "scopes": {
     "agent-members-498::会员管理": {
@@ -203,4 +203,9 @@ window.PROTOTYPE_COMPARISONS_498 = {
       "screenshot": null
     }
   }
+};
+
+window.PROTOTYPE_COMPARISONS_498.scopes = {
+  "agent-bonuses-498": window.PROTOTYPE_COMPARISONS_498.scopes["agent-bonuses-498"],
+  "agent-financial-report-498::团队财务": window.PROTOTYPE_COMPARISONS_498.scopes["agent-financial-report-498::团队财务"]
 };

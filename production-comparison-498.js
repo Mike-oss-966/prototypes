@@ -221,7 +221,7 @@
   }
 
   function mount({ requirement, page, tabName = "", modal }) {
-    if (requirement.id !== "#981") return;
+    if (requirement.id !== "#1073") return;
     const trigger = document.querySelector("[data-production-comparison-498]");
     if (!trigger || trigger.dataset.bound) return;
     trigger.dataset.bound = "true";
