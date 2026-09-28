@@ -60,7 +60,7 @@
         brand: venue.code === "QUICKGAME" ? venue.providers[gameIndex % venue.providers.length] : venue.name.replace(/真人|电子|体育|棋牌|捕鱼|彩票/g, ""),
         hot: gameIndex < 2,
         hotSort: gameIndex < 2 ? 100 - gameIndex : 0,
-        globalStatus: gameIndex === 4 && venueIndex % 3 === 0 ? "maintenance_show" : "enabled",
+        globalStatus: gameIndex === 1 && venue.name === "PP电子" ? "maintenance_show" : gameIndex === 4 && venueIndex % 3 === 0 ? "maintenance_show" : "enabled",
         createdBy: "admin",
         createdAt: `2026-09-${pad(Math.max(1, 23 - (venueIndex % 18)))} 10:${pad(gameIndex % 60)}:00`,
         updatedBy: "admin",
@@ -97,9 +97,9 @@
   seedRates();
 
   let logs = [
-    { id: "ML202609240018", targetType: "场馆", venue: "QuickGame电子", game: "-", wallet: "-", range: "2026-09-24 02:00:00 至 2026-09-24 05:00:00", action: "设置维护", display: "维护展示", operator: "admin", operatedAt: "2026-09-23 19:26:10", reason: "上游线路例行维护", scope: "总站" },
-    { id: "ML202609240019", targetType: "游戏", venue: "PG电子", game: "麻将胡了", wallet: "-", range: "2026-09-24 09:00:00 至 2026-09-24 12:00:00", action: "设置维护", display: "维护不展示", operator: "site_xy_ops", operatedAt: "2026-09-24 08:55:32", reason: "游戏接口异常", scope: "XY体育" },
-    { id: "ML202609240020", targetType: "游戏", venue: "PG电子", game: "麻将胡了", wallet: "-", range: "2026-09-24 09:00:00 至 2026-09-24 12:00:00", action: "设置开启", display: "-", operator: "site_xy_ops", operatedAt: "2026-09-24 11:42:06", reason: "上游服务已恢复", scope: "XY体育" }
+    { id: "ML202609240018", targetType: "场馆", venue: "QuickGame电子", game: "-", wallet: "-", range: "2026-09-24 02:00:00 至 2026-09-24 05:00:00", action: "维护展示", display: "维护展示", operator: "admin", operatedAt: "2026-09-23 19:26:10", reason: "上游线路例行维护", scope: "总站" },
+    { id: "ML202609240019", targetType: "游戏", venue: "PG电子", game: "麻将胡了", wallet: "-", range: "2026-09-24 09:00:00 至 2026-09-24 12:00:00", action: "维护不展示", display: "维护不展示", operator: "site_xy_ops", operatedAt: "2026-09-24 08:55:32", reason: "游戏接口异常", scope: "XY体育" },
+    { id: "ML202609240020", targetType: "游戏", venue: "PG电子", game: "麻将胡了", wallet: "-", range: "2026-09-24 09:00:00 至 2026-09-24 12:00:00", action: "开启", display: "-", operator: "site_xy_ops", operatedAt: "2026-09-24 11:42:06", reason: "上游服务已恢复", scope: "XY体育" }
   ];
 
   const initialFilters = () => ({ name: "", type: "", status: "", venue: "", platform: "", code: "", brand: "", remark: "", wallet: "", game: "" });
@@ -109,7 +109,8 @@
     menuOpen: true,
     page: { control: { 场馆列表: 1, 游戏列表: 1, 钱包列表: 1, 维护日志: 1 }, site: { 场馆列表: 1, 游戏列表: 1, 钱包列表: 1, 维护日志: 1 } },
     size: 10,
-    oldTab: "线路管理",
+    oldTab: "游戏列表",
+    memberGameTab: "全部",
     filters: { control: Object.fromEntries(["场馆列表", "游戏列表", "钱包列表", "维护日志"].map((tab) => [tab, initialFilters()])), site: Object.fromEntries(["场馆列表", "游戏列表", "钱包列表", "维护日志"].map((tab) => [tab, initialFilters()])) }
   };
   let helpers = {};
@@ -132,7 +133,7 @@
   function effectiveStatus(row, portal) {
     if (portal !== "site") return { value: row.globalStatus, source: "" };
     if (row.globalStatus !== "enabled") return { value: row.globalStatus, source: "总站" };
-    return { value: row.siteStatuses[currentSite()] || "enabled", source: "本站" };
+    return { value: row.siteStatuses[currentSite()] || "enabled", source: "只对本站生效" };
   }
   function effectiveGameStatus(game, portal) {
     if (portal !== "site") return { value: game.globalStatus, source: "" };
@@ -140,10 +141,10 @@
     if (game.globalStatus !== "enabled") return { value: game.globalStatus, source: "总站游戏" };
     if (venue?.globalStatus !== "enabled") return { value: venue.globalStatus, source: "总站场馆" };
     const gameSiteStatus = game.siteStatuses[currentSite()] || "enabled";
-    if (gameSiteStatus !== "enabled") return { value: gameSiteStatus, source: "本站游戏" };
+    if (gameSiteStatus !== "enabled") return { value: gameSiteStatus, source: "只对本站生效" };
     const venueSiteStatus = venue?.siteStatuses[currentSite()] || "enabled";
     if (venueSiteStatus !== "enabled") return { value: venueSiteStatus, source: "本站场馆" };
-    return { value: "enabled", source: "本站" };
+    return { value: "enabled", source: "只对本站生效" };
   }
   function isAuthorized(venue, site) { return venue.authorizedSites.includes(site); }
   function configured(venue, site) { return subjectCodes(venue).every((provider) => (rateConfigs.get(`${site}|${venue.code}|${provider}`) || []).length); }
@@ -155,14 +156,15 @@
   }
   function badge(id) { return helpers.badge?.(id) || `<span class="component-badge">${id}</span>`; }
   function annotate(id, className = "") { return `class="annotated ${className}" data-component-id="${id}"`; }
-  function actionButton(label, action, code, extra = "") { return `<button type="button" class="venue599-link" data-venue599-action="${action}" data-code="${escape(code)}" ${extra}>${label}</button>`; }
+  function actionButton(label, action, code, extra = "", className = "") { return `<button type="button" class="venue599-link${className ? ` ${className}` : ""}" data-venue599-action="${action}" data-code="${escape(code)}" ${extra}>${label}</button>`; }
 
   function sidebar(page) {
     const site = page.portal === "站点";
     const oldActive = page.key === "control-game-management-old-599";
+    const unchangedItem = (name) => `<span class="venue599-menu-item is-unchanged" aria-disabled="true"><span>${escape(name)}</span></span>`;
     const menuItems = site
       ? `<a href="#requirement/%23599/page/site-venue-management-599" class="venue599-menu-item active annotated" data-component-id="N11">${badge("N11")}<span>场馆管理</span><em class="menu-change-badge is-new">新增</em></a>`
-      : `<a href="#requirement/%23599/page/control-game-management-old-599" class="venue599-menu-item ${oldActive ? "active" : ""}"><span>游戏管理(旧)</span><em class="menu-change-badge">修改</em></a><a href="#requirement/%23599/page/control-venue-management-599" class="venue599-menu-item ${oldActive ? "" : "active"} annotated" data-component-id="N01">${badge("N01")}<span>场馆管理</span><em class="menu-change-badge is-new">新增</em></a>`;
+      : `${unchangedItem("站内信")}<a href="#requirement/%23599/page/control-venue-management-599" class="venue599-menu-item ${oldActive ? "" : "active"} annotated" data-component-id="N01">${badge("N01")}<span>场馆管理</span><em class="menu-change-badge is-new">新增</em></a><a href="#requirement/%23599/page/control-game-management-old-599" class="venue599-menu-item ${oldActive ? "active" : ""}"><span>游戏管理(旧)</span><em class="menu-change-badge">修改</em></a>${["前端皮肤", "App版本管理", "短信通道管理", "区号配置", "短信发送记录", "二要素验证通道"].map(unchangedItem).join("")}`;
     return `<aside class="risk-sidebar venue599-sidebar"><div class="venue599-brand"><span>${site ? "S" : "C"}</span><div><strong>${site ? "站点" : "总控"}后台管理系统</strong><small>${site ? currentSite() : "运营管理中心"}</small></div></div><nav><section><button type="button" class="venue599-menu-parent" data-venue599-menu-toggle aria-expanded="${state.menuOpen}"><i aria-hidden="true"></i><span>资源管理</span><b class="${state.menuOpen ? "open" : ""}"></b></button><div class="venue599-menu-children"${state.menuOpen ? "" : " hidden"}>${menuItems}</div></section></nav><div class="risk-user"><span>MK</span><div><strong>Mike</strong><small>${site ? "站点管理员" : "总控管理员"}</small></div></div></aside>`;
   }
 
@@ -208,6 +210,15 @@
     const f = state.filters[portal]["维护日志"];
     return logs.filter((item) => portal === "control" || [currentSite(), "总站"].includes(item.scope)).filter((item) => matchesText(item.venue, f.venue) && matchesText(item.game, f.game) && matchesText(item.wallet, f.wallet));
   }
+  function lockedWalletForVenue(venue) {
+    return wallets.find((wallet) => wallet.status === "locked" && wallet.venueCodes.includes(venue.code));
+  }
+  function maintainedVenuesForWallet(wallet) {
+    return wallet.venueCodes.map(venueByCode).filter((venue) => venue && venue.globalStatus !== "enabled");
+  }
+  function linkedStateName(name, warning) {
+    return `<div class="venue599-linked-name${warning ? " is-warning" : ""}"><strong>${escape(name)}</strong>${warning ? `<span>${escape(warning)}</span>` : ""}</div>`;
+  }
   function pager(rows, portal, tab) {
     const totalPages = Math.max(1, Math.ceil(rows.length / state.size));
     state.page[portal][tab] = Math.min(state.page[portal][tab], totalPages);
@@ -230,13 +241,17 @@
       : "";
     const body = result.rows.map((venue, index) => {
       const effective = effectiveStatus(venue, portal);
+      const walletLocked = Boolean(lockedWalletForVenue(venue));
       const gameCount = games.filter((game) => game.venueCode === venue.code).length;
       const controlActions = `${actionButton("详情", "venue-detail", venue.code)}${actionButton("编辑", "edit-venue", venue.code)}${actionButton("费率设置", "rate", venue.code)}${actionButton("授权管理", "authorize", venue.code)}`;
       const configuredSiteCount = venue.authorizedSites.filter((site) => configured(venue, site)).length;
-      return `<tr><td>${(result.page - 1) * state.size + index + 1}</td><td><strong>${escape(venue.name)}</strong></td><td><span class="venue599-code">${escape(venue.code)}</span></td><td>${escape(venue.cnName)}</td><td>${escape(venue.type)}</td><td>${portal === "control" ? `<button type="button" class="venue599-rate-cell" data-venue599-action="rate" data-code="${escape(venue.code)}">${configuredSiteCount ? `${configuredSiteCount}个站点已配置` : "未配置"}</button>` : rateSummary(venue, currentSite())}</td><td>${escape(venue.updatedAt)}</td><td><button type="button" class="venue599-count-link" data-venue599-action="games" data-code="${escape(venue.code)}">${gameCount}</button></td>${portal === "control" ? `<td>${venue.authorizedSites.length}</td>` : ""}<td>${statusControl("场馆", venue, portal, effective)}</td><td>${escape(venue.remark || "-")}</td>${portal === "control" ? `<td class="venue599-actions">${controlActions}</td>` : ""}</tr>`;
+      const rateCell = portal === "control"
+        ? `<button type="button" class="venue599-rate-cell" data-venue599-action="rate" data-code="${escape(venue.code)}">${configuredSiteCount ? `${configuredSiteCount}个站点已配置` : "未配置"}</button>`
+        : `<button type="button" class="venue599-rate-cell" data-venue599-action="view-rate" data-code="${escape(venue.code)}">${rateSummary(venue, currentSite())}</button>`;
+      return `<tr><td>${(result.page - 1) * state.size + index + 1}</td><td>${linkedStateName(venue.name, walletLocked ? "钱包已锁定" : "")}</td><td><span class="venue599-code">${escape(venue.code)}</span></td><td>${escape(venue.cnName)}</td><td>${escape(venue.type)}</td><td>${rateCell}</td>${portal === "control" ? `<td>${escape(venue.updatedAt)}</td>` : ""}<td><button type="button" class="venue599-count-link" data-venue599-action="games" data-code="${escape(venue.code)}">${gameCount}</button></td>${portal === "control" ? `<td>${venue.authorizedSites.length}</td>` : ""}<td>${statusControl("场馆", venue, portal, effective)}</td>${portal === "control" ? `<td>${escape(venue.remark || "-")}</td><td class="venue599-actions">${controlActions}</td>` : ""}</tr>`;
     }).join("");
-    const headers = `<tr><th>序号</th><th>场馆名称</th><th>场馆CODE</th><th>场馆中文名称</th><th>场馆类型</th><th>场馆费率</th><th>最后更新时间</th><th>游戏数</th>${portal === "control" ? "<th>授权数</th>" : ""}<th>场馆状态</th><th>备注</th>${portal === "control" ? '<th class="venue599-sticky-action">操作</th>' : ""}</tr>`;
-    const table = `<table class="risk-table venue599-table venue599-venue-table"><thead>${headers}</thead><tbody>${body || `<tr><td colspan="${portal === "control" ? 12 : 10}" class="venue599-empty">暂无符合条件的数据</td></tr>`}</tbody></table>`;
+    const headers = `<tr><th>序号</th><th>场馆名称</th><th>场馆CODE</th><th>场馆中文名称</th><th>场馆类型</th><th>场馆费率</th>${portal === "control" ? "<th>最后更新时间</th>" : ""}<th>游戏数</th>${portal === "control" ? "<th>授权数</th>" : ""}<th>场馆状态</th>${portal === "control" ? '<th>备注</th><th class="venue599-sticky-action">操作</th>' : ""}</tr>`;
+    const table = `<table class="risk-table venue599-table venue599-venue-table"><thead>${headers}</thead><tbody>${body || `<tr><td colspan="${portal === "control" ? 12 : 8}" class="venue599-empty">暂无符合条件的数据</td></tr>`}</tbody></table>`;
     return tablePanel(id, toolbar, table, rows.length, portal, "场馆列表", result.page, result.totalPages);
   }
 
@@ -248,10 +263,10 @@
     const body = result.rows.map((game, index) => {
       const effective = effectiveGameStatus(game, portal);
       const actions = `${actionButton("编辑", "edit-game", game.code)}${actionButton("授权管理", "authorize-game", game.code)}`;
-      return `<tr><td>${(result.page - 1) * state.size + index + 1}</td><td><strong>${escape(game.name)}</strong></td><td>${escape(game.venueName)}</td><td>${escape(game.type)}</td><td><span class="venue599-code">${escape(game.code)}</span></td><td>${game.platforms.map((item) => `<span class="venue599-platform">${item}</span>`).join("")}</td><td>${game.sort}</td>${portal === "control" ? `<td><span class="venue599-image">WEB</span></td><td><span class="venue599-image">H5 / APP</span></td><td>${game.authSites.length}</td>` : ""}<td>${statusControl("游戏", game, portal, effective)}</td>${portal === "control" ? `<td>${escape(game.brand || "-")}</td><td>${escape(game.createdBy)}<small>${escape(game.createdAt)}</small></td><td>${escape(game.updatedBy)}<small>${escape(game.updatedAt)}</small></td><td class="venue599-actions">${actions}</td>` : ""}</tr>`;
+      return `<tr><td>${(result.page - 1) * state.size + index + 1}</td><td><strong>${escape(game.name)}</strong></td><td>${escape(game.venueName)}</td><td>${escape(game.type)}</td><td><span class="venue599-code">${escape(game.code)}</span></td><td>${game.platforms.map((item) => `<span class="venue599-platform">${item}</span>`).join("")}</td><td>${game.sort}</td>${portal === "control" ? `<td><span class="venue599-image-thumb" role="img" aria-label="WEB游戏图片"><i aria-hidden="true"></i></span></td><td><span class="venue599-image-thumb is-mobile" role="img" aria-label="移动端游戏图片"><i aria-hidden="true"></i></span></td><td>${game.authSites.length}</td>` : ""}<td>${statusControl("游戏", game, portal, effective)}</td>${portal === "control" ? `<td>${escape(game.brand || "-")}</td><td>${escape(game.createdBy)}<small>${escape(game.createdAt)}</small></td><td>${escape(game.updatedBy)}<small>${escape(game.updatedAt)}</small></td><td class="venue599-actions">${actions}</td>` : ""}</tr>`;
     }).join("");
     const headers = portal === "control"
-      ? "<tr><th>序号</th><th>游戏名称</th><th>游戏场馆</th><th>场馆类型</th><th>游戏CODE</th><th>支持平台</th><th>排序</th><th>WEB游戏图片</th><th>H5游戏图片</th><th>授权数</th><th>游戏状态</th><th>品牌</th><th>创建人 / 时间</th><th>最后编辑人 / 时间</th><th class=\"venue599-sticky-action\">操作</th></tr>"
+      ? "<tr><th>序号</th><th>游戏名称</th><th>游戏场馆</th><th>场馆类型</th><th>游戏CODE</th><th>支持平台</th><th>排序</th><th>WEB游戏图片</th><th>移动端游戏图片</th><th>授权数</th><th>游戏状态</th><th>品牌</th><th>创建人 / 时间</th><th>最后编辑人 / 时间</th><th class=\"venue599-sticky-action\">操作</th></tr>"
       : "<tr><th>序号</th><th>游戏名称</th><th>游戏场馆</th><th>场馆类型</th><th>游戏CODE</th><th>支持平台</th><th>排序</th><th>游戏状态</th></tr>";
     const table = `<table class="risk-table venue599-table venue599-game-table"><thead>${headers}</thead><tbody>${body || `<tr><td colspan="${portal === "control" ? 15 : 8}" class="venue599-empty">暂无符合条件的数据</td></tr>`}</tbody></table>`;
     return tablePanel(id, toolbar, table, rows.length, portal, "游戏列表", result.page, result.totalPages);
@@ -264,8 +279,9 @@
     const toolbar = portal === "control" ? `<div class="venue599-toolbar"><button type="button" class="main-action annotated" data-component-id="B08" data-venue599-action="add-wallet">${badge("B08")}新增钱包</button></div>` : "";
     const body = result.rows.map((wallet, index) => {
       const venueNames = wallet.venueCodes.map((code) => venues.find((venue) => venue.code === code)?.name || code);
-      const actions = portal === "control" ? `${actionButton("编辑", "edit-wallet", wallet.code)}${actionButton(wallet.status === "normal" ? "锁定钱包" : "解锁钱包", "wallet-status", wallet.code)}${actionButton("删除记录", "delete-wallet", wallet.code)}` : "-";
-      return `<tr><td>${(result.page - 1) * state.size + index + 1}</td><td><strong>${escape(wallet.name)}</strong></td><td><span class="venue599-code">${escape(wallet.code)}</span></td><td>${venueNames.map((name) => `<span class="venue599-venue-chip">${escape(name)}</span>`).join("")}</td><td>${new Set(wallet.venueCodes.flatMap((code) => venues.find((venue) => venue.code === code)?.authorizedSites || [])).size}</td><td><span class="venue599-status ${wallet.status === "normal" ? "is-enabled" : "is-hidden"}">${wallet.status === "normal" ? "正常" : "锁定"}</span></td><td class="venue599-actions">${actions}</td></tr>`;
+      const venueMaintained = maintainedVenuesForWallet(wallet).length > 0;
+      const actions = portal === "control" ? `${actionButton("编辑", "edit-wallet", wallet.code)}${actionButton(wallet.status === "normal" ? "锁定钱包" : "解锁钱包", "wallet-status", wallet.code, "", wallet.status === "locked" ? "is-danger" : "")}${actionButton("删除记录", "delete-wallet", wallet.code)}` : "-";
+      return `<tr><td>${(result.page - 1) * state.size + index + 1}</td><td>${linkedStateName(wallet.name, venueMaintained ? "场馆已维护" : "")}</td><td><span class="venue599-code">${escape(wallet.code)}</span></td><td>${venueNames.map((name) => `<span class="venue599-venue-chip">${escape(name)}</span>`).join("")}</td><td>${new Set(wallet.venueCodes.flatMap((code) => venues.find((venue) => venue.code === code)?.authorizedSites || [])).size}</td><td><span class="venue599-status ${wallet.status === "normal" ? "is-enabled" : "is-hidden"}">${wallet.status === "normal" ? "正常" : "锁定"}</span></td><td class="venue599-actions">${actions}</td></tr>`;
     }).join("");
     const table = `<table class="risk-table venue599-table"><thead><tr><th>序号</th><th>钱包名称</th><th>钱包CODE</th><th>关联场馆</th><th>授权数</th><th>钱包状态</th><th class="venue599-sticky-action">操作</th></tr></thead><tbody>${body || '<tr><td colspan="7" class="venue599-empty">暂无符合条件的数据</td></tr>'}</tbody></table>`;
     return tablePanel(id, toolbar, table, rows.length, portal, "钱包列表", result.page, result.totalPages);
@@ -275,16 +291,85 @@
     const rows = filteredLogs(portal);
     const result = pager(rows, portal, "维护日志");
     const id = portal === "control" ? "T04" : "T14";
-    const body = result.rows.map((row, index) => `<tr><td>${(result.page - 1) * state.size + index + 1}</td><td>${escape(row.venue)}</td><td>${escape(row.game)}</td><td>${escape(row.wallet)}</td><td>${escape(row.range)}</td><td><span class="venue599-log-action">${escape(row.action)}</span></td><td>${escape(row.operator)}</td><td>${escape(row.operatedAt)}</td><td>${escape(row.reason)}</td>${portal === "control" ? `<td>${escape(row.scope)}</td>` : ""}</tr>`).join("");
+    const body = result.rows.map((row, index) => {
+      const operationClass = row.action === "开启" ? "is-enabled" : row.action === "维护展示" ? "is-warning" : "is-hidden";
+      return `<tr><td>${(result.page - 1) * state.size + index + 1}</td><td>${escape(row.venue)}</td><td>${escape(row.game)}</td><td>${escape(row.wallet)}</td><td>${escape(row.range)}</td><td><span class="venue599-status ${operationClass}">${escape(row.action)}</span></td><td>${escape(row.operator)}</td><td>${escape(row.operatedAt)}</td><td>${escape(row.reason)}</td>${portal === "control" ? `<td>${escape(row.scope)}</td>` : ""}</tr>`;
+    }).join("");
     const table = `<table class="risk-table venue599-table"><thead><tr><th>序号</th><th>维护场馆</th><th>维护游戏</th><th>维护钱包</th><th>维护时间</th><th>操作</th><th>操作人</th><th>操作时间</th><th>维护原因</th>${portal === "control" ? "<th>操作范围</th>" : ""}</tr></thead><tbody>${body || `<tr><td colspan="${portal === "control" ? 10 : 9}" class="venue599-empty">暂无符合条件的数据</td></tr>`}</tbody></table>`;
     return tablePanel(id, "", table, rows.length, portal, "维护日志", result.page, result.totalPages);
   }
 
   function oldPage() {
-    const items = ["线路管理", "游戏厂商管理", "游戏管理", "游戏分组", "自动下架日志", "三方场馆设置"];
+    const items = ["游戏列表", "三方游戏币种配置", "游戏线路管理", "游戏厂商管理", "游戏管理", "游戏分组管理", "游戏自动下架日志", "三方场馆设置"];
+    if (!items.includes(state.oldTab)) state.oldTab = items[0];
     return `<section class="venue599-old-page" data-venue599-root><header><span>生产功能归档</span><h2>游戏管理(旧)</h2></header><nav class="venue599-old-tabs" aria-label="游戏管理旧功能">${items.map((item) => `<button type="button" class="${state.oldTab === item ? "active" : ""}" data-venue599-old-tab="${escape(item)}">${escape(item)}</button>`).join("")}</nav><div class="venue599-old-content"><strong>${escape(state.oldTab)}</strong><span>页面字段、权限、数据和交互与生产一致，本需求不修改。</span></div></section>`;
   }
+  const memberPages = [
+    ["member-venue-list-599", "场馆列表"],
+    ["member-game-list-599", "游戏列表"],
+    ["member-transfer-599", "转账"],
+    ["member-withdraw-599", "提现"]
+  ];
+  const maintenanceTime = "2026-09-28 02:00 ~ 2026-09-28 05:00";
+  const memberWalletNames = ["PG电子", "PP电子", "v8棋牌", "MG电子", "JDB电子", "DG视讯", "AG真人", "KY体育", "旺财电竞", "DB体育", "天成彩票", "DP棋牌", "PM捕鱼", "旺财电子", "旺财捕鱼", "旺财棋牌", "旺财彩票", "旺财电子", "旺财体育", "QuickGame"];
+
+  function memberPrototypeNav(page) {
+    return `<nav class="member-mobile-prototype-nav venue599-member-nav" aria-label="会员端原型页面切换"><span>会员端页面</span><div>${memberPages.map(([key, name]) => `<a class="${page.key === key ? "active" : ""}" href="#requirement/%23599/page/${key}">${name}</a>`).join("")}</div><small>原型评审导航，不属于生产功能</small></nav>`;
+  }
+  function memberHeader(title) {
+    return `<div class="venue599-member-status"><strong>18:30</strong><span>● ● ●　87%</span></div><header class="venue599-member-header"><button type="button" aria-label="返回">‹</button><strong>${escape(title)}</strong><button type="button" aria-label="搜索" class="venue599-member-search"></button></header>`;
+  }
+  function maintenanceCover(compact = false) {
+    const time = compact ? `<span>2026-09-28</span><span>02:00 ~ 05:00</span>` : `<span>${maintenanceTime}</span>`;
+    return `<div class="venue599-maintenance-cover${compact ? " is-compact" : ""}"><strong>维护中</strong>${time}</div>`;
+  }
+  function memberVenuePage() {
+    const categories = [["热", "热门"], ["哈", "哈希"], ["体", "体育"], ["真", "真人"], ["棋", "棋牌"], ["竞", "电竞"], ["彩", "彩票"], ["电", "电子"], ["鱼", "捕鱼"]];
+    const cards = [
+      ["venue-saba.png", "沙巴体育", false],
+      ["venue-ky.png", "KY体育", true],
+      ["venue-wc.png", "旺财体育", false],
+      ["venue-dog.png", "狗蛋体育", false]
+    ];
+    return `<section ${annotate("M01", "venue599-member-screen venue599-member-venue-screen")}>${badge("M01")}${memberHeader("体育场馆")}<div class="venue599-member-venue-body"><nav class="venue599-member-categories">${categories.map(([icon, name]) => `<button type="button" class="${name === "体育" ? "active" : ""}"><i>${icon}</i><span>${name}</span></button>`).join("")}</nav><div class="venue599-member-venue-list">${cards.map(([asset, name, maintained]) => `<article class="venue599-member-venue-card${maintained ? " is-maintenance" : ""}"><img src="./assets/599/${asset}" alt="${escape(name)}" />${maintained ? maintenanceCover() : ""}</article>`).join("")}</div></div></section>`;
+  }
+  function memberGamePage() {
+    const venue = venues.find((item) => item.name === "PP电子") || venues.find((item) => item.type === "电子") || venues[0];
+    const visibleGames = games.filter((game) => game.venueCode === venue.code && game.globalStatus !== "maintenance_hide");
+    const hotGames = visibleGames.filter((game) => game.hot).sort((a, b) => b.hotSort - a.hotSort || b.createdAt.localeCompare(a.createdAt));
+    const latestGames = [...visibleGames].sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.code.localeCompare(a.code)).slice(0, 10);
+    const groups = { 全部: visibleGames, 热门: hotGames, 最新: latestGames, 收藏: [] };
+    const assets = ["game-sweet-bonanza.png", "game-sugar-rush.png", "game-olympus.png", "game-starlight.png", "game-sweet-bonanza-cn.png", "game-santa.png"];
+    const selected = groups[state.memberGameTab] || visibleGames;
+    const cards = selected.slice(0, state.memberGameTab === "全部" ? 12 : 10);
+    const counts = { 全部: visibleGames.length, 热门: hotGames.length, 最新: latestGames.length, 收藏: 0 };
+    const cardHtml = cards.length ? cards.map((game, index) => {
+      const maintained = game.globalStatus === "maintenance_show";
+      return `<article class="${maintained ? "is-maintenance" : ""}"><div><img src="./assets/599/${assets[index % assets.length]}" alt="${escape(game.name)}" />${maintained ? maintenanceCover(true) : ""}</div><footer><span>${escape(game.name)}</span><button type="button" aria-label="收藏${escape(game.name)}">♡</button></footer></article>`;
+    }).join("") : '<div class="venue599-member-game-empty">暂无游戏</div>';
+    return `<section ${annotate("M02", "venue599-member-screen venue599-member-game-screen")}>${badge("M02")}${memberHeader(venue.name)}<nav class="venue599-member-game-tabs">${Object.keys(groups).map((tab) => `<button type="button" class="${state.memberGameTab === tab ? "active" : ""}" data-member-game-tab="${tab}">${tab}(${counts[tab]})</button>`).join("")}</nav><div class="venue599-member-game-grid">${cardHtml}</div></section>`;
+  }
+  function memberWalletGrid() {
+    return `<div class="venue599-member-wallet-grid">${memberWalletNames.map((name) => `<article class="${name === "PP电子" ? "is-maintenance" : ""}"><strong>${escape(name)}</strong><b>¥0.00</b>${name === "PP电子" ? maintenanceCover(true) : ""}</article>`).join("")}</div>`;
+  }
+  function memberTransferPage() {
+    return `<section ${annotate("M03", "venue599-member-screen venue599-member-wallet-screen")}>${badge("M03")}${memberHeader("转账")}<div class="venue599-member-balance"><span>中心钱包余额</span><strong>¥12,680.00</strong><button type="button">一键回收</button></div><div class="venue599-member-switch-row"><span>隐藏无余额场馆</span><button type="button" aria-label="隐藏无余额场馆"></button></div>${memberWalletGrid()}</section>`;
+  }
+  function memberWithdrawPage() {
+    return `<section ${annotate("M04", "venue599-member-screen venue599-member-withdraw-screen")}>${badge("M04")}${memberHeader("提现")}<div class="venue599-member-withdraw-balance"><span>可提现余额</span><strong>¥12,680.00</strong><small>中心钱包 ¥12,680.00</small></div><label class="venue599-member-amount"><span>提现金额</span><input value="1,000.00" readonly /><b>CNY</b></label><h3>选择提现钱包</h3><div class="venue599-member-switch-row"><span>隐藏无余额场馆</span><button type="button" aria-label="隐藏无余额场馆"></button></div>${memberWalletGrid()}<button type="button" class="venue599-member-submit">下一步</button></section>`;
+  }
+  function memberPage(page) {
+    const screens = {
+      "member-venue-list-599": memberVenuePage,
+      "member-game-list-599": memberGamePage,
+      "member-transfer-599": memberTransferPage,
+      "member-withdraw-599": memberWithdrawPage
+    };
+    const screen = (screens[page.key] || memberVenuePage)();
+    return `${memberPrototypeNav(page)}<div class="member-mobile-frame venue599-member-phone" data-venue599-root>${screen}</div>`;
+  }
   function pageBody(page) {
+    if (page.portal === "会员") return memberPage(page);
     if (page.key === "control-game-management-old-599") return oldPage();
     const portal = portalKey(page);
     const content = state.tab === "场馆列表" ? venueTable(portal) : state.tab === "游戏列表" ? gameTable(portal) : state.tab === "钱包列表" ? walletTable(portal) : logTable(portal);
@@ -293,6 +378,7 @@
   function render(page, api) {
     activePage = page;
     helpers = api || {};
+    if (page.portal === "会员") return pageBody(page);
     state.portal = portalKey(page);
     state.tab = page.tabs?.includes(api.activeTab) ? api.activeTab : page.tabs?.[0] || "";
     return pageBody(page);
@@ -325,15 +411,19 @@
     const editing = Boolean(venue);
     const nextId = venues.reduce((max, item) => Math.max(max, item.id), 1000) + 1;
     const immutableFields = editing ? "" : `${field("场馆ID", `<input name="id" value="${nextId}" />`, true)}${field("场馆CODE", '<input name="code" placeholder="全局唯一" />', true)}`;
-    const createOnlyFields = editing ? "" : `${field("场馆类型", `<select name="type">${types.map((type) => `<option>${escape(type)}</option>`).join("")}</select>`, true)}${field("场馆钱包", `<select name="walletCode">${wallets.map((wallet) => `<option value="${escape(wallet.code)}">${escape(wallet.name)}</option>`).join("")}</select>`, true)}${field("备注", '<textarea name="remark" rows="3" placeholder="请输入备注"></textarea>')}`;
-    const body = `<form class="venue599-form" data-venue599-form>${immutableFields}${field("场馆名称", `<input name="name" value="${escape(venue?.name || "")}" />`, true)}${field("场馆中文名称", `<input name="cnName" value="${escape(venue?.cnName || "")}" />`, true)}${createOnlyFields}${field("排序", `<input name="sort" type="number" min="0" value="${venue?.sort ?? 0}" />`, true)}</form><p class="venue599-form-tip">${editing ? "费率和授权关系通过列表中的独立操作维护。" : "新增后默认进入“维护不展示”，配置完整后再设置启用。"}</p>`;
+    const walletField = editing ? "" : field("场馆钱包", `<select name="walletCode">${wallets.map((wallet) => `<option value="${escape(wallet.code)}">${escape(wallet.name)}</option>`).join("")}</select>`, true);
+    const typeField = field("所属场馆类型", `<select name="type">${types.map((type) => `<option${(venue?.type || types[0]) === type ? " selected" : ""}>${escape(type)}</option>`).join("")}</select>`, true);
+    const body = `<form class="venue599-form" data-venue599-form>${immutableFields}${field("场馆名称", `<input name="name" value="${escape(venue?.name || "")}" />`, true)}${field("场馆中文名称", `<input name="cnName" value="${escape(venue?.cnName || "")}" />`, true)}${typeField}${walletField}${field("排序", `<input name="sort" type="number" min="0" value="${venue?.sort ?? 0}" />`, true)}${field("备注", `<textarea name="remark" rows="3" placeholder="请输入备注">${escape(venue?.remark || "")}</textarea>`)}</form><p class="venue599-form-tip">${editing ? "费率和授权关系通过列表中的独立操作维护。" : "新增后默认进入“维护不展示”，配置完整后再设置启用。"}</p>`;
     showModal(editing ? "编辑场馆" : "新增场馆", body, { className: "venue599-form-dialog", onSave(dialog) {
       const form = dialog.querySelector("form");
       const value = Object.fromEntries(new FormData(form));
       const required = editing ? [value.name, value.cnName] : [value.code, value.name, value.cnName, value.type, value.walletCode];
       if (!required.every((item) => String(item || "").trim())) return notify(dialog, "请完整填写所有必填项");
       if (!editing && venues.some((item) => item.code.toUpperCase() === value.code.trim().toUpperCase())) return notify(dialog, "场馆CODE已存在，请重新填写");
-      if (editing) Object.assign(venue, { name: value.name.trim(), cnName: value.cnName.trim(), sort: Number(value.sort), updatedAt: dateTime() });
+      if (editing) {
+        Object.assign(venue, { name: value.name.trim(), cnName: value.cnName.trim(), type: value.type, sort: Number(value.sort), remark: value.remark.trim(), updatedAt: dateTime() });
+        games.filter((game) => game.venueCode === venue.code).forEach((game) => { game.venueName = venue.name; game.type = venue.type; });
+      }
       else venues.unshift({ id: Number(value.id), code: value.code.trim().toUpperCase(), name: value.name.trim(), cnName: value.cnName.trim(), type: value.type, walletCode: value.walletCode, sort: Number(value.sort), remark: value.remark.trim(), updatedAt: dateTime(), globalStatus: "maintenance_hide", authorizedSites: [], authorizedAt: {}, siteStatuses: {}, providers: [], games: [] });
       return true;
     }});
@@ -402,16 +492,11 @@
     }
     return { result };
   }
-  function openRate(venue, site = venue.authorizedSites[0] || SITES[0], authorizeOnSave = false) {
-    const dialog = showModal(authorizeOnSave ? `配置费率并授权 - ${venue.name}` : `场馆费率设置 - ${venue.name}`, `<div ${annotate("B03", "venue599-modal-section")}>${badge("B03")}${rateEditorHtml(venue, site)}</div>`, { className: "venue599-rate-dialog", saveText: authorizeOnSave ? "保存并授权" : "保存费率", onSave(current) {
+  function openRate(venue, site = venue.authorizedSites[0] || SITES[0]) {
+    const dialog = showModal(`场馆费率设置 - ${venue.name}`, `<div ${annotate("B03", "venue599-modal-section")}>${badge("B03")}${rateEditorHtml(venue, site)}</div>`, { className: "venue599-rate-dialog", saveText: "保存费率", onSave(current) {
       const parsed = readRateEditor(current);
       if (parsed.error) return notify(current, parsed.error);
       parsed.result.forEach((ranges, provider) => rateConfigs.set(`${site}|${venue.code}|${provider}`, ranges));
-      if (authorizeOnSave && !venue.authorizedSites.includes(site)) {
-        venue.authorizedSites.push(site);
-        venue.authorizedAt[site] = dateTime();
-        venue.siteStatuses[site] = venue.siteStatuses[site] || "maintenance_hide";
-      }
       venue.updatedAt = dateTime();
       return true;
     }});
@@ -422,13 +507,22 @@
     const feeReady = configured(venue, site);
     const status = venue.siteStatuses[site] || "maintenance_hide";
     const actions = rateOnly
-      ? (authorized ? `<button type="button" data-auth-edit="${escape(site)}">设置费率</button>` : '<span class="venue599-auth-tip">请从授权管理配置</span>')
-      : (authorized ? `<button type="button" data-auth-edit="${escape(site)}">编辑费率</button><button type="button" class="danger" data-auth-cancel="${escape(site)}">取消授权</button>` : `<button type="button" class="primary" data-auth-create="${escape(site)}">配置费率并授权</button>`);
+      ? `<button type="button" data-auth-edit="${escape(site)}">${feeReady ? "编辑费率" : "设置费率"}</button>`
+      : (authorized ? `<button type="button" class="danger" data-auth-cancel="${escape(site)}">取消授权</button>` : `<button type="button" class="primary" data-auth-create="${escape(site)}">授权</button>`);
     return `<tr data-auth-row="${escape(site)}"><td>${escape(site)}</td><td><span class="venue599-code">${SITE_IDS[site]}</span></td><td>${authorized ? statusTag(status) : "-"}</td><td>${feeReady ? '<span class="venue599-status is-enabled">已配置</span>' : '<span class="venue599-status is-hidden">未配置</span>'}</td><td>${authorized ? '<span class="venue599-status is-enabled">已授权</span>' : '<span class="venue599-status is-neutral">未授权</span>'}</td><td>${escape(venue.authorizedAt?.[site] || "-")}</td><td class="venue599-auth-actions">${actions}</td></tr>`;
   }
   function bindSiteDirectory(dialog, venue) {
-    dialog?.querySelectorAll("[data-auth-create]").forEach((button) => button.addEventListener("click", () => { document.getElementById("modal-root").innerHTML = ""; openRate(venue, button.dataset.authCreate, true); }));
-    dialog?.querySelectorAll("[data-auth-edit]").forEach((button) => button.addEventListener("click", () => { document.getElementById("modal-root").innerHTML = ""; openRate(venue, button.dataset.authEdit, false); }));
+    dialog?.querySelectorAll("[data-auth-create]").forEach((button) => button.addEventListener("click", () => {
+      const site = button.dataset.authCreate;
+      if (!configured(venue, site)) { notify(dialog, "请先配置场馆费率后再授权"); return; }
+      venue.authorizedSites.push(site);
+      venue.authorizedAt[site] = dateTime();
+      venue.siteStatuses[site] = venue.siteStatuses[site] || "maintenance_hide";
+      document.getElementById("modal-root").innerHTML = "";
+      openAuthorization(venue);
+      helpers.rerender?.();
+    }));
+    dialog?.querySelectorAll("[data-auth-edit]").forEach((button) => button.addEventListener("click", () => { document.getElementById("modal-root").innerHTML = ""; openRate(venue, button.dataset.authEdit); }));
     dialog?.querySelectorAll("[data-auth-cancel]").forEach((button) => button.addEventListener("click", () => {
       const site = button.dataset.authCancel;
       venue.authorizedSites = venue.authorizedSites.filter((item) => item !== site);
@@ -447,6 +541,15 @@
   function openRateDirectory(venue) {
     const dialog = showModal(`场馆费率设置 - ${venue.name}`, siteDirectory(venue, true), { closeOnly: true, className: "venue599-auth-dialog" });
     bindSiteDirectory(dialog, venue);
+  }
+  function openSiteRate(venue) {
+    const site = currentSite();
+    const subjects = subjectCodes(venue).map((provider) => {
+      const rows = rateConfigs.get(`${site}|${venue.code}|${provider}`) || [];
+      const body = rows.map((row, index) => `<tr><td>档位${index + 1}</td><td>${row.start.toLocaleString("zh-CN")}</td><td>${row.end === null ? "无上限" : row.end.toLocaleString("zh-CN")}</td><td><strong>${row.rate}%</strong></td></tr>`).join("");
+      return `<section class="venue599-rate-view-subject"><header><strong>${provider ? `Provider：${escape(provider)}` : "场馆计费"}</strong></header><table class="risk-table venue599-rate-view-table"><thead><tr><th>档位</th><th>起始金额 CNY</th><th>封顶金额 CNY</th><th>费率</th></tr></thead><tbody>${body || '<tr><td colspan="4" class="venue599-empty">暂未配置费率</td></tr>'}</tbody></table></section>`;
+    }).join("");
+    showModal(`场馆费率 - ${venue.name}`, `<div class="venue599-rate-view"><div class="venue599-rate-context"><span>所属站点</span><strong>${escape(site)}</strong><span>计费场馆</span><strong>${escape(venue.name)}</strong></div>${subjects}<div class="venue599-rate-note"><strong>档位依据</strong><span>按本结算周期的平台视角场馆总输赢匹配，不按投注金额匹配。</span></div></div>`, { closeOnly: true, className: "venue599-rate-view-dialog" });
   }
   function openAuthorization(venue) {
     const dialog = showModal(`授权管理 - ${venue.name}`, siteDirectory(venue, false), { closeOnly: true, className: "venue599-auth-dialog" });
@@ -484,16 +587,16 @@
     const starts = new Date(); starts.setMinutes(starts.getMinutes() + 5);
     const ends = new Date(starts); ends.setHours(ends.getHours() + 3);
     const id = portal === "control" ? (kind === "场馆" ? "B05" : "B07") : (kind === "场馆" ? "B11" : "B12");
-    const body = `<form class="venue599-status-form" data-status-form><div ${annotate(id, "venue599-status-choice")}>${badge(id)}<label><input type="radio" name="status" value="enabled" ${current === "enabled" ? "checked" : ""} />设置开启</label><label><input type="radio" name="status" value="maintenance_show" ${current === "maintenance_show" ? "checked" : ""} />维护展示</label><label><input type="radio" name="status" value="maintenance_hide" ${current === "maintenance_hide" ? "checked" : ""} />维护不展示</label></div><div class="venue599-maintenance-fields">${field("维护开始时间", `<input type="datetime-local" name="start" value="${localInputTime(starts)}" />`, true)}${field("维护结束时间", `<input type="datetime-local" name="end" value="${localInputTime(ends)}" />`, true)}${field("维护原因", '<textarea name="reason" rows="3" placeholder="请输入维护原因"></textarea>', true)}</div><p class="venue599-form-tip">维护展示保留会员端入口并显示维护层；维护不展示直接隐藏入口。</p></form>`;
+    const body = `<form class="venue599-status-form" data-status-form><div ${annotate(id, "venue599-status-choice")}>${badge(id)}<label><input type="radio" name="status" value="enabled" ${current === "enabled" ? "checked" : ""} />开启</label><label><input type="radio" name="status" value="maintenance_show" ${current === "maintenance_show" ? "checked" : ""} />维护展示</label><label><input type="radio" name="status" value="maintenance_hide" ${current === "maintenance_hide" ? "checked" : ""} />维护不展示</label></div><div class="venue599-maintenance-fields">${field("维护开始时间", `<input type="datetime-local" name="start" value="${localInputTime(starts)}" />`, true)}${field("维护结束时间", `<input type="datetime-local" name="end" value="${localInputTime(ends)}" />`, true)}${field("维护原因", '<textarea name="reason" rows="3" placeholder="请输入维护原因"></textarea>', true)}</div><p class="venue599-form-tip">维护展示保留会员端入口并显示维护层；维护不展示直接隐藏入口。</p></form>`;
     const dialog = showModal(`${kind}状态 - ${targetName}`, body, { className: "venue599-status-dialog", saveText: "确认", onSave(currentDialog) {
       const form = currentDialog.querySelector("form");
       const value = Object.fromEntries(new FormData(form));
-      if (portal === "site" && row.globalStatus !== "enabled" && value.status === "enabled") return notify(currentDialog, "总站正在维护，本站不能设置开启");
+      if (portal === "site" && row.globalStatus !== "enabled" && value.status === "enabled") return notify(currentDialog, "总站正在维护，本站不能开启");
       if (value.status !== "enabled" && (!value.start || !value.end || !value.reason.trim())) return notify(currentDialog, "设置维护时需填写完整时间范围和维护原因");
       if (value.status !== "enabled" && value.start >= value.end) return notify(currentDialog, "维护开始时间必须早于结束时间");
       if (portal === "control") row.globalStatus = value.status; else row.siteStatuses[currentSite()] = value.status;
       const venue = kind === "场馆" ? row.name : row.venueName;
-      logs.unshift({ id: `ML${Date.now()}`, targetType: kind, venue, game: kind === "游戏" ? row.name : "-", wallet: "-", range: value.status === "enabled" ? "-" : `${value.start.replace("T", " ")}:00 至 ${value.end.replace("T", " ")}:00`, action: value.status === "enabled" ? "设置开启" : "设置维护", display: value.status === "enabled" ? "-" : STATUS[value.status].label, operator: portal === "control" ? "admin" : "site_xy_ops", operatedAt: dateTime(), reason: value.status === "enabled" ? (value.reason.trim() || "服务恢复") : value.reason.trim(), scope: portal === "control" ? "总站" : currentSite() });
+      logs.unshift({ id: `ML${Date.now()}`, targetType: kind, venue, game: kind === "游戏" ? row.name : "-", wallet: "-", range: value.status === "enabled" ? "-" : `${value.start.replace("T", " ")}:00 至 ${value.end.replace("T", " ")}:00`, action: value.status === "enabled" ? "开启" : STATUS[value.status].label, display: value.status === "enabled" ? "-" : STATUS[value.status].label, operator: portal === "control" ? "admin" : "site_xy_ops", operatedAt: dateTime(), reason: value.status === "enabled" ? (value.reason.trim() || "服务恢复") : value.reason.trim(), scope: portal === "control" ? "总站" : currentSite() });
       return true;
     }});
     const refreshFields = () => {
@@ -506,7 +609,7 @@
 
   function openGameForm(game) {
     const editing = Boolean(game);
-    const body = `<form class="venue599-form venue599-game-form">${field("游戏名称", `<input name="name" value="${escape(game?.name || "")}" />`, true)}${field("游戏场馆", `<select name="venueCode">${venues.map((venue) => `<option value="${escape(venue.code)}"${game?.venueCode === venue.code ? " selected" : ""}>${escape(venue.name)}</option>`).join("")}</select>`, true)}${field("游戏CODE", `<input name="code" value="${escape(game?.code || "")}" ${editing ? "disabled" : ""} />`, true)}${field("支持平台", `<span class="venue599-platform-checks">${["WEB", "H5", "APP"].map((platform) => `<label><input type="checkbox" name="platform" value="${platform}" ${!game || game.platforms.includes(platform) ? "checked" : ""} />${platform}</label>`).join("")}</span>`, true)}${field("WEB游戏图片", '<button type="button" class="venue599-upload">上传WEB图片</button>')}${field("H5 / APP游戏图片", '<button type="button" class="venue599-upload">上传H5图片</button>')}${field("排序", `<input name="sort" type="number" min="0" value="${game?.sort ?? 0}" />`, true)}${field("热门置顶", `<select name="hot"><option value="false">否</option><option value="true" ${game?.hot ? "selected" : ""}>是</option></select>`)}${field("热门排序", `<input name="hotSort" type="number" min="0" value="${game?.hotSort ?? 0}" />`)}${field("品牌", `<input name="brand" value="${escape(game?.brand || "")}" />`)}</form><p class="venue599-form-tip">APP端复用H5图片；新增游戏默认维护不展示。</p>`;
+    const body = `<form class="venue599-form venue599-game-form">${field("游戏名称", `<input name="name" value="${escape(game?.name || "")}" />`, true)}${field("游戏场馆", `<select name="venueCode">${venues.map((venue) => `<option value="${escape(venue.code)}"${game?.venueCode === venue.code ? " selected" : ""}>${escape(venue.name)}</option>`).join("")}</select>`, true)}${field("游戏CODE", `<input name="code" value="${escape(game?.code || "")}" ${editing ? "disabled" : ""} />`, true)}${field("支持平台", `<span class="venue599-platform-checks">${["WEB", "H5", "APP"].map((platform) => `<label><input type="checkbox" name="platform" value="${platform}" ${!game || game.platforms.includes(platform) ? "checked" : ""} />${platform}</label>`).join("")}</span>`, true)}${field("WEB游戏图片", '<button type="button" class="venue599-upload">上传WEB图片</button>')}${field("移动端游戏图片", '<button type="button" class="venue599-upload">上传移动端图片</button>')}${field("排序", `<input name="sort" type="number" min="0" value="${game?.sort ?? 0}" />`, true)}${field("品牌", `<input name="brand" value="${escape(game?.brand || "")}" />`)}${field("热门排序", `<input name="hotSort" type="number" min="0" value="${game?.hotSort ?? 0}" />`)}${field("热门置顶", `<select name="hot"><option value="false">否</option><option value="true" ${game?.hot ? "selected" : ""}>是</option></select>`)}</form><p class="venue599-form-tip">H5与APP共用移动端游戏图片；新增游戏默认维护不展示。</p>`;
     showModal(editing ? "编辑游戏" : "新增游戏", body, { className: "venue599-form-dialog venue599-game-dialog", onSave(dialog) {
       const form = dialog.querySelector("form");
       const value = Object.fromEntries(new FormData(form));
@@ -566,7 +669,10 @@
   function openWalletForm(wallet) {
     const editing = Boolean(wallet);
     const selectedVenue = venues.find((venue) => venue.code === wallet?.venueCodes?.[0]) || venues[0];
-    const body = `<form class="venue599-form venue599-wallet-form">${field("关联场馆", `<select name="venueCode" ${editing ? "disabled" : ""}>${venues.map((venue) => `<option value="${escape(venue.code)}"${selectedVenue.code === venue.code ? " selected" : ""}>${escape(venue.name)}</option>`).join("")}</select>`, true)}${field("钱包CODE", `<input name="code" value="${escape(wallet?.code || selectedVenue.walletCode)}" readonly />`, true)}${field("钱包名称", `<input name="name" value="${escape(wallet?.name || `${selectedVenue.name}钱包`)}" />`, true)}</form>`;
+    const venueField = editing
+      ? field("关联场馆", `<div class="venue599-related-venues">${wallet.venueCodes.map((code) => `<span>${escape(venueByCode(code)?.name || code)}</span>`).join("")}</div>`, true)
+      : field("关联场馆", `<select name="venueCode">${venues.map((venue) => `<option value="${escape(venue.code)}"${selectedVenue.code === venue.code ? " selected" : ""}>${escape(venue.name)}</option>`).join("")}</select>`, true);
+    const body = `<form class="venue599-form venue599-wallet-form">${venueField}${field("钱包CODE", `<input name="code" value="${escape(wallet?.code || selectedVenue.walletCode)}" readonly />`, true)}${field("钱包名称", `<input name="name" value="${escape(wallet?.name || `${selectedVenue.name}钱包`)}" />`, true)}</form>`;
     const dialog = showModal(editing ? "编辑钱包" : "新增钱包", body, { className: "venue599-form-dialog", onSave(current) {
       const value = Object.fromEntries(new FormData(current.querySelector("form")));
       if (!value.name?.trim()) return notify(current, "钱包名称不能为空");
@@ -586,7 +692,7 @@
   }
   function openWalletStatus(wallet) {
     const locking = wallet.status === "normal";
-    showModal(`${locking ? "锁定" : "解锁"}钱包 - ${wallet.name}`, `<div ${annotate("B08", "venue599-wallet-confirm")}>${badge("B08")}<p>${locking ? "锁定后禁止会员新进入关联场馆并禁止新上分；已有余额仍可正常下分退出，系统不会强制下分。" : "解锁后恢复相关场馆的进入和上分能力。"}</p><dl><div><dt>钱包CODE</dt><dd>${escape(wallet.code)}</dd></div><div><dt>关联场馆</dt><dd>${wallet.venueCodes.map((code) => escape(venueByCode(code)?.name || code)).join("、")}</dd></div></dl></div>`, { className: "venue599-confirm-dialog", saveText: locking ? "确认锁定" : "确认解锁", onSave() { wallet.status = locking ? "locked" : "normal"; wallet.updatedAt = dateTime(); return true; } });
+    showModal(`${locking ? "锁定" : "解锁"}钱包 - ${wallet.name}`, `<div ${annotate("B08", "venue599-wallet-confirm")}>${badge("B08")}<p>${locking ? "锁定后禁止会员新进入关联场馆并禁止新上分；系统强制所有此场馆用户下分。" : "解锁后恢复相关场馆的进入和上分能力。"}</p><dl><div><dt>钱包CODE</dt><dd>${escape(wallet.code)}</dd></div><div><dt>关联场馆</dt><dd>${wallet.venueCodes.map((code) => escape(venueByCode(code)?.name || code)).join("、")}</dd></div></dl></div>`, { className: "venue599-confirm-dialog", saveText: locking ? "确认锁定" : "确认解锁", onSave() { wallet.status = locking ? "locked" : "normal"; wallet.updatedAt = dateTime(); return true; } });
   }
 
   function collectFilters(root) {
@@ -613,6 +719,7 @@
     if (action === "venue-detail") return openVenueDetail(venue);
     if (action === "edit-venue") return openVenueForm(venue);
     if (action === "rate") return openRateDirectory(venue);
+    if (action === "view-rate") return openSiteRate(venue);
     if (action === "authorize") return openAuthorization(venue);
     if (action === "status-venue") return openStatus("场馆", venue, portal);
     if (action === "edit-game") return openGameForm(game);
@@ -637,6 +744,7 @@
     const root = document.querySelector("[data-venue599-root]");
     if (!root) return;
     root.querySelectorAll("[data-venue599-old-tab]").forEach((button) => button.addEventListener("click", () => { state.oldTab = button.dataset.venue599OldTab; helpers.rerender?.(); }));
+    root.querySelectorAll("[data-member-game-tab]").forEach((button) => button.addEventListener("click", () => { state.memberGameTab = button.dataset.memberGameTab; helpers.rerender?.(); }));
     root.querySelectorAll("[data-venue599-tab]").forEach((button) => button.addEventListener("click", () => helpers.setTab?.(button.dataset.venue599Tab)));
     root.querySelector("[data-venue599-search]")?.addEventListener("click", () => { collectFilters(root); helpers.rerender?.(); });
     root.querySelector("[data-venue599-reset]")?.addEventListener("click", () => { state.filters[state.portal][state.tab] = initialFilters(); state.page[state.portal][state.tab] = 1; helpers.rerender?.(); });

@@ -5667,8 +5667,11 @@
 
   function prototypeEndpointSwitch(requirement, page) {
     if (requirement.id === "#599") {
+      if (page.portal === "会员") {
+        return `<div class="prototype-endpoint-switch"><a href="#requirement/%23599/page/control-venue-management-599">总控后台</a><a href="#requirement/%23599/page/site-venue-management-599">站点后台</a><a href="#requirement/%23599/page/member-venue-list-599" class="active">会员端</a></div><span class="current-page-label">${escapeHtml(page.name)}</span>`;
+      }
       const siteActive = page.portal === "站点";
-      return `<div class="prototype-endpoint-switch"><a href="#requirement/%23599/page/control-venue-management-599" class="${siteActive ? "" : "active"}">总控后台</a><a href="#requirement/%23599/page/site-venue-management-599" class="${siteActive ? "active" : ""}">站点后台</a></div><span class="current-page-label">${escapeHtml(page.name)}</span>`;
+      return `<div class="prototype-endpoint-switch"><a href="#requirement/%23599/page/control-venue-management-599" class="${siteActive ? "" : "active"}">总控后台</a><a href="#requirement/%23599/page/site-venue-management-599" class="${siteActive ? "active" : ""}">站点后台</a><a href="#requirement/%23599/page/member-venue-list-599">会员端</a></div><span class="current-page-label">${escapeHtml(page.name)}</span>`;
     }
     if (requirement.id === "#911") return window.Commission911.endpoints(page);
     if (requirement.id === "#971") {
@@ -5735,9 +5738,10 @@
     const memberModuleMode = requirement.id === "#488";
     const member493Mode = requirement.id === "#493";
     const memberDetailMode = requirement.id === "#488" && member488DetailPages.some(([key]) => key === page.key);
+    const venue599MemberMode = requirement.id === "#599" && page.portal === "会员";
     const member509MobileMode = ["#509", "#643"].includes(requirement.id) && memberVipMobileKeys.includes(page.key);
     const member739MobileMode = requirement.id === "#739" && member739MobileKeys.includes(page.key);
-    const memberMobileMode = member509MobileMode || member739MobileMode;
+    const memberMobileMode = member509MobileMode || member739MobileMode || venue599MemberMode;
     const vipAlgorithmMode = requirement.id === "#509" && page.key === "vip-algorithm-509";
     const profitSimulatorMode = isAgent498Requirement(requirement.id) && page.key === "profit-simulator-498";
     const control498Mode = isAgent498Requirement(requirement.id) && page.key.startsWith("control-");
@@ -5766,7 +5770,9 @@
     const suppressUnchangedExportNotice = (requirement.id === "#776" && page.key === "agent-finance-management-776") || ["#830", "#911", "#1027"].includes(requirement.id) || privacy862Mode;
     const exportNotice = renderedPageContent.includes("导出") && !suppressUnchangedExportNotice ? exportStandardNotice(exportAnnotation) : "";
     const topSpecNotices = `${productionComparisonNotice(requirement, page)}${scopeSpecNotice(scopeAnnotation)}`;
-    const prototypeBody = profitSimulatorMode
+    const prototypeBody = venue599MemberMode
+      ? `<div class="venue599-member-stage">${renderedPageContent}</div>`
+      : profitSimulatorMode
       ? `<div class="profit-simulator-stage">${renderedPageContent}</div>`
       : memberMobileMode
       ? `<div class="member-mobile-stage">${memberMobilePrototypeNav(page.key)}${renderedPageContent}</div>`
