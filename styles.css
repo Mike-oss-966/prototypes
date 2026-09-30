@@ -6612,6 +6612,8 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .venue599-toolbar button.annotated { position: relative; }
 .venue599-toolbar button.annotated > .component-badge { top: -8px; right: -7px; }
 .venue599-table-wrap { width: 100%; min-width: 0; max-width: 100%; overflow-x: auto !important; overflow-y: hidden !important; border: 0; }
+.venue599-phase1 .venue599-table-wrap { scroll-padding-inline-end: 210px; }
+.venue599-phase1 .venue599-status-control { scroll-margin-inline-end: 210px; }
 .venue599-table { width: 100%; min-width: 1080px; border-collapse: collapse; table-layout: auto; }
 .venue599-venue-table { min-width: 1510px; }
 .venue599-game-table { min-width: 1920px; }
@@ -6670,6 +6672,8 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .venue599-old-tabs { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); margin-top: 22px; padding: 0 8px; border-bottom: 1px solid #ebeef5; }
 .venue599-old-tabs button { min-width: 0; height: 42px; padding: 0 6px; overflow: hidden; color: #909399; background: transparent; border: 0; border-bottom: 2px solid transparent; font: 12px inherit; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .venue599-old-tabs button.active { color: #409eff; border-bottom-color: #409eff; }
+.venue599-phase1 .venue599-old-tabs { display: flex; flex-wrap: nowrap; gap: 4px; overflow-x: auto; padding: 0 2px; }
+.venue599-phase1 .venue599-old-tabs button { flex: 0 0 auto; padding: 0 5px; font-size: 11px; }
 .venue599-old-content { min-height: 280px; display: grid; place-items: center; align-content: center; gap: 8px; color: #909399; }
 .venue599-old-content strong { color: #606266; font-size: 16px; font-weight: 500; }
 .venue599-old-content span { font-size: 13px; }
@@ -6750,6 +6754,21 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .venue599-status-choice label { min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 7px; color: #606266; background: #fff; border: 1px solid #dcdfe6; border-radius: 4px; cursor: pointer; }
 .venue599-status-choice label:has(input:checked) { color: #409eff; background: #ecf5ff; border-color: #409eff; }
 .venue599-status-choice input { accent-color: #409eff; }
+.venue599-phase1 .venue599-status-choice:has(label:nth-child(2):last-child) { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.venue599-site-choices { margin: 10px 0 16px; border: 1px solid #dcdfe6; border-radius: 4px; }
+.venue599-site-choices > label { display: flex; align-items: center; gap: 7px; padding: 10px 12px; color: #303133; background: #f5f7fa; border-bottom: 1px solid #ebeef5; font-size: 13px; }
+.venue599-site-choices > div { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px 12px; padding: 12px; }
+.venue599-site-choices > div label { display: flex; align-items: center; gap: 6px; color: #606266; font-size: 13px; }
+.venue599-site-choices label.is-unavailable { color: #b8bdc5; }
+.venue599-sites-heading { margin: 6px 0 0; color: #303133; font-size: 13px; font-weight: 500; }
+.venue599-site-fixed { margin: 0 0 15px; color: #606266; font-size: 13px; }
+.venue599-game-bulk-form > .venue599-form-field { margin-bottom: 16px; }
+.venue599-game-select { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.venue599-game-select input { accent-color: #409eff; }
+.venue599-page-select { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 12px; }
+.venue599-page-select input { margin: 0; accent-color: #409eff; }
+.venue599-page-select-index { display: block; margin-top: 2px; font-size: 11px; color: #909399; }
+.venue599-phase1 .venue599-game-table th:first-child,.venue599-phase1 .venue599-game-table td:first-child { min-width: 105px; }
 .venue599-maintenance-fields { display: grid; gap: 14px; }
 .venue599-maintenance-fields[hidden] { display: none; }
 .venue599-platform-checks { min-height: 38px; display: flex; align-items: center; gap: 16px; padding: 0 10px; border: 1px solid #dcdfe6; border-radius: 4px; }
