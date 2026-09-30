@@ -5728,6 +5728,13 @@
   function prototypeEndpointSwitch(requirement, page) {
     if (isVenueManagementRequirement(requirement.id)) {
       const route = encodeURIComponent(requirement.id);
+      if (requirement.id === "#599") {
+        if (page.portal === "会员") {
+          return `<div class="prototype-endpoint-switch"><a href="#requirement/${route}/page/control-venue-management-599">总控后台</a><a href="#requirement/${route}/page/member-venue-list-599" class="active">会员端</a></div><span class="current-page-label">${escapeHtml(page.name)}</span>`;
+        }
+        const controlActive = page.portal === "总控";
+        return `<div class="prototype-endpoint-switch"><a href="#requirement/${route}/page/control-venue-management-599" class="${controlActive ? "active" : ""}">总控后台</a><a href="#requirement/${route}/page/member-venue-list-599">会员端</a></div><span class="current-page-label">${escapeHtml(page.name)}</span>`;
+      }
       if (page.portal === "会员") {
         return `<div class="prototype-endpoint-switch"><a href="#requirement/${route}/page/control-venue-management-599">总控后台</a><a href="#requirement/${route}/page/site-venue-management-599">站点后台</a><a href="#requirement/${route}/page/member-venue-list-599" class="active">会员端</a></div><span class="current-page-label">${escapeHtml(page.name)}</span>`;
       }

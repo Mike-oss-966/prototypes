@@ -111,7 +111,6 @@
     page: { control: { 场馆列表: 1, 游戏列表: 1, 钱包列表: 1, 维护日志: 1 }, site: { 场馆列表: 1, 游戏列表: 1, 钱包列表: 1, 维护日志: 1 } },
     size: 10,
     oldTab: "游戏列表",
-    memberGameTab: "全部",
     selectedGames: new Set(),
     filters: { control: Object.fromEntries(["场馆列表", "游戏列表", "钱包列表", "维护日志"].map((tab) => [tab, initialFilters()])), site: Object.fromEntries(["场馆列表", "游戏列表", "钱包列表", "维护日志"].map((tab) => [tab, initialFilters()])) }
   };
@@ -161,13 +160,10 @@
   function actionButton(label, action, code, extra = "", className = "") { return `<button type="button" class="venue599-link${className ? ` ${className}` : ""}" data-venue599-action="${action}" data-code="${escape(code)}" ${extra}>${label}</button>`; }
 
   function sidebar(page) {
-    const site = page.portal === "站点";
     const oldActive = page.key === "control-game-management-old-599";
     const unchangedItem = (name) => `<span class="venue599-menu-item is-unchanged" aria-disabled="true"><span>${escape(name)}</span></span>`;
-    const menuItems = site
-      ? `<a href="#requirement/%23599/page/site-venue-management-599" class="venue599-menu-item active annotated" data-component-id="N11">${badge("N11")}<span>场馆管理</span><em class="menu-change-badge is-new">新增</em></a>`
-      : `${unchangedItem("站内信")}<a href="#requirement/%23599/page/control-venue-management-599" class="venue599-menu-item ${oldActive ? "" : "active"} annotated" data-component-id="N01">${badge("N01")}<span>场馆管理</span><em class="menu-change-badge is-new">新增</em></a><a href="#requirement/%23599/page/control-game-management-old-599" class="venue599-menu-item ${oldActive ? "active" : ""}"><span>游戏管理(旧)</span><em class="menu-change-badge">修改</em></a>${["前端皮肤", "App版本管理", "短信通道管理", "区号配置", "短信发送记录", "二要素验证通道"].map(unchangedItem).join("")}`;
-    return `<aside class="risk-sidebar venue599-sidebar"><div class="venue599-brand"><span>${site ? "S" : "C"}</span><div><strong>${site ? "站点" : "总控"}后台管理系统</strong><small>${site ? currentSite() : "运营管理中心"}</small></div></div><nav><section><button type="button" class="venue599-menu-parent" data-venue599-menu-toggle aria-expanded="${state.menuOpen}"><i aria-hidden="true"></i><span>资源管理</span><b class="${state.menuOpen ? "open" : ""}"></b></button><div class="venue599-menu-children"${state.menuOpen ? "" : " hidden"}>${menuItems}</div></section></nav><div class="risk-user"><span>MK</span><div><strong>Mike</strong><small>${site ? "站点管理员" : "总控管理员"}</small></div></div></aside>`;
+    const menuItems = `${unchangedItem("站内信")}<a href="#requirement/%23599/page/control-venue-management-599" class="venue599-menu-item ${oldActive ? "" : "active"} annotated" data-component-id="N01">${badge("N01")}<span>场馆管理</span><em class="menu-change-badge is-new">新增</em></a><a href="#requirement/%23599/page/control-game-management-old-599" class="venue599-menu-item ${oldActive ? "active" : ""}"><span>游戏管理(旧)</span><em class="menu-change-badge">修改</em></a>${["前端皮肤", "App版本管理", "短信通道管理", "区号配置", "短信发送记录", "二要素验证通道"].map(unchangedItem).join("")}`;
+    return `<aside class="risk-sidebar venue599-sidebar"><div class="venue599-brand"><span>C</span><div><strong>总控后台管理系统</strong><small>运营管理中心</small></div></div><nav><section><button type="button" class="venue599-menu-parent" data-venue599-menu-toggle aria-expanded="${state.menuOpen}"><i aria-hidden="true"></i><span>资源管理</span><b class="${state.menuOpen ? "open" : ""}"></b></button><div class="venue599-menu-children"${state.menuOpen ? "" : " hidden"}>${menuItems}</div></section></nav><div class="risk-user"><span>MK</span><div><strong>Mike</strong><small>总控管理员</small></div></div></aside>`;
   }
 
   function tabs(page) {
@@ -311,7 +307,6 @@
   }
   const memberPages = [
     ["member-venue-list-599", "场馆列表"],
-    ["member-game-list-599", "游戏列表"],
     ["member-transfer-599", "转账"],
     ["member-withdraw-599", "提现"]
   ];
@@ -338,21 +333,6 @@
     ];
     return `<section ${annotate("M01", "venue599-member-screen venue599-member-venue-screen")}>${badge("M01")}${memberHeader("体育场馆")}<div class="venue599-member-venue-body"><nav class="venue599-member-categories">${categories.map(([icon, name]) => `<button type="button" class="${name === "体育" ? "active" : ""}"><i>${icon}</i><span>${name}</span></button>`).join("")}</nav><div class="venue599-member-venue-list">${cards.map(([asset, name, maintained]) => `<article class="venue599-member-venue-card${maintained ? " is-maintenance" : ""}"><img src="./assets/599/${asset}" alt="${escape(name)}" />${maintained ? maintenanceCover() : ""}</article>`).join("")}</div></div></section>`;
   }
-  function memberGamePage() {
-    const venue = venues.find((item) => item.name === "PP电子") || venues.find((item) => item.type === "电子") || venues[0];
-    const visibleGames = games.filter((game) => game.venueCode === venue.code && game.authSites.includes(currentSite()) && game.siteStatuses[currentSite()] !== "maintenance_hide");
-    const hotGames = visibleGames.filter((game) => game.hot).sort((a, b) => b.hotSort - a.hotSort || b.createdAt.localeCompare(a.createdAt));
-    const latestGames = [...visibleGames].sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.code.localeCompare(a.code)).slice(0, 10);
-    const groups = { 全部: visibleGames, 热门: hotGames, 最新: latestGames, 收藏: [] };
-    const assets = ["game-sweet-bonanza.png", "game-sugar-rush.png", "game-olympus.png", "game-starlight.png", "game-sweet-bonanza-cn.png", "game-santa.png"];
-    const selected = groups[state.memberGameTab] || visibleGames;
-    const cards = selected.slice(0, state.memberGameTab === "全部" ? 12 : 10);
-    const counts = { 全部: visibleGames.length, 热门: hotGames.length, 最新: latestGames.length, 收藏: 0 };
-    const cardHtml = cards.length ? cards.map((game, index) => {
-      return `<article><div><img src="./assets/599/${assets[index % assets.length]}" alt="${escape(game.name)}" /></div><footer><span>${escape(game.name)}</span><button type="button" aria-label="收藏${escape(game.name)}">♡</button></footer></article>`;
-    }).join("") : '<div class="venue599-member-game-empty">暂无游戏</div>';
-    return `<section ${annotate("M02", "venue599-member-screen venue599-member-game-screen")}>${badge("M02")}${memberHeader(venue.name)}<nav class="venue599-member-game-tabs">${Object.keys(groups).map((tab) => `<button type="button" class="${state.memberGameTab === tab ? "active" : ""}" data-member-game-tab="${tab}">${tab}(${counts[tab]})</button>`).join("")}</nav><div class="venue599-member-game-grid">${cardHtml}</div></section>`;
-  }
   function memberWalletGrid() {
     return `<div class="venue599-member-wallet-grid">${memberWalletNames.map((name) => `<article class="${name === "PP电子" ? "is-maintenance" : ""}"><strong>${escape(name)}</strong><b>¥0.00</b>${name === "PP电子" ? maintenanceCover(true) : ""}</article>`).join("")}</div>`;
   }
@@ -365,7 +345,6 @@
   function memberPage(page) {
     const screens = {
       "member-venue-list-599": memberVenuePage,
-      "member-game-list-599": memberGamePage,
       "member-transfer-599": memberTransferPage,
       "member-withdraw-599": memberWithdrawPage
     };
@@ -516,25 +495,37 @@
       : (authorized ? `<button type="button" class="danger" data-auth-cancel="${escape(site)}">取消授权</button>` : `<button type="button" class="primary" data-auth-create="${escape(site)}">授权</button>`);
     return `<tr data-auth-row="${escape(site)}"><td>${escape(site)}</td><td><span class="venue599-code">${SITE_IDS[site]}</span></td><td>${authorized ? statusTag(status) : "-"}</td><td>${feeReady ? '<span class="venue599-status is-enabled">已配置</span>' : '<span class="venue599-status is-hidden">未配置</span>'}</td><td>${authorized ? '<span class="venue599-status is-enabled">已授权</span>' : '<span class="venue599-status is-neutral">未授权</span>'}</td><td>${escape(venue.authorizedAt?.[site] || "-")}</td><td class="venue599-auth-actions">${actions}</td></tr>`;
   }
+  function confirmSiteAuthorization(venue, site, authorize) {
+    const action = authorize ? "授权" : "取消授权";
+    const detail = authorize
+      ? `确认向站点【${escape(site)}】授权场馆【${escape(venue.name)}】？授权后，该站点可以展示此场馆及其游戏。`
+      : `确认取消站点【${escape(site)}】的场馆【${escape(venue.name)}】授权？取消后，该站点不再展示此场馆及其游戏；已经产生的场馆费仍继续计算。`;
+    showModal(`确认${action}`, `<div class="venue599-confirm-copy"><strong>请确认${action}操作</strong><p>${detail}</p></div>`, { className: "venue599-confirm-dialog", saveText: `确认${action}`, onSave() {
+      if (authorize) {
+        venue.authorizedSites.push(site);
+        venue.authorizedAt[site] = dateTime();
+        venue.siteStatuses[site] = venue.siteStatuses[site] || "maintenance_hide";
+        games.filter((game) => game.venueCode === venue.code).forEach((game) => { if (!game.authSites.includes(site)) game.authSites.push(site); });
+      } else {
+        venue.authorizedSites = venue.authorizedSites.filter((item) => item !== site);
+        delete venue.authorizedAt[site];
+        games.filter((game) => game.venueCode === venue.code).forEach((game) => { game.authSites = game.authSites.filter((item) => item !== site); });
+      }
+      document.getElementById("modal-root").innerHTML = "";
+      openAuthorization(venue);
+      helpers.rerender?.();
+      return false;
+    }});
+  }
   function bindSiteDirectory(dialog, venue) {
     dialog?.querySelectorAll("[data-auth-create]").forEach((button) => button.addEventListener("click", () => {
       const site = button.dataset.authCreate;
       if (!configured(venue, site)) { notify(dialog, "请先配置场馆费率后再授权"); return; }
-      venue.authorizedSites.push(site);
-      venue.authorizedAt[site] = dateTime();
-      venue.siteStatuses[site] = venue.siteStatuses[site] || "maintenance_hide";
-      games.filter((game) => game.venueCode === venue.code).forEach((game) => { if (!game.authSites.includes(site)) game.authSites.push(site); });
-      document.getElementById("modal-root").innerHTML = "";
-      openAuthorization(venue);
-      helpers.rerender?.();
+      confirmSiteAuthorization(venue, site, true);
     }));
     dialog?.querySelectorAll("[data-auth-cancel]").forEach((button) => button.addEventListener("click", () => {
       const site = button.dataset.authCancel;
-      venue.authorizedSites = venue.authorizedSites.filter((item) => item !== site);
-      delete venue.authorizedAt[site];
-      games.filter((game) => game.venueCode === venue.code).forEach((game) => { game.authSites = game.authSites.filter((item) => item !== site); });
-      document.getElementById("modal-root").innerHTML = "";
-      helpers.rerender?.();
+      confirmSiteAuthorization(venue, site, false);
     }));
     dialog?.querySelectorAll("[data-auth-view]").forEach((button) => button.addEventListener("click", () => {
       document.getElementById("modal-root").innerHTML = "";
@@ -801,7 +792,6 @@
     const root = document.querySelector("[data-venue599-root]");
     if (!root) return;
     root.querySelectorAll("[data-venue599-old-tab]").forEach((button) => button.addEventListener("click", () => { state.oldTab = button.dataset.venue599OldTab; helpers.rerender?.(); }));
-    root.querySelectorAll("[data-member-game-tab]").forEach((button) => button.addEventListener("click", () => { state.memberGameTab = button.dataset.memberGameTab; helpers.rerender?.(); }));
     root.querySelectorAll("[data-venue599-tab]").forEach((button) => button.addEventListener("click", () => helpers.setTab?.(button.dataset.venue599Tab)));
     root.querySelector("[data-venue599-search]")?.addEventListener("click", () => { collectFilters(root); helpers.rerender?.(); });
     root.querySelector("[data-venue599-reset]")?.addEventListener("click", () => { state.filters[state.portal][state.tab] = initialFilters(); state.page[state.portal][state.tab] = 1; helpers.rerender?.(); });
