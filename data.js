@@ -818,7 +818,7 @@
         priority: "P0",
         startDate: "2026-07-30",
         completionDate: "—",
-        updatedAt: "2026-10-01 12:07",
+        updatedAt: "2026-10-01 18:13",
         summary: "在生产代理后台中增加团队财务、红利记录，并改造财务管理的提现账户与内部转账能力。",
         moduleName: "代理业务",
         defaultPageKey: "agent-finance-management-1073",

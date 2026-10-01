@@ -3810,14 +3810,15 @@
     const endDay = options.endDay || 31;
     const startTime = options.startTime || "00:00:00";
     const endTime = options.endTime || "23:59:59";
-    const calendarDays = (selectedDay) => (["#510", "#911", "#971"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: ["#510", "#911", "#971"].includes(currentRequirementId) ? new Date(year, month, 0).getDate() : 31 }, (_, index) => {
+    const dateOnly = options.dateOnly === true;
+    const calendarDays = (selectedDay) => (dateOnly || ["#510", "#911", "#971"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dateOnly || ["#510", "#911", "#971"].includes(currentRequirementId) ? new Date(year, month, 0).getDate() : 31 }, (_, index) => {
       const day = index + 1;
       return `<button type="button" class="calendar-day${day === selectedDay ? " selected" : ""}" data-day="${day}">${day}</button>`;
     }).join("");
-    const calendar = (rangeSide, selectedDay, time) => `<section class="calendar-panel" data-range-side="${rangeSide}" data-year="${year}" data-month="${month}"><header><button type="button" class="agent-date-month-nav" data-month-step="-1" aria-label="上个月">‹</button><strong>${year}年${month}月</strong><button type="button" class="agent-date-month-nav" data-month-step="1" aria-label="下个月">›</button></header><div class="calendar-week"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div class="calendar-days">${calendarDays(selectedDay)}</div><label class="calendar-time">${rangeSide === "start" ? "开始时间" : "结束时间"}<input type="time" value="${time}" step="1" /></label></section>`;
-    const displayStart = options.empty ? "开始时间" : `${year}-${String(month).padStart(2, "0")}-${String(startDay).padStart(2, "0")} ${startTime}`;
-    const displayEnd = options.empty ? "结束时间" : `${year}-${String(month).padStart(2, "0")}-${String(endDay).padStart(2, "0")} ${endTime}`;
-    return `<div class="date-range-field agent-498-date-field site-695-date-picker site-695-date-control"><button class="risk-range agent-498-date" type="button" data-date-trigger aria-expanded="false"><span>${displayStart}</span><b>至</b><span>${displayEnd}</span></button><button type="button" class="site-695-date-clear" title="清空时间" aria-label="清空时间">×</button><div class="date-picker-popover dual-calendar agent-498-date-popover" hidden><div class="quick-ranges agent-498-date-quick"><button type="button" data-range-days="0">今日</button><button type="button" data-range-days="1">昨日</button><button type="button" data-range-days="week">本周</button><button type="button" data-range-days="30">30天</button><button type="button" data-range-days="90">90天</button><button type="button" data-range-days="180">180天</button></div>${calendar("start", startDay, startTime)}${calendar("end", endDay, endTime)}<p class="agent-date-error" role="alert" hidden>开始时间不得晚于结束时间</p><footer><button type="button" class="secondary-action date-close">取消</button><button type="button" class="main-action date-apply">确定</button></footer></div></div>`;
+    const calendar = (rangeSide, selectedDay, time) => `<section class="calendar-panel" data-range-side="${rangeSide}" data-year="${year}" data-month="${month}"><header><button type="button" class="agent-date-month-nav" data-month-step="-1" aria-label="上个月">‹</button><strong>${year}年${month}月</strong><button type="button" class="agent-date-month-nav" data-month-step="1" aria-label="下个月">›</button></header><div class="calendar-week"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div class="calendar-days">${calendarDays(selectedDay)}</div>${dateOnly ? "" : `<label class="calendar-time">${rangeSide === "start" ? "开始时间" : "结束时间"}<input type="time" value="${time}" step="1" /></label>`}</section>`;
+    const displayStart = options.empty ? (dateOnly ? "开始日期" : "开始时间") : `${year}-${String(month).padStart(2, "0")}-${String(startDay).padStart(2, "0")}${dateOnly ? "" : ` ${startTime}`}`;
+    const displayEnd = options.empty ? (dateOnly ? "结束日期" : "结束时间") : `${year}-${String(month).padStart(2, "0")}-${String(endDay).padStart(2, "0")}${dateOnly ? "" : ` ${endTime}`}`;
+    return `<div class="date-range-field agent-498-date-field site-695-date-picker site-695-date-control${dateOnly ? " agent-date-only" : ""}"><button class="risk-range agent-498-date" type="button" data-date-trigger aria-expanded="false"><span>${displayStart}</span><b>至</b><span>${displayEnd}</span></button><button type="button" class="site-695-date-clear" title="清空${dateOnly ? "日期" : "时间"}" aria-label="清空${dateOnly ? "日期" : "时间"}">×</button><div class="date-picker-popover dual-calendar agent-498-date-popover" hidden><div class="quick-ranges agent-498-date-quick"><button type="button" data-range-days="0">今日</button><button type="button" data-range-days="1">昨日</button><button type="button" data-range-days="week">本周</button><button type="button" data-range-days="30">30天</button><button type="button" data-range-days="90">90天</button><button type="button" data-range-days="180">180天</button></div>${calendar("start", startDay, startTime)}${calendar("end", endDay, endTime)}<p class="agent-date-error" role="alert" hidden>${dateOnly ? "开始日期不得晚于结束日期" : "开始时间不得晚于结束时间"}</p><footer><button type="button" class="secondary-action date-close">取消</button><button type="button" class="main-action date-apply">确定</button></footer></div></div>`;
   }
 
   function agent498Field(label, type = "input", options = [], className = "") {
@@ -4177,10 +4178,12 @@
       return `${agent498WalletPanel("transfer", "转账支付账户")} ${agent498Filter([["代理账号/编号", "input"], ["状态", "select", ["全部状态", "成功", "失败"]], ["操作时间", "date"]], true)}${agent498Table("转账记录", ["序号", "单号", "代理账号", "支付账户", "转账金额（CNY）", "状态", "备注", "操作时间"], rows, 32)}`;
     }
     if (menu === "财务报表") {
-      const reportFilter = `<section class="finance-report-1073-filter"><div class="finance-report-1073-date-field"><span>统计时间</span>${agent498DateControl({ month: 9, startDay: 1, endDay: 28, endTime: "23:59:59" })}</div>${active === "团队财务" ? '<label><span>代理账号/编号</span><input type="text" placeholder="请输入代理账号或编号" /></label>' : ""}<button type="button" class="main-action">搜索</button><button type="button" class="secondary-action">重置</button></section>`;
+      const reportFilter = `<section class="finance-report-1073-filter"><div class="finance-report-1073-date-field"><span>统计时间范围</span>${agent498DateControl({ month: 9, startDay: 1, endDay: 28, dateOnly: true })}</div>${active === "团队财务" ? '<label><span>代理账号/编号</span><input type="text" placeholder="请输入代理账号或编号" /></label>' : ""}<button type="button" class="main-action">搜索</button><button type="button" class="secondary-action">重置</button></section>`;
       const feeCards = `<section class="finance-report-1073-cards unchanged-production"><article><header><strong>场馆费比例</strong><button type="button" class="finance-report-1073-help" aria-label="查看说明">?</button></header><p>¥12,800.00</p><button type="button" class="link-action agent-1073-fee-detail">查看明细</button></article><article><header><strong>充提手续费比例</strong><button type="button" class="finance-report-1073-help" aria-label="查看说明">?</button></header><p>¥8,200.00</p><button type="button" class="link-action agent-1073-fee-detail">查看明细</button></article></section>`;
-      const teamRows = [["—", "团队总数据", "286,000", "86,000", "+128,600", "12,800", "18,600", "22,400", "+74,800", "8,200"], ["1", "subline_a", "168,000", "52,000", "+78,000", "7,600", "10,200", "13,000", "+44,600", "4,800"], ["2", "subline_b", "118,000", "34,000", "+50,600", "5,200", "8,400", "9,400", "+30,200", "3,400"]];
-      const teamTable = `<section class="finance-report-1073-table annotated" data-component-id="T01">${componentBadge("T01")}<header><div><h2>团队财务</h2><span>团队总数据及下级代理经营数据</span></div><button type="button" class="secondary-action annotated" data-component-id="B01">${componentBadge("B01")}导出表格</button></header><div class="finance-report-1073-table-wrap"><table class="risk-table"><thead><tr>${["序号", "代理账号", "充值（CNY）", "提现（CNY）", "总输赢（CNY）", "场馆费（CNY）", "红利（CNY）", "返水（CNY）", "净输赢（CNY）", "充提手续费（CNY）"].map((header) => `<th>${header}</th>`).join("")}</tr></thead><tbody>${teamRows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${pagination(20, 8)}</section>`;
+      const teamRows = [["—", "团队总数据", "286,000", "24,000", "86,000", "+128,600", "12,800", "18,600", "22,400", "8,200", "+66,600"], ["1", "subline_a", "168,000", "14,000", "52,000", "+78,000", "7,600", "10,200", "13,000", "4,800", "+42,400"], ["2", "subline_b", "118,000", "10,000", "34,000", "+50,600", "5,200", "8,400", "9,400", "3,400", "+24,200"]];
+      const feeHint = "按照最高费率预估计算，不代表真实结算金额。";
+      const teamHeaders = ["序号", "代理账号", "充值 CNY", "代理代存 CNY", "提现 CNY", "总输赢（平台视角）CNY", "场馆费（预估）CNY", "红利 CNY", "返水 CNY", "充提手续费 CNY", "净输赢（预估）CNY"];
+      const teamTable = `<section class="finance-report-1073-table annotated" data-component-id="T01">${componentBadge("T01")}<header><div><h2>团队财务</h2><span>团队总数据及下级代理经营数据</span></div><button type="button" class="secondary-action annotated" data-component-id="B01">${componentBadge("B01")}导出表格</button></header><div class="finance-report-1073-table-wrap"><table class="risk-table"><thead><tr>${teamHeaders.map((header) => `<th><span class="finance-report-1073-header-label">${header}${header.startsWith("场馆费") || header.startsWith("充提手续费") ? `<button type="button" class="finance-report-1073-header-help" aria-label="${header}计算说明" title="${feeHint}">?</button>` : ""}</span></th>`).join("")}</tr></thead><tbody>${teamRows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${pagination(20, 8)}</section>`;
       return `<div class="finance-report-1073 production-finance-report-1073">${reportFilter}${active === "团队财务" ? teamTable : feeCards}</div>`;
     }
     if (menu === "佣金报表") {
@@ -5959,14 +5962,16 @@
       const popover = field.querySelector(".agent-498-date-popover");
       if (!trigger || !popover || trigger.dataset.agentDateBound) return;
       trigger.dataset.agentDateBound = "true";
+      const dateOnly = field.classList.contains("agent-date-only");
       const pad = (value) => String(value).padStart(2, "0");
       const formatDateTime = (date, time) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${time}`;
+      const formatDate = (date) => formatDateTime(date, "00:00:00").slice(0, 10);
       const renderPanel = (panel, year, month, selectedDay) => {
         const dayCount = new Date(year, month, 0).getDate();
         panel.dataset.year = String(year);
         panel.dataset.month = String(month);
         panel.querySelector("header strong").textContent = `${year}年${month}月`;
-        panel.querySelector(".calendar-days").innerHTML = (["#510", "#911", "#971"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dayCount }, (_, index) => {
+        panel.querySelector(".calendar-days").innerHTML = (dateOnly || ["#510", "#911", "#971"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dayCount }, (_, index) => {
           const day = index + 1;
           return `<button type="button" class="calendar-day${day === selectedDay ? " selected" : ""}" data-day="${day}">${day}</button>`;
         }).join("");
@@ -5974,6 +5979,7 @@
       const selectPanelDate = (panel, date) => renderPanel(panel, date.getFullYear(), date.getMonth() + 1, date.getDate());
       const panelValue = (panel) => {
         const day = Number(panel.querySelector(".calendar-day.selected")?.dataset.day || 1);
+        if (dateOnly) return `${panel.dataset.year}-${pad(panel.dataset.month)}-${pad(day)}`;
         const time = panel.querySelector("input[type='time']").value || (panel.dataset.rangeSide === "start" ? "00:00:00" : "23:59:59");
         return `${panel.dataset.year}-${pad(panel.dataset.month)}-${pad(day)} ${time}`;
       };
@@ -6017,7 +6023,7 @@
       field.querySelector(".date-close")?.addEventListener("click", close);
       field.querySelector(".site-695-date-clear")?.addEventListener("click", () => {
         if (["#510", "#911", "#971"].includes(currentRequirementId)) delete trigger.dataset.n911RangeBefore;
-        trigger.innerHTML = `<span>开始时间</span><b>至</b><span>结束时间</span>`;
+        trigger.innerHTML = dateOnly ? `<span>开始日期</span><b>至</b><span>结束日期</span>` : `<span>开始时间</span><b>至</b><span>结束时间</span>`;
         trigger.classList.remove("range-selected");
         close();
       });
@@ -6038,7 +6044,7 @@
         }
         const quickButton = event.target.closest("[data-range-days]");
         if (!quickButton) return;
-        const end = ["#510", "#911", "#971"].includes(currentRequirementId) ? new Date() : currentRequirementId === "#776" ? new Date(2026, 7, 21) : field.closest(".site-member-695-app") ? new Date(2026, 7, 13) : new Date(2026, 6, 31);
+        const end = dateOnly || ["#510", "#911", "#971"].includes(currentRequirementId) ? new Date() : currentRequirementId === "#776" ? new Date(2026, 7, 21) : field.closest(".site-member-695-app") ? new Date(2026, 7, 13) : new Date(2026, 6, 31);
         let start = new Date(end);
         const range = quickButton.dataset.rangeDays;
         if (range === "1") {
@@ -6052,10 +6058,14 @@
         const panels = Array.from(popover.querySelectorAll(".calendar-panel"));
         selectPanelDate(panels[0], start);
         selectPanelDate(panels[1], end);
-        panels[0].querySelector("input[type='time']").value = "00:00:00";
-        const endTime = ["#510", "#911"].includes(currentRequirementId) && range !== "1" ? [end.getHours(), end.getMinutes(), end.getSeconds()].map(pad).join(":") : "23:59:59";
-        panels[1].querySelector("input[type='time']").value = endTime;
-        trigger.innerHTML = `<span>${formatDateTime(start, "00:00:00")}</span><b>至</b><span>${formatDateTime(end, endTime)}</span>`;
+        if (dateOnly) {
+          trigger.innerHTML = `<span>${formatDate(start)}</span><b>至</b><span>${formatDate(end)}</span>`;
+        } else {
+          panels[0].querySelector("input[type='time']").value = "00:00:00";
+          const endTime = ["#510", "#911"].includes(currentRequirementId) && range !== "1" ? [end.getHours(), end.getMinutes(), end.getSeconds()].map(pad).join(":") : "23:59:59";
+          panels[1].querySelector("input[type='time']").value = endTime;
+          trigger.innerHTML = `<span>${formatDateTime(start, "00:00:00")}</span><b>至</b><span>${formatDateTime(end, endTime)}</span>`;
+        }
         trigger.classList.add("range-selected");
       });
       field.querySelector(".date-apply")?.addEventListener("click", () => {
@@ -7595,7 +7605,8 @@
       modal("提交确认", '<p class="danger-confirm">请确认当前操作信息。</p><label class="modal-field">支付密码<input type="password" placeholder="请输入支付密码" /></label>', "确认提交");
     }));
     document.querySelector(".agent-fee-detail")?.addEventListener("click", () => modal("存提手续费详情", `<div class="risk-table-wrap"><table class="risk-table"><thead><tr><th>费用来源</th><th>支付方式</th><th>金额（CNY）</th><th>费率</th><th>手续费（CNY）</th></tr></thead><tbody><tr><td>会员存款</td><td>支付宝</td><td>50,000</td><td>1.2%</td><td>600</td></tr><tr><td>代理额度充值</td><td>USDT</td><td>20,000</td><td>0.8%</td><td>160</td></tr><tr><td>会员提款</td><td>银行卡</td><td>30,000</td><td>1.0%</td><td>300</td></tr></tbody></table></div>`, "关闭"));
-    document.querySelectorAll(".agent-1073-fee-detail").forEach((button) => button.addEventListener("click", () => modal("费用明细", `<div class="finance-report-1073-detail"><p>统计时间（北京时间）：2026-09-01 00:00:00 至 2026-09-28 23:59:59</p><div class="finance-report-1073-switch"><button type="button" class="active">充值手续费</button><button type="button">提现手续费</button></div><div class="risk-table-wrap"><table class="risk-table"><thead><tr><th>序号</th><th>实际通道</th><th>金额（CNY）</th><th>当前站点报价</th><th>费用（CNY）</th></tr></thead><tbody><tr><td>1</td><td>支付宝</td><td>50,000.00</td><td>1.20%</td><td>600.00</td></tr><tr><td>2</td><td>USDT</td><td>20,000.00</td><td>0.80%</td><td>160.00</td></tr></tbody></table></div><p class="finance-report-1073-total">总计：760.00 CNY</p></div>`, "关闭")));
+    document.querySelectorAll(".agent-1073-fee-detail").forEach((button) => button.addEventListener("click", () => modal("费用明细", `<div class="finance-report-1073-detail"><p>统计时间范围（北京时间）：2026-09-01 至 2026-09-28</p><div class="finance-report-1073-switch"><button type="button" class="active">充值手续费</button><button type="button">提现手续费</button></div><div class="risk-table-wrap"><table class="risk-table"><thead><tr><th>序号</th><th>实际通道</th><th>金额（CNY）</th><th>当前站点报价</th><th>费用（CNY）</th></tr></thead><tbody><tr><td>1</td><td>支付宝</td><td>50,000.00</td><td>1.20%</td><td>600.00</td></tr><tr><td>2</td><td>USDT</td><td>20,000.00</td><td>0.80%</td><td>160.00</td></tr></tbody></table></div><p class="finance-report-1073-total">总计：760.00 CNY</p></div>`, "关闭")));
+    document.querySelectorAll(".finance-report-1073-header-help").forEach((button) => button.addEventListener("click", () => modal("预估费用说明", "<p>按照最高费率预估计算，不代表真实结算金额。</p>", "关闭")));
     document.querySelector(".agent-overflow-submit")?.addEventListener("click", () => modal("提交溢出申请", '<p>确认提交当前会员的溢出申请？提交后进入总控或站点审核。</p>', "确认提交"));
     document.querySelectorAll("[data-agent-profile-tab]").forEach((button) => button.addEventListener("click", () => { agent498ProfileTab = button.dataset.agentProfileTab; rerenderAgent498(page.key); }));
     document.querySelector(".agent-profile-unlock")?.addEventListener("click", () => {
