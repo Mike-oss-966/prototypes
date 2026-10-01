@@ -301,7 +301,7 @@
   }
 
   function oldPage() {
-    const items = ["游戏列表", "三方游戏币种配置", "游戏线路管理", "游戏厂商管理", "游戏管理", "游戏分组管理", "游戏自动下架日志", "三方场馆设置"];
+    const items = ["游戏列表", "三方游戏币种配置", "游戏线路管理", "游戏厂商管理", "游戏管理", "游戏分组管理", "游戏自动下架日志"];
     if (!items.includes(state.oldTab)) state.oldTab = items[0];
     return `<section class="venue599-old-page" data-venue599-root><header><span>生产功能归档</span><h2>游戏管理(旧)</h2></header><nav class="venue599-old-tabs" aria-label="游戏管理旧功能">${items.map((item) => `<button type="button" class="${state.oldTab === item ? "active" : ""}" data-venue599-old-tab="${escape(item)}">${escape(item)}</button>`).join("")}</nav><div class="venue599-old-content"><strong>${escape(state.oldTab)}</strong><span>页面字段、权限、数据和交互与生产一致，本需求不修改。</span></div></section>`;
   }

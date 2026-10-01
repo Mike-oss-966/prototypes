@@ -48,12 +48,13 @@
     const item = (key, name, icon = "page") => ({ key, name, icon, href: hrefs[key] || "", disabled: !hrefs[key] });
     const direct = (key, name, icon) => ({ ...item(key, name, icon), className: "site-prototype-menu-direct" });
     return [
+      direct("operations-dashboard", "运营数据看板", "dashboard"),
       direct("personal-center", "个人中心", "user"),
+      direct("agent-list-entry", "代理列表", "agent"),
       { type: "group", name: "会员管理", icon: "members", items: [
         item("member-list", "会员列表"), item("active-members", "活跃会员"), item("member-ledger", "会员帐变记录"),
         item("deposit-list", "充值列表"), item("withdraw-list", "提现列表"), item("lottery-rebate", "彩票会员返水报表")
       ] },
-      direct("operations-dashboard", "运营数据看板", "dashboard"),
       { type: "group", name: "财务管理", icon: "finance", items: [
         item("platform-finance", "平台财务管理"), item("agent-commission-settlement", "代理佣金结算"),
         item("site-profit", "站点利润明细"), item("commission-report", "佣金报表"),
