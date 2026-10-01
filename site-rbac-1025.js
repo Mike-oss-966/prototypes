@@ -7,23 +7,23 @@
     {
       name: "会员管理",
       pages: [
-        ["会员列表", ["查看会员详情", "查看存款明细", "查看场馆输赢", "查看投注明细", "修改会员备注", "导出"]],
+        ["会员列表", ["查看存款/场馆/投注明细", "修改会员备注", "导出"]],
         ["活跃会员", ["导出"]],
         ["会员帐变记录", []],
         ["充值列表", []],
         ["提现列表", []],
-        ["彩票会员返水报表", ["查看会员返水和代理返水佣金页签", "查看明细", "导出"]]
+        ["彩票会员返水报表", ["查看代理返水佣金", "导出"]]
       ]
     },
-    { name: "运营数据看板", pages: [["运营数据看板", ["查看指标明细"]]] },
+    { name: "运营数据看板", pages: [["运营数据看板", []]] },
     {
       name: "财务管理",
       pages: [
-        ["平台财务管理", ["查看流水详情", "导出", "快速充值", "余额提现", "内部转账", "发放红包", "更换提现账号"]],
-        ["代理佣金结算", ["查看费用明细", "发放佣金", "导出"]],
+        ["平台财务管理", ["导出", "快速充值", "余额提现", "内部转账给会员", "内部转账给代理", "发放红包", "更换提现账号"]],
+        ["代理佣金结算", ["发放佣金", "导出"]],
         ["站点利润明细", ["导出"]],
-        ["佣金报表", ["查看账单明细"]],
-        ["财务报表", ["查看费用明细"]],
+        ["佣金报表", []],
+        ["财务报表", []],
         ["预付金账户", ["转入预付金"]]
       ]
     },
@@ -32,30 +32,23 @@
       pages: [
         ["充提转账统计", ["导出"]],
         ["游戏报表", ["导出"]],
-        ["全站转账明细", ["查看收款方明细", "导出"]],
-        ["三方场馆代理费用明细", ["查看费用明细", "导出"]]
+        ["全站转账明细", ["导出"]],
+        ["三方场馆代理费用明细", ["导出"]]
       ]
     },
     {
       name: "代理模块",
       pages: [
-        ["代理列表", ["查看代理详情", "查看代理关系", "查看下级代理", "查看下级会员", "新增", "编辑", "启停", "重置登录密码", "重置取款密码", "导出"]],
-        ["冲正统计报表", ["查看预支/欠款明细"]],
+        ["代理列表", ["新增", "代理信息修改操作", "导出"]],
+        ["冲正统计报表", []],
         ["冲正回款报表", ["导出"]],
-        ["负盈利代理佣金结算", ["查看费用明细", "发放", "不发放", "修改发放", "导出"]],
-        ["负盈利代理佣金报表", ["查看会员及费用明细", "导出"]],
-        ["团队代理管理", ["查看团队详情", "团队改名", "开设副线", "冻结/解冻", "提交关系调整", "批准/驳回关系调整", "导出"]]
+        ["负盈利代理佣金结算", ["发放佣金", "导出"]],
+        ["负盈利代理佣金报表", ["导出"]],
+        ["团队代理管理", ["团队改名", "开设副线", "冻结/解冻", "提交关系调整", "批准/驳回关系调整", "导出"]]
       ]
     },
-    { name: "合营配置", pages: [["合营配置", ["新增联系方式", "编辑", "删除", "开启/关闭显示"]]] },
-    { name: "活动管理", pages: [["活动列表", ["查看活动详情"]]] }
-  ];
-
-  const agentOptions = [
-    { id: "AG10021", name: "星河招商一部" },
-    { id: "AG10038", name: "远洋招商主管" },
-    { id: "AG10052", name: "华东运营组" },
-    { id: "AG10067", name: "南区渠道组" }
+    { name: "合营配置", pages: [["合营配置", ["修改合营配置"]]] },
+    { name: "活动管理", pages: [["活动列表", []]] }
   ];
 
   function expandPermissionNames(names) {
@@ -75,9 +68,9 @@
 
   const roles = [
     { id: "ROLE-001", name: "站点管理员", description: "站点全部业务权限", status: "启用", users: 1, updatedAt: "系统内置", system: true, permissions: "all" },
-    { id: "ROLE-002", name: "财务专员", description: "负责财务管理和财务类报表", status: "启用", users: 2, updatedAt: "2026-09-24 15:20:18", permissions: ["财务管理", "运营报表"], actionPermissions: buildActionPermissions(["财务管理", "运营报表"], { "平台财务管理": ["查看流水详情"], "代理佣金结算": ["查看费用明细"], "佣金报表": ["查看账单明细"], "财务报表": ["查看费用明细"] }) },
-    { id: "ROLE-003", name: "运营专员", description: "负责会员、活动和运营数据查看", status: "启用", users: 4, updatedAt: "2026-09-23 11:08:42", permissions: ["会员管理", "运营数据看板", "活动管理"], actionPermissions: buildActionPermissions(["会员管理", "运营数据看板", "活动管理"], { "会员列表": ["查看会员详情"], "活动列表": ["查看活动详情"] }) },
-    { id: "ROLE-004", name: "招商人员", description: "按指定代理数据范围查看业务数据", status: "停用", users: 1, updatedAt: "2026-09-19 09:46:10", permissions: ["会员管理", "代理模块"], actionPermissions: buildActionPermissions(["会员管理", "代理模块"], { "会员列表": ["查看会员详情"], "代理列表": ["查看代理详情", "查看代理关系", "查看下级代理", "查看下级会员"] }), scope: "指定代理范围", scopeAgents: ["AG10021", "AG10038"] }
+    { id: "ROLE-002", name: "财务专员", description: "负责财务管理和财务类报表", status: "启用", users: 2, updatedAt: "2026-09-24 15:20:18", permissions: ["财务管理", "运营报表"], actionPermissions: buildActionPermissions(["财务管理", "运营报表"]) },
+    { id: "ROLE-003", name: "运营专员", description: "负责会员、活动和运营数据查看", status: "启用", users: 4, updatedAt: "2026-09-23 11:08:42", permissions: ["会员管理", "运营数据看板", "活动管理"], actionPermissions: buildActionPermissions(["会员管理", "运营数据看板", "活动管理"]) },
+    { id: "ROLE-004", name: "招商人员", description: "负责本站点会员与代理业务查看", status: "停用", users: 1, updatedAt: "2026-09-19 09:46:10", permissions: ["会员管理", "代理模块"], actionPermissions: buildActionPermissions(["会员管理", "代理模块"]) }
   ];
 
   let roleSequence = roles.length + 1;
@@ -169,20 +162,22 @@
   }
 
   function roleEditorBody(role) {
-    const current = role || { name: "", description: "", status: "启用", scope: "当前站点全部数据", scopeAgents: [], actionPermissions: {} };
+    const current = role || { name: "", description: "", status: "启用", actionPermissions: {} };
     const tree = permissionGroups.map((group, groupIndex) => {
+      if (group.name === "运营数据看板") {
+        const pageName = group.pages[0][0];
+        return `<section class="site-rbac-1025-permission-group"><header><label class="site-rbac-1025-group-check"><input type="checkbox" ${hasPage(current, pageName) ? "checked" : ""} data-rbac-page-view="${escape(pageName)}"><span class="site-rbac-1025-box"></span><span>${escape(group.name)}</span></label><span>整体权限</span></header></section>`;
+      }
       const allPages = group.pages.every(([page]) => hasPage(current, page));
       const pageRows = group.pages.map(([pageName, actions]) => {
         const pageChecked = hasPage(current, pageName);
-        const actionMarkup = actions.length ? `<div class="site-rbac-1025-action-list">${actions.map((action) => checkbox(action, `data-rbac-action="${escape(pageName)}" data-rbac-action-name="${escape(action)}"`, roleHasAction(current, pageName, action), !pageChecked)).join("")}</div>` : '<span class="site-rbac-1025-no-action">仅查看列表</span>';
+        const actionMarkup = actions.length ? `<div class="site-rbac-1025-action-list">${actions.map((action) => checkbox(action, `data-rbac-action="${escape(pageName)}" data-rbac-action-name="${escape(action)}"`, roleHasAction(current, pageName, action), !pageChecked)).join("")}</div>` : '<span class="site-rbac-1025-no-action">全部权限</span>';
         return `<div class="site-rbac-1025-permission-row"><div class="site-rbac-1025-page-name">${checkbox(pageName, `data-rbac-page-view="${escape(pageName)}"`, pageChecked)}<small>查看列表</small></div>${actionMarkup}</div>`;
       }).join("");
       const groupCheckbox = `<label class="site-rbac-1025-group-check"><input type="checkbox" ${allPages ? "checked" : ""} data-rbac-group="${groupIndex}"><span class="site-rbac-1025-box"></span><span>${escape(group.name)}</span></label>`;
       return `<section class="site-rbac-1025-permission-group"><header>${groupCheckbox}<span>${group.pages.length} 个页面</span></header>${pageRows}</section>`;
     }).join("");
-    const selectedAgents = new Set(current.scopeAgents || []);
-    const agentPicker = `<div class="site-rbac-1025-scope-agents" data-rbac-scope-agents ${current.scope === "指定代理范围" ? "" : "hidden"}><div><strong>指定代理</strong><span>仅可查看所选代理及其下属会员的数据</span></div><div class="site-rbac-1025-agent-options">${agentOptions.map((agent) => checkbox(`${agent.name}（${agent.id}）`, `data-rbac-agent="${escape(agent.id)}"`, selectedAgents.has(agent.id))).join("")}</div></div>`;
-    return `<div class="site-rbac-1025-editor annotated" data-component-id="M01">${context.badge("M01")}<p class="site-rbac-1025-form-error" data-rbac-form-error hidden></p><div class="site-rbac-1025-editor-grid"><label><span>角色名称 <em>*</em></span><input data-rbac-role-name value="${escape(current.name)}" maxlength="30" placeholder="请输入角色名称" ${role?.system ? "disabled" : ""} /></label><label><span>角色状态</span><select data-rbac-role-status ${role?.system ? "disabled" : ""}><option ${current.status === "启用" ? "selected" : ""}>启用</option><option ${current.status === "停用" ? "selected" : ""}>停用</option></select></label><label class="site-rbac-1025-full-field"><span>角色说明</span><input data-rbac-role-description value="${escape(current.description)}" maxlength="60" placeholder="请输入角色用途说明" ${role?.system ? "disabled" : ""} /></label></div><div class="site-rbac-1025-scope-block"><header><div><strong>数据范围</strong><span>角色能查看和操作的数据范围</span></div><span class="site-rbac-1025-scope-fixed">固定为当前站点</span></header><div class="site-rbac-1025-scope-row"><span>所属站点</span><strong>当前站点</strong><small>站点角色不能跨站访问数据</small></div><div class="site-rbac-1025-scope-row"><span>代理数据</span><select data-rbac-scope><option ${current.scope === "当前站点全部数据" ? "selected" : ""}>当前站点全部数据</option><option ${current.scope === "指定代理范围" ? "selected" : ""}>指定代理范围</option></select><small>选择指定代理范围后，仅展示所选代理及其下属会员的数据。</small></div>${agentPicker}</div><div class="site-rbac-1025-permission-heading"><div><strong>业务权限</strong><span>勾选页面查看权限后，再配置该页面的操作权限</span></div><button type="button" class="secondary-action" data-rbac-clear>清空权限</button></div><div class="site-rbac-1025-system-lock"><span class="site-rbac-1025-lock-icon">锁</span><div><strong>系统管理</strong><p>系统管理及其下级页面不进入授权树，仅站点最高权限账号可操作。</p></div><span>不可授权</span></div><div class="site-rbac-1025-permission-tree">${tree}</div></div>`;
+    return `<div class="site-rbac-1025-editor annotated" data-component-id="M01">${context.badge("M01")}<p class="site-rbac-1025-form-error" data-rbac-form-error hidden></p><div class="site-rbac-1025-editor-grid"><label><span>角色名称 <em>*</em></span><input data-rbac-role-name value="${escape(current.name)}" maxlength="30" placeholder="请输入角色名称" ${role?.system ? "disabled" : ""} /></label><label><span>角色状态</span><select data-rbac-role-status ${role?.system ? "disabled" : ""}><option ${current.status === "启用" ? "selected" : ""}>启用</option><option ${current.status === "停用" ? "selected" : ""}>停用</option></select></label><label class="site-rbac-1025-full-field"><span>角色说明</span><input data-rbac-role-description value="${escape(current.description)}" maxlength="60" placeholder="请输入角色用途说明" ${role?.system ? "disabled" : ""} /></label></div><div class="site-rbac-1025-permission-heading"><div><strong>业务权限</strong><span>数据范围固定为当前站点全部数据；勾选页面权限后，可配置该页面的操作权限</span></div><button type="button" class="secondary-action" data-rbac-clear>清空权限</button></div><div class="site-rbac-1025-system-lock"><span class="site-rbac-1025-lock-icon">锁</span><div><strong>系统管理</strong><p>系统管理及其下级页面不进入授权树，仅站点最高权限账号可操作。</p></div><span>不可授权</span></div><div class="site-rbac-1025-permission-tree">${tree}</div></div>`;
   }
 
   function openRoleEditor(role) {
@@ -207,10 +202,6 @@
       root.querySelectorAll("[data-rbac-group], [data-rbac-page-view], [data-rbac-action]").forEach((input) => { input.checked = false; if (input.dataset.rbacAction) input.disabled = true; });
       syncPermissionState(root);
     });
-    root.querySelector("[data-rbac-scope]")?.addEventListener("change", (event) => {
-      const picker = root.querySelector("[data-rbac-scope-agents]");
-      if (picker) picker.hidden = event.target.value !== "指定代理范围";
-    });
     syncPermissionState(root);
     root.querySelector(".site-rbac-1025-save")?.addEventListener("click", () => {
       const nameInput = root.querySelector("[data-rbac-role-name]");
@@ -223,10 +214,7 @@
       if (!name) { showError("请输入角色名称"); return; }
       if (roles.some((item) => item.id !== role?.id && item.name.trim() === name)) { showError("角色名称已存在，请更换后再保存"); return; }
       const selectedViews = Array.from(root.querySelectorAll("[data-rbac-page-view]:checked"));
-      if (!selectedViews.length) { showError("请至少选择一个页面的查看列表权限"); return; }
-      const scope = root.querySelector("[data-rbac-scope]")?.value || "当前站点全部数据";
-      const scopeAgents = scope === "指定代理范围" ? Array.from(root.querySelectorAll("[data-rbac-agent]:checked")).map((item) => item.dataset.rbacAgent) : [];
-      if (scope === "指定代理范围" && !scopeAgents.length) { showError("请选择至少一个指定代理", root.querySelector("[data-rbac-scope]")); return; }
+      if (!selectedViews.length) { showError("请至少选择一个业务页面权限"); return; }
       const actionPermissions = {};
       selectedViews.forEach((input) => {
         const pageName = input.dataset.rbacPageView;
@@ -236,13 +224,11 @@
         role.name = name;
         role.description = root.querySelector("[data-rbac-role-description]")?.value.trim() || "";
         role.status = root.querySelector("[data-rbac-role-status]")?.value || "启用";
-        role.scope = scope;
-        role.scopeAgents = scopeAgents;
         role.actionPermissions = actionPermissions;
         role.permissions = Object.keys(actionPermissions);
         role.updatedAt = currentTimestamp();
       } else {
-        roles.push({ id: `ROLE-${String(roleSequence++).padStart(3, "0")}`, name, description: root.querySelector("[data-rbac-role-description]")?.value.trim() || "", status: root.querySelector("[data-rbac-role-status]")?.value || "启用", users: 0, updatedAt: currentTimestamp(), permissions: Object.keys(actionPermissions), actionPermissions, scope, scopeAgents });
+        roles.push({ id: `ROLE-${String(roleSequence++).padStart(3, "0")}`, name, description: root.querySelector("[data-rbac-role-description]")?.value.trim() || "", status: root.querySelector("[data-rbac-role-status]")?.value || "启用", users: 0, updatedAt: currentTimestamp(), permissions: Object.keys(actionPermissions), actionPermissions });
       }
       window.setTimeout(() => context.rerender(), 0);
     }, true);

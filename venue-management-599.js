@@ -319,9 +319,8 @@
   function memberHeader(title) {
     return `<div class="venue599-member-status"><strong>18:30</strong><span>● ● ●　87%</span></div><header class="venue599-member-header"><button type="button" aria-label="返回">‹</button><strong>${escape(title)}</strong><button type="button" aria-label="搜索" class="venue599-member-search"></button></header>`;
   }
-  function maintenanceCover(compact = false) {
-    const time = compact ? `<span>2026-09-28</span><span>02:00 ~ 05:00</span>` : `<span>${maintenanceTime}</span>`;
-    return `<div class="venue599-maintenance-cover${compact ? " is-compact" : ""}"><strong>维护中</strong>${time}</div>`;
+  function maintenanceCover() {
+    return `<div class="venue599-maintenance-cover"><strong>维护中</strong><span>${maintenanceTime}</span></div>`;
   }
   function memberVenuePage() {
     const categories = [["热", "热门"], ["哈", "哈希"], ["体", "体育"], ["真", "真人"], ["棋", "棋牌"], ["竞", "电竞"], ["彩", "彩票"], ["电", "电子"], ["鱼", "捕鱼"]];
@@ -334,7 +333,7 @@
     return `<section ${annotate("M01", "venue599-member-screen venue599-member-venue-screen")}>${badge("M01")}${memberHeader("体育场馆")}<div class="venue599-member-venue-body"><nav class="venue599-member-categories">${categories.map(([icon, name]) => `<button type="button" class="${name === "体育" ? "active" : ""}"><i>${icon}</i><span>${name}</span></button>`).join("")}</nav><div class="venue599-member-venue-list">${cards.map(([asset, name, maintained]) => `<article class="venue599-member-venue-card${maintained ? " is-maintenance" : ""}"><img src="./assets/599/${asset}" alt="${escape(name)}" />${maintained ? maintenanceCover() : ""}</article>`).join("")}</div></div></section>`;
   }
   function memberWalletGrid() {
-    return `<div class="venue599-member-wallet-grid">${memberWalletNames.map((name) => `<article class="${name === "PP电子" ? "is-maintenance" : ""}"><strong>${escape(name)}</strong><b>¥0.00</b>${name === "PP电子" ? maintenanceCover(true) : ""}</article>`).join("")}</div>`;
+    return `<div class="venue599-member-wallet-grid">${memberWalletNames.map((name) => `<article class="${name === "PP电子" ? "is-maintenance" : ""}"><strong>${escape(name)}</strong><b>¥0.00</b>${name === "PP电子" ? '<span class="venue599-member-wallet-maintenance">维护</span>' : ""}</article>`).join("")}</div>`;
   }
   function memberTransferPage() {
     return `<section ${annotate("M03", "venue599-member-screen venue599-member-wallet-screen")}>${badge("M03")}${memberHeader("转账")}<div class="venue599-member-balance"><span>中心钱包余额</span><strong>¥12,680.00</strong><button type="button">一键回收</button></div><div class="venue599-member-switch-row"><span>隐藏无余额场馆</span><button type="button" aria-label="隐藏无余额场馆"></button></div>${memberWalletGrid()}</section>`;
