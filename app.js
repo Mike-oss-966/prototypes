@@ -462,6 +462,7 @@
 
   function sidebar(requirement, page) {
     if (isVenueManagementRequirement(requirement.id)) return venueModule(requirement.id)?.sidebar(page) || "";
+    if (requirement.id === "#1131") return window.Withdraw1131.sidebar(requirement, page);
     if (requirement.id === "#1027") return window.AgentDaily1027.sidebar(page);
     if (requirement.id === "#1025") return window.SiteRbac1025.sidebar(page);
     if (requirement.id === "#911") return window.Commission911.sidebar(page);
@@ -5397,6 +5398,7 @@
     if (page.key.endsWith("-488")) return member488Content(page);
     if (page.key.endsWith("-493")) return member493Content(page);
     if (["deposit-withdraw-settings", "member-transactions", "agent-transactions", "site-transactions"].includes(page.key)) return financeGroupedContent(page);
+    if (currentRequirementId === "#1131") return window.Withdraw1131.render(page, { badge: componentBadge, modal, sites: siteOptions, siteSelect: siteMultiSelect, dateControl: agent498DateControl, bindDates: bindAgent498DatePickers, bindSites: bindSiteAutocomplete, bindLinks: bindComponentLinks, activeTab: activePageTab(page), setTab: (tab) => { window.location.hash = `#requirement/%231131/page/${page.key}/menu/${encodeURIComponent(tab)}`; }, rerender: () => detailView(requirements.find((item) => item.id === currentRequirementId), page.key) });
     if (page.key === "deposit-audit") return financeStandaloneContent(page, depositAuditContent());
     if (page.key === "withdrawal-audit") return financeStandaloneContent(page, withdrawalAuditContent());
     if (page.key === "withdraw-review") return withdrawReviewContent();
@@ -5476,6 +5478,7 @@
 
   function normalizeTableCurrencyUnits(root = document) {
     root.querySelectorAll("table").forEach((table) => {
+      if (table.closest(".withdraw1131-app,.withdraw1131-modal-root")) return;
       const headerRows = Array.from(table.tHead?.rows || []);
       const headerRow = headerRows.at(-1);
       const headers = Array.from(headerRow?.cells || []);
@@ -5549,6 +5552,7 @@
   }
 
   function normalizeConfirmedFieldNames(root = document, requirementId = "", pageKey = "") {
+    if (requirementId === "#1131") return;
     splitUpperAgentColumns(root);
     root.querySelectorAll(".risk-content label, .risk-content th, .modal-body label, .modal-body th").forEach((element) => {
       const textNode = Array.from(element.childNodes).find((node) => node.nodeType === Node.TEXT_NODE && node.nodeValue.trim());
@@ -5818,6 +5822,7 @@
     const profitSimulatorMode = isAgent498Requirement(requirement.id) && page.key === "profit-simulator-498";
     const control498Mode = isAgent498Requirement(requirement.id) && page.key.startsWith("control-");
     const finance971Mode = requirement.id === "#971";
+    const withdraw1131Mode = requirement.id === "#1131";
     const agent1027Mode = requirement.id === "#1027";
     const siteRbac1025Mode = requirement.id === "#1025";
     const venue599Mode = isVenueManagementRequirement(requirement.id);
@@ -5856,6 +5861,13 @@
     const agent498Role = requirement.id === "#498" && agent498Portal !== "AGENT" ? (agent498Portal === "CONTROL" ? "总控管理员" : "站点管理员") : agent498IdentityConfig[agent498Identity]?.label;
     app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${escapeHtml(requirement.displayId ?? requirement.id)}</strong><span>${requirement.title}</span></div><nav${["#509", "#643", "#828", "#971"].includes(requirement.id) || venue599Mode || isAgent498Requirement(requirement.id) ? ' class="prototype-endpoint-nav"' : ""} aria-label="当前原型页面">${prototypeEndpointSwitch(requirement, page)}</nav></header><div class="prototype-canvas${memberMobileMode ? " member-mobile-canvas" : ""}${vipAlgorithmMode ? " vip-algorithm-canvas" : ""}${profitSimulatorMode ? " profit-simulator-canvas" : ""}${risk680Mode ? " risk-680-canvas" : ""}${risk784Mode || risk830Mode ? " risk-784-canvas" : ""}${privacy862Mode ? " privacy-862-canvas" : ""}">${prototypeBody}</div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${agent498Mode ? escapeHtml(agent498Role) : site695Mode ? escapeHtml(site695IdentityConfig[site695Identity].label) : page.role}</span>${privacy862Mode ? "" : `<span>页面：${page.id}</span>`}</div><div class="spec-title-row"><div><h2>${displayPageName}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll">${permissionReview}<div class="spec-top-notices">${topSpecNotices}</div><div class="questions-slot">${questionsBlock(page)}</div>${pageNoteBlock(page)}${pageLogic}${extraNotice}${adjustmentNotice}${exportNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${cardAnnotations.length} 项</span></div><div class="annotation-list">${cardAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"${memberModuleMode || publicAgent498Mode || risk784Mode || risk830Mode || requirement.id === "#828" || finance971Mode || agent1027Mode || venue599Mode ? ` class="${venue599SiteMode ? "production-site-ui-695" : "production-admin-ui-488"}"` : risk680Mode ? ' class="risk-680-modal-root"' : ""}></div>`;
     window.PrototypeUI?.bindMenuToggles(app);
+    if (withdraw1131Mode) {
+      app.querySelector(".risk-app")?.classList.add("production-admin-ui-488", "withdraw1131-app");
+      app.querySelector(".prototype-canvas")?.classList.add("withdraw1131-canvas");
+      app.querySelector(".detail-shell")?.classList.add("withdraw1131-shell");
+      document.getElementById("modal-root")?.classList.add("production-admin-ui-488", "withdraw1131-modal-root");
+      window.Withdraw1131.bind();
+    }
     if (requirement.id === "#911") {
       window.Commission911.bind({ rerender: () => detailView(requirement, page.key) });
       bindAgent498DatePickers();
@@ -7878,7 +7890,7 @@
       const requestedMenu = decodeURIComponent(match[3]);
       if (targetPage?.tabs?.includes(requestedMenu)) agent498SubViewState[targetPage.key] = requestedMenu;
     }
-    if (requirement.id === "#971") {
+    if (["#971", "#1131"].includes(requirement.id)) {
       const replacement = { "agent-dashboard-971": "agent-financial-report-971", "site-dashboard-971": "site-financial-report-971" }[match[2]];
       if (replacement) { window.location.replace(`#requirement/%23971/page/${replacement}`); return; }
       const targetPage = requirement.pages.find((item) => item.key === match[2]);
