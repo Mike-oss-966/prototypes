@@ -12,6 +12,7 @@
   let cooperationContactSequence828 = cooperationContacts828.length + 1;
   const rebateVenueCatalog = Array.isArray(window.PROTOTYPE_VENUE_GAMES) ? window.PROTOTYPE_VENUE_GAMES : [];
   const bonusTypeOptions = ["VIP晋升礼金", "VIP周礼金", "VIP月礼金", "VIP生日礼金", "签到奖励", "推广首充奖励", "推广存款奖励", "推广投注返佣", "活动任务奖励", "指定会员红包", "活动彩金", "新人首充彩金", "余额宝利息"];
+  const member488OverviewBonusDetails = [["活动礼金","3,100"],["晋升礼金","700"],["周礼金","820"],["月礼金","900"],["活动彩金","0"],["首充彩金","0"],["生日礼金","400"],["平台红利","0"],["线上活动","0"],["线下红利","0"],["代理彩金","0"],["官方代理红利","0"],["负数置零","0"],["会员推荐会员奖励","1,200"],["人工发彩金","1,500"],["余额宝利息","12.68"]];
   const memberCustomTagOptions = [
     { name: "世界杯高活跃", type: "运营标签", description: "世界杯活动期间高活跃会员", count: "2,816", operator: "mike.ops", updatedAt: "2026-07-23 16:18:20" },
     { name: "线下补充核验", type: "风控标签", description: "需补充线下身份或资金核验", count: "93", operator: "amy.risk", updatedAt: "2026-07-22 11:30:08" },
@@ -461,8 +462,8 @@
   }
 
   function sidebar(requirement, page) {
-    if (isVenueManagementRequirement(requirement.id)) return venueModule(requirement.id)?.sidebar(page) || "";
     if (requirement.id === "#1131") return window.Withdraw1131.sidebar(requirement, page);
+    if (isVenueManagementRequirement(requirement.id)) return venueModule(requirement.id)?.sidebar(page) || "";
     if (requirement.id === "#1027") return window.AgentDaily1027.sidebar(page);
     if (requirement.id === "#1025") return window.SiteRbac1025.sidebar(page);
     if (requirement.id === "#911") return window.Commission911.sidebar(page);
@@ -1248,13 +1249,9 @@
     return `<div class="risk-page-heading finance-page-heading"><div><h1>${page.name}</h1></div><span class="prototype-only-label">变更标记仅用于原型评审</span></div>${financeMenuChangeSummary(page)}${content}`;
   }
 
-  const member488DetailPages = [
-    ["member-basic-488", "基本信息"], ["member-overview-488", "数据概览"], ["member-wallet-488", "中心钱包"],
-    ["member-statistics-488", "用户统计"], ["bet-records-488", "投注记录"], ["deposit-info-488", "存款信息"],
-    ["withdrawal-info-488", "提款信息"], ["bonus-info-488", "红利信息"], ["rebate-info-488", "返水信息"],
-    ["manual-adjustments-488", "人工上下分记录"], ["account-adjustment-488", "账户调整"],
-    ["balance-change-488", "账变记录"], ["risk-record-488", "风控记录"]
-  ];
+  const member488DetailPages = requirements.find(item => item.id === "#488").pages
+    .filter(page => !["member-list-488", "member-logs-488"].includes(page.key))
+    .map(page => [page.key, page.name]);
 
   function member488ContextAccount() {
     return sessionStorage.getItem("prototype-member-detail-account") || "member_10086";
@@ -1327,12 +1324,12 @@
   function member488OverviewContent(page) {
     const headers = ["总输赢", "总有效投注", "总存款", "总提款", "总存提差", "总收入", "总支出", "总红利", "总返水", "总打赏金额", "总打码金额"];
     const values = ["+18,650 CNY", "690,820 CNY", "168,800 CNY", "121,300 CNY", "47,500 CNY", "28,560 CNY", "9,680 CNY", "8,632.68 CNY", "6,380 CNY", "1,280 CNY", "712,460 CNY"];
-    const incomeDetails = [["被转账", "12,800"], ["红包金额", "3,260"], ["额度增加", "12,500"]];
-    const bonusDetails = [["会员推荐会员奖励", "1,200"], ["活动奖励", "3,100"], ["人工发彩金", "1,500"], ["VIP周礼金", "820"], ["VIP月礼金", "900"], ["VIP晋升礼金", "700"], ["VIP生日礼金", "400"], ["余额宝利息", "12.68"]];
+    const incomeDetails = [["代理转账", "12,800"], ["红包金额", "3,260"], ["额度增加", "12,500"]];
+    const bonusDetails = member488OverviewBonusDetails;
     const headerTips = {
-      "总收入": "统计时间内，被转账金额、红包金额和额度增加金额的合计。",
+      "总收入": "统计时间内，代理转账金额、红包金额和额度增加金额的合计。",
       "总支出": "统计时间内，会员额度减少金额的合计。",
-      "总红利": "统计时间内，会员推荐会员奖励、活动奖励、人工发彩金、VIP礼金和余额宝利息的合计。"
+      "总红利": "统计时间内，全部生产礼金类型及会员推荐会员奖励、人工发彩金、余额宝利息的合计；同一笔红利只计入一次。"
     };
     const headerCell = (header, index) => `<th class="${productionIndexes.has(index) ? "production-same" : ""}"><span class="overview-header-label">${header}${headerTips[header] ? `<span class="overview-header-hint" tabindex="0" role="note" aria-label="${header}说明：${headerTips[header]}" data-tooltip="${headerTips[header]}">?</span>` : ""}</span></th>`;
     const detailCell = (value, details, annotated = false) => `<div class="overview-table-value bonus-hover${annotated ? ' annotated" data-component-id="C01' : ""}" tabindex="0">${annotated ? componentBadge("C01") : ""}<strong class="amount">${value}</strong><div class="bonus-tooltip">${details.map(([name, amount]) => `<span><b>${name}</b><em>${amount}</em></span>`).join("")}</div></div>`;
@@ -1361,58 +1358,93 @@
     const venues = [["DW体育","82,680","79,520","186","+6,820"],["SABA体育","51,300","48,900","102","-3,650"],["FB体育","26,880","24,560","68","+1,260"]];
     const columns = `<colgroup><col class="statistics-seq" /><col class="statistics-venue" /><col /><col /><col /><col /></colgroup>`;
     const totalCells = `<td colspan="2"><strong>总计</strong></td><td><strong class="amount">160,860</strong></td><td><strong class="amount">152,980</strong></td><td><strong>356</strong></td><td><strong class="amount">+4,430</strong></td>`;
-    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid"><div class="risk-field"><label>场馆名称</label><select><option>全部场馆</option><option>DW体育</option><option>SABA体育</option></select></div>${member488DateRange("F01", "下注时间", false)}${filterActions(true)}</div></section><div class="inner-tabs member-category-tabs annotated" data-component-id="N01">${componentBadge("N01")}${["体育","真人","电子","电竞","棋牌","捕鱼","彩票","哈希"].map((x,i)=>`<button class="${i===0?"active":""}">${x}</button>`).join("")}</div><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>场馆统计</h2><span>共 3 个场馆</span></div></div><div class="risk-table-wrap member-statistics-wrap"><table class="risk-table member-statistics-table member-statistics-total-top" aria-label="场馆统计顶部总计">${columns}<tbody><tr class="table-total-row top">${totalCells}</tr></tbody></table><table class="risk-table member-statistics-table">${columns}<thead><tr><th>序号</th><th>场馆名称</th><th>总下注</th><th>有效投注</th><th>注单笔数</th><th>总盈亏（会员视角）</th></tr></thead><tbody>${venues.map((r,i)=>`<tr><td>${i+1}</td><td>${r[0]}</td><td><strong class="amount">${r[1]} CNY</strong></td><td>${r[2]} CNY</td><td>${r[3]}</td><td><strong class="${r[4].startsWith("-")?"amount-negative":"amount"}">${r[4]} CNY</strong></td></tr>`).join("")}</tbody><tfoot><tr class="table-total-row bottom">${totalCells}</tr></tfoot></table></div>${pagination(20,3)}</section>`);
+    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid"><div class="risk-field"><label>场馆名称</label><select><option>全部场馆</option><option>DW体育</option><option>SABA体育</option></select></div>${member488DateRange("F01", "下注时间", false)}${filterActions(true)}</div></section><div class="inner-tabs member-category-tabs annotated" data-component-id="N01">${componentBadge("N01")}${["体育","真人","电子","电竞","棋牌","捕鱼","彩票","哈希"].map((x,i)=>`<button class="${i===0?"active":""}">${x}</button>`).join("")}</div><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>场馆统计</h2><span>共 3 个场馆</span></div></div><div class="risk-table-wrap member-statistics-wrap" data-page-scroll><table class="risk-table member-statistics-table">${columns}<thead><tr><th>序号</th><th>场馆名称</th><th>总下注</th><th>有效投注</th><th>注单笔数</th><th>总盈亏（会员视角）</th></tr></thead><tbody>${venues.map((r,i)=>`<tr><td>${i+1}</td><td>${r[0]}</td><td><strong class="amount">${r[1]} CNY</strong></td><td>${r[2]} CNY</td><td>${r[3]}</td><td><strong class="${r[4].startsWith("-")?"amount-negative":"amount"}">${r[4]} CNY</strong></td></tr>`).join("")}</tbody><tfoot><tr class="table-total-row bottom">${totalCells}</tr></tfoot></table></div>${pagination(20,3)}</section>`);
   }
 
   function member488BetContent(page) {
+    const member = member488ContextAccount();
     const rows = [
-      { member: "member_10086", vip: "VIP6", agent: "agent_087 / AG10386", venue: "DB真人", venueType: "真人", game: "经典百家乐", gameType: "国际厅", gameNo: "GB08267193F", activity: "荷官打赏 20", detail: ["厅别：国际厅", "下注：闲", "牌型：庄 ♥7♠J；闲 ♥Q♣Q♦Q", "结果：庄7；闲0"], bet: "20.00", valid: "20.00", result: "20.00", early: "否", second: "否", status: "已结算", times: ["2026-07-19 13:03:41", "—", "2026-07-19 13:04:12"], order: "1286689241258828160", venueOrder: "DB260719130341" },
-      { member: "member_10086", vip: "VIP6", agent: "agent_087 / AG10386", venue: "DW体育", venueType: "体育", game: "足球", gameType: "欧洲厅", gameNo: "MATCH-88931", activity: "—", detail: ["足球（2026-07-20 03:00:00）", "世界杯2026：西班牙 v 阿根廷", "2-0 @10（欧洲盘）", "早盘；玩法：全场波胆", "下注时比分：暂无比分"], bet: "200.00", valid: "200.00", result: "-200.00", early: "否", second: "是", status: "已结算", times: ["2026-07-19 13:02:23", "2026-07-20 03:00:00", "2026-07-20 05:18:43"], order: "1286688941858090880", venueOrder: "DW260719130223" },
-      { member: "member_10086", vip: "VIP6", agent: "agent_087 / AG10386", venue: "开元棋牌", venueType: "棋牌", game: "炸金花", gameType: "旗舰厅", gameNo: "ROOM-6158", activity: "—", detail: null, bet: "500.00", valid: "480.00", result: "1,240.00", early: "否", second: "否", status: "已结算", times: ["2026-07-19 09:54:51", "—", "2026-07-19 09:55:21"], order: "BMKR4N3KX000010", venueOrder: "KY260719095451" }
+      { member, vip: 'VIP6', site: 'XY体育', siteCode: 'XY001', memberType: '普代', agent: 'agent_087', agentCode: 'AG10386', venue: '旺财真人', venueType: '真人', game: '经典百家乐', gameType: '国际厅', gameNo: 'GB08267193F', detail: ['厅别：国际厅', '下注：闲', '牌型：庄 ♥7♠J；闲 ♥Q♣Q♦Q', '结果：庄7；闲0'], bet: 20, valid: 20, result: 20, status: '已结算', betAt: '2026-07-19 13:03:41', matchAt: '—', netAt: '2026-07-19 13:04:12', syncAt: '2026-07-19 13:04:20', order: 'DB260719130341', ip: '192.0.2.18', match: '' },
+      { member, vip: 'VIP6', site: 'XY体育', siteCode: 'XY001', memberType: '普代', agent: 'agent_087', agentCode: 'AG10386', venue: '旺财体育', venueType: '体育', game: '足球', gameType: '欧洲厅', gameNo: 'MATCH-88931', detail: ['足球（2026-07-19 13:00:00）', '示例联赛：主队 v 客队', '2-0 @10（欧洲盘）', '早盘；玩法：全场波胆', '下注时比分：暂无比分'], bet: 200, valid: 200, result: -200, status: '已结算', betAt: '2026-07-19 12:02:23', matchAt: '2026-07-19 13:00:00', netAt: '2026-07-19 15:18:43', syncAt: '2026-07-19 15:18:50', order: 'DW260719120223', ip: '192.0.2.18', match: '示例联赛 主队 客队' },
+      { member, vip: 'VIP6', site: 'XY体育', siteCode: 'XY001', memberType: '普代', agent: 'agent_087', agentCode: 'AG10386', venue: '旺财棋牌', venueType: '棋牌', game: '炸金花', gameType: '旗舰厅', gameNo: 'ROOM-6158', detail: null, bet: 500, valid: 0, result: 0, status: '未结算', betAt: '2026-07-19 16:54:51', matchAt: '—', netAt: '', syncAt: '2026-07-19 16:54:55', order: 'KY260719165451', ip: '192.0.2.18', match: '' }
     ];
-    const body = rows.map((row, index) => `<tr><td class="sticky-member-493-account"><strong>${row.member}</strong></td><td>${row.vip}</td><td>${row.agent}</td><td>${row.venue}</td><td>${row.venueType}</td><td>${row.game}</td><td>${row.gameType}</td><td><strong class="mono">${row.gameNo}</strong></td><td>${row.activity}</td><td>${member493BetDetail(row.detail, row.game, index === 0)}</td><td><strong class="amount">${row.bet}</strong></td><td><strong class="amount">${row.valid}</strong></td><td>${row.result}</td><td>${row.early}</td><td>${row.second}</td><td><span class="result-tag approved">${row.status}</span></td><td>${row.times[0]}</td><td>${row.times[1]}</td><td>${row.times[2]}</td><td><strong class="mono">${row.order}</strong></td><td><strong class="mono">${row.venueOrder}</strong></td></tr>`).join("");
-    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid member-493-bet-filters"><div class="risk-field"><label>场馆名称</label><select><option>全部场馆</option><option>DB真人</option><option>DW体育</option><option>开元棋牌</option></select></div><div class="risk-field"><label>场馆类型</label><select><option>全部类型</option><option>真人</option><option>体育</option><option>电子</option><option>棋牌</option></select></div><div class="risk-field"><label>游戏名称</label><input type="text" placeholder="请输入游戏名称" /></div><div class="risk-field"><label>游戏类型</label><input type="text" placeholder="请输入具体厅名称" /></div><div class="risk-field"><label>游戏编号</label><input type="text" placeholder="赛事ID / 局号 / 期号" /></div><div class="risk-field"><label>提前结算</label><select><option>全部</option><option>是</option><option>否</option></select></div><div class="risk-field"><label>二次结算</label><select><option>全部</option><option>是</option><option>否</option></select></div><div class="risk-field"><label>注单号</label><input type="text" placeholder="请输入投注单号" /></div>${member488DateRange("F01", "下注时间", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated member-488-production-diff" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>已结算投注记录</h2><span>共 356 条</span></div></div><div class="risk-table-wrap"><table class="risk-table member-493-bet-table member-488-bet-table"><thead><tr><th class="sticky-member-493-account">会员账号</th><th>会员等级</th><th>上级代理账号/编号</th><th>场馆名称</th><th>场馆类型</th><th>游戏名称</th><th>游戏类型</th><th class="annotated" data-component-id="C02">${componentBadge("C02")}游戏编号</th><th>场馆活动</th><th>下注详情</th><th>下注金额（CNY）</th><th>有效投注（CNY）</th><th>输赢情况（CNY）</th><th>提前结算</th><th>二次结算</th><th>注单状态</th><th>下注时间</th><th>开赛时间</th><th>结算时间</th><th>投注单号</th><th>场馆单号</th></tr></thead><tbody>${body}</tbody></table></div>${pagination(20,356)}</section>`);
+    const input = (name, key, placeholder) => `<div class="risk-field"><label>${name}</label><input type="text" data-record-filter="${key}" placeholder="${placeholder}" /></div>`;
+    const select = (name, key, options) => `<div class="risk-field"><label>${name}</label><select data-record-filter="${key}"><option value="">全部</option>${options.map(value => `<option>${escapeHtml(value)}</option>`).join('')}</select></div>`;
+    const dates = [['下注时间', 'betAt'], ['结算时间', 'netAt'], ['同步时间', 'syncAt']].map(([label, key]) => `<div data-record-date="${key}">${member488DateRange('F01', label, false)}</div>`).join('');
+    const headers = ['会员账号', '场馆名称', '场馆类型', '游戏名称', '游戏类型', '游戏编号', '下注详情', '下注金额 CNY', '有效投注 CNY', '输赢金额 CNY（会员视角）', '注单状态', '下注时间', '开赛时间', '结算时间', '同步时间', '投注单号', '投注IP'];
+    const body = rows.map((row, index) => {
+      const values = [escapeHtml(row.member), row.venue, row.venueType, row.game, row.gameType, row.gameNo, member493BetDetail(row.detail, row.game, index === 0), money(row.bet), money(row.valid), row.status === '未结算' ? '—' : money(row.result), `<span class="result-tag ${row.status === '已结算' ? 'approved' : 'pending'}">${row.status}</span>`, row.betAt, row.matchAt, row.netAt || '—', row.syncAt, row.order, row.ip];
+      return `<tr data-member-record="${escapeHtml(JSON.stringify(row))}">${values.map((value, col) => `<td class="${col === 0 ? 'sticky-member-493-account' : col === 11 ? 'member488-bet-detail-cell' : ''}">${value}</td>`).join('')}</tr>`;
+    }).join('');
+    const totals = headers.map((_, index) => `<td${index === 7 ? ' data-record-total="bet"' : index === 8 ? ' data-record-total="valid"' : index === 9 ? ' data-record-total="result"' : ''}>${index === 0 ? '<strong>总计</strong>' : index === 7 ? money(720) : index === 8 ? money(220) : index === 9 ? money(-180) : '—'}</td>`).join('');
+    return member488DetailPage(page, `<section class="risk-filter-panel annotated member488-record-filters" data-component-id="F01">${componentBadge('F01')}<div class="risk-filter-grid member488-bet-filters">${input('投注单号', 'order', '请输入三方注单号')}${select('场馆名称', 'venue', rebateVenueCatalog.map(item => item.name))}${select('场馆类型', 'venueType', [...new Set(rebateVenueCatalog.map(item => item.type))])}${input('游戏名称', 'game', '请输入游戏名称')}${input('游戏类型', 'gameType', '请输入游戏类型')}${input('游戏编号', 'gameNo', '请输入局号或局ID')}${select('订单状态', 'status', ['未结算', '已结算', '不结算'])}<div class="risk-field"><label>下注金额</label><div class="member488-amount-range"><input type="number" min="0" data-record-min placeholder="最小金额" /><span>至</span><input type="number" min="0" data-record-max placeholder="最大金额" /></div></div>${input('赛事名称', 'match', '请输入赛事详情')}${dates}${filterActions(true)}</div></section><section class="risk-list-card annotated member488-record-list" data-component-id="T01">${componentBadge('T01')}<div class="risk-list-heading"><div><h2>投注记录</h2><span data-record-count>共 ${rows.length} 条</span></div></div><div class="risk-table-wrap" data-page-scroll><table class="risk-table member-488-bet-table"><thead><tr>${headers.map((header, index) => `<th class="${index === 0 ? 'sticky-member-493-account' : index === 5 ? 'annotated' : ''}"${index === 5 ? ' data-component-id="C02"' : ''}>${index === 5 ? componentBadge('C02') : ''}${header}</th>`).join('')}</tr></thead><tbody>${body}</tbody><tfoot><tr class="table-total-row bottom">${totals}</tr></tfoot></table></div>${pagination(20, rows.length)}</section>`);
   }
 
   function member488MoneyRecordContent(page, withdrawal = false) {
-    const title = withdrawal ? "提款" : "存款";
-    const stateOptions = withdrawal ? ["审核中","转账中","拒绝","成功","失败"] : ["确认中","确认失败","确认成功","待支付","用户主动取消"];
-    const headers = withdrawal ? ["订单号","订单类型","提款通道","提款金额","到账金额","开户行","银行卡号","币种","汇率","地址","订单时间","风控审核完成时间","风控操作人","风控审核备注","出款完成时间","财务操作人","财务审核备注","状态"] : ["订单号","虚拟币金额","汇率","订单金额","到账金额","上分金额","存款优惠","支付方式","订单时间","确认付款时间","完成时间","操作人","取消原因","状态"];
-    const cells = withdrawal ? ["WD2607190086","会员提款","极速出款","5,000","4,980","招商银行","6225 **** 1886","CNY","1.000000","上海市浦东新区","2026-07-19 10:20:18","2026-07-19 10:32:20","mike.risk","正常通过","2026-07-19 11:05:18","mike.finance","已核验","成功"] : ["DP2607190068","—","1.000000","2,000","2,000","2,000","80","支付宝","2026-07-19 09:20:18","2026-07-19 09:21:16","2026-07-19 09:22:08","mike.finance","—","确认成功"];
-    const productionHeaders = new Set();
-    const headerClass = (header, index) => [index === 0 ? "sticky-member-order with-seq" : index === headers.length - 1 ? "sticky-member-status" : "", productionHeaders.has(header) ? "production-same" : ""].filter(Boolean).join(" ");
-    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid member-record-filters"><div class="risk-field"><label>订单号</label><input type="text" placeholder="请输入单号" /></div><div class="risk-field"><label>订单状态</label><select><option>全部状态</option>${stateOptions.map(x=>`<option>${x}</option>`).join("")}</select></div><div class="risk-field"><label>${withdrawal?"订单类型":"支付方式"}</label><select><option>全部类型</option><option>${withdrawal?"会员提款":"支付宝"}</option></select></div>${member488DateRange("F01", "订单时间", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated member-488-production-diff" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>${title}信息</h2><span>共 68 条</span></div></div><div class="risk-table-wrap"><table class="risk-table member-money-table"><thead><tr><th class="sticky-member-seq">序号</th>${headers.map((header,index)=>`<th class="${headerClass(header,index)}">${header}</th>`).join("")}</tr></thead><tbody>${[0,1,2].map((_,row)=>`<tr><td class="sticky-member-seq">${row+1}</td>${cells.map((cell,index)=>{ const value = index === cells.length - 1 && row === 2 ? stateOptions[1] : cell; const isFailure = ["确认失败", "失败", "拒绝"].includes(value); return `<td class="${headerClass(headers[index],index)}">${index===0?`<strong class="mono">${cell.slice(0,-1)}${8-row}</strong>`:index===cells.length-1?`<span class="result-tag${isFailure ? " failed" : ""}">${value}</span>`:cell}</td>`; }).join("")}</tr>`).join("")}</tbody></table></div>${pagination(20,68)}</section>`);
+    if (!withdrawal) {
+      const rows = [
+        { order: 'DP2607190068', channel: '101/支付宝', amount: 2000, actual: 2000, status: '充值成功', time: '2026-07-19 09:20:18' },
+        { order: 'DP2607190067', channel: '102/银行卡', amount: 3000, actual: 0, status: '充值确认中', time: '2026-07-19 10:20:18' },
+        { order: 'DP2607190066', channel: '103/USDT', amount: 1500, actual: 0, status: '充值失败', time: '2026-07-19 11:20:18' }
+      ];
+      const body = rows.map(row => `<tr data-member-record="${escapeHtml(JSON.stringify(row))}"><td class="production-same"><strong class="mono">${row.order}</strong></td><td class="production-same">${row.channel}</td><td class="production-same">${money(row.amount)}</td><td class="production-same">${row.actual ? money(row.actual) : '—'}</td><td class="production-same"><span class="result-tag ${row.status === '充值成功' ? 'approved' : row.status === '充值失败' ? 'failed' : 'pending'}">${row.status}</span></td><td class="production-same">${row.time}</td></tr>`).join('');
+      return member488DetailPage(page, `<div class="member-488-production-diff"><section class="risk-filter-panel annotated member488-record-filters" data-component-id="F01">${componentBadge('F01')}<div class="risk-filter-grid"><div data-record-date="time">${member488DateRange('F01', '计算时间', false)}</div>${filterActions()}</div></section><section class="risk-list-card annotated member488-record-list" data-component-id="T01">${componentBadge('T01')}<div class="risk-table-wrap" data-page-scroll><table class="risk-table member488-deposit-table"><thead><tr><th class="production-same">订单号</th><th class="production-same">充值通道</th><th>充值金额 CNY</th><th>到账金额 CNY</th><th class="production-same">状态</th><th class="production-same">充值时间</th></tr></thead><tbody>${body}</tbody><tfoot><tr class="table-total-row bottom"><td><strong>总计</strong></td><td>—</td><td data-record-total="amount">${money(6500)}</td><td data-record-total="actual">${money(2000)}</td><td>—</td><td>—</td></tr></tfoot></table></div>${pagination(20, rows.length)}</section></div>`);
+    }
+    const headers = ['订单号', '提款通道', '提款金额 CNY', '到账金额 CNY', '提现账号', '币种', '汇率', '订单时间', '风控审核完成时间', '风控操作人', '风控审核备注', '出款完成时间', '财务操作人', '财务审核备注', '状态'];
+    const rows = [
+      { order: 'WD2607190086', channel: '极速出款', amount: 5000, actual: 4980, account: '6225 **** 1886', currency: 'CNY', rate: '1.000000', time: '2026-07-19 10:20:18', riskAt: '2026-07-19 10:32:20', riskBy: 'mike.risk', riskNote: '正常通过', paidAt: '2026-07-19 11:05:18', financeBy: 'mike.finance', financeNote: '已核验', status: '成功' },
+      { order: 'WD2607190085', channel: '支付宝出款', amount: 3000, actual: 0, account: 'user****@example.com', currency: 'CNY', rate: '1.000000', time: '2026-07-19 12:20:18', riskAt: '2026-07-19 12:32:20', riskBy: 'mike.risk', riskNote: '正常通过', paidAt: '—', financeBy: '—', financeNote: '—', status: '待处理' },
+      { order: 'WD2607190084', channel: '银行卡出款', amount: 2000, actual: 0, account: '6217 **** 2068', currency: 'CNY', rate: '1.000000', time: '2026-07-19 13:20:18', riskAt: '2026-07-19 13:32:20', riskBy: 'mike.risk', riskNote: '未满足提款条件', paidAt: '—', financeBy: '—', financeNote: '—', status: '拒绝' }
+    ];
+    const cellClass = index => index === 0 ? 'sticky-member-order with-seq' : index === headers.length - 1 ? 'sticky-member-status' : '';
+    const body = rows.map((row, index) => {
+      const cells = [row.order, row.channel, money(row.amount), row.actual ? money(row.actual) : '—', row.account, row.currency, row.rate, row.time, row.riskAt, row.riskBy, row.riskNote, row.paidAt, row.financeBy, row.financeNote, `<span class="result-tag ${row.status === '拒绝' ? 'failed' : row.status === '待处理' ? 'pending' : 'approved'}">${row.status}</span>`];
+      return `<tr data-member-record="${escapeHtml(JSON.stringify(row))}"><td class="sticky-member-seq">${index + 1}</td>${cells.map((value, col) => `<td class="${cellClass(col)}">${value}</td>`).join('')}</tr>`;
+    }).join('');
+    return member488DetailPage(page, `<section class="risk-filter-panel annotated member488-record-filters" data-component-id="F01">${componentBadge('F01')}<div class="risk-filter-grid member-record-filters"><div class="risk-field"><label>订单号</label><input type="text" data-record-filter="order" placeholder="请输入单号" /></div><div class="risk-field"><label>订单状态</label><select data-record-filter="status"><option value="">全部状态</option>${['待处理', '失败', '拒绝', '成功'].map(status => `<option>${status}</option>`).join('')}</select></div><div data-record-date="time">${member488DateRange('F01', '订单时间', false)}</div>${filterActions(true)}</div></section><section class="risk-list-card annotated member488-record-list" data-component-id="T01">${componentBadge('T01')}<div class="risk-list-heading"><div><h2>提款信息</h2><span data-record-count>共 ${rows.length} 条</span></div></div><div class="risk-table-wrap" data-page-scroll><table class="risk-table member-money-table"><thead><tr><th class="sticky-member-seq">序号</th>${headers.map((header, index) => `<th class="${cellClass(index)}">${header}</th>`).join('')}</tr></thead><tbody>${body}</tbody><tfoot><tr class="table-total-row bottom"><td><strong>总计</strong></td>${headers.map((_, index) => `<td${index === 2 ? ' data-record-total="amount"' : index === 3 ? ' data-record-total="actual"' : ''}>${index === 2 ? money(10000) : index === 3 ? money(4980) : '—'}</td>`).join('')}</tr></tfoot></table></div>${pagination(20, rows.length)}</section>`);
   }
 
   function member488BonusContent(page) {
-    const bonusTypes = ["VIP晋升礼金","VIP周礼金","VIP月礼金","VIP生日礼金","签到奖励","推广首充奖励","推广存款奖励","推广投注返佣","活动任务奖励","指定会员红包","活动彩金","新人首充彩金","余额宝利息"];
-    const rows = [
-      ["VIP晋升礼金","晋升VIP6礼金","688","中心钱包","中心钱包","1","系统自动","VIP晋升任务"], ["VIP周礼金","VIP6周礼金","188","中心钱包","中心钱包","1","系统自动","每周礼金任务"],
-      ["VIP月礼金","VIP6月礼金","588","中心钱包","中心钱包","1","系统自动","每月礼金任务"], ["VIP生日礼金","VIP生日专享礼金","288","中心钱包","中心钱包","1","系统自动","生日礼金任务"],
-      ["签到奖励","连续签到7天奖励","18","中心钱包","中心钱包","1","系统自动","签到任务"], ["推广首充奖励","下级会员首充奖励","68","中心钱包","中心钱包","1","系统自动","推广结算"],
-      ["推广存款奖励","下级会员存款奖励","36","中心钱包","中心钱包","1","系统自动","推广结算"], ["推广投注返佣","下级会员投注返佣","92","中心钱包","中心钱包","1","系统自动","推广结算"],
-      ["活动任务奖励","周末挑战任务奖励","128","中心钱包","中心钱包","3","系统自动","活动任务"], ["指定会员红包","运营定向红包","88","中心钱包","中心钱包","1","人工发放","运营审批"],
-      ["活动彩金","体育加码活动彩金","680","场馆钱包","DW体育","3","人工发放","运营审批"], ["新人首充彩金","新人首充专享彩金","108","场馆钱包","PG电子","5","系统自动","首充活动"],
-      ["余额宝利息","余额宝每日利息","12.68","中心钱包","中心钱包","1","系统自动","余额宝结算"]
-    ];
-    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid member-record-filters"><div class="risk-field annotated" data-component-id="C01">${componentBadge("C01")}<label>红利类型</label><select><option>全部类型</option>${bonusTypes.map((type)=>`<option>${type}</option>`).join("")}</select></div><div class="risk-field"><label>发放状态</label><select><option>全部状态</option><option>未发放</option><option>已发放</option></select></div><div class="risk-field"><label>钱包类型</label><select><option>全部钱包</option><option>中心钱包</option><option>场馆钱包</option></select></div><div class="risk-field"><label>钱包名称</label><select><option>全部钱包名称</option><option>中心钱包</option><option>DW体育</option><option>PG电子</option></select></div>${member488DateRange("F01", "红利申请时间", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>红利信息</h2><span>共 13 条示例</span></div></div><div class="risk-table-wrap"><table class="risk-table member-record-table"><thead><tr><th>序号</th><th>订单号</th><th>红利类型</th><th>红利标题</th><th>红利金额</th><th>钱包类型</th><th>钱包名称</th><th>流水倍数</th><th>发放状态</th><th>领取状态</th><th>申请时间</th><th>发放类型</th><th>审核备注</th><th>发放时间</th></tr></thead><tbody>${rows.map((row,index)=>`<tr><td>${index+1}</td><td><strong class="mono">BN2607${String(1900+index).padStart(4,"0")}</strong></td><td>${row[0]}</td><td>${row[1]}</td><td><strong class="amount">${row[2]} CNY</strong></td><td>${row[3]}</td><td>${row[4]}</td><td>${row[5]}</td><td><span class="result-tag approved">已发放</span></td><td><span class="result-tag ${index % 4 === 1 ? "pending" : "approved"}">${index % 4 === 1 ? "未领取" : "已领取"}</span></td><td>2026-07-${String(19-(index%5)).padStart(2,"0")} 09:30:00</td><td>${row[6]}</td><td>${row[7]}</td><td>2026-07-${String(19-(index%5)).padStart(2,"0")} 10:00:00</td></tr>`).join("")}</tbody></table></div>${pagination(20,13)}</section>`);
+    const examples = {
+      "活动礼金": ["周末签到活动礼金", 3, "系统自动", "活动任务"],
+      "晋升礼金": ["VIP6晋升礼金", 1, "系统自动", "VIP晋升任务"],
+      "周礼金": ["VIP6周礼金", 1, "系统自动", "每周礼金任务"],
+      "月礼金": ["VIP6月礼金", 1, "系统自动", "每月礼金任务"],
+      "活动彩金": ["体育加码活动彩金", 3, "人工发放", "运营审批"],
+      "首充彩金": ["新人首充专享彩金", 5, "系统自动", "首充活动"],
+      "生日礼金": ["VIP生日专享礼金", 1, "系统自动", "生日礼金任务"],
+      "平台红利": ["平台红利结算", 1, "系统自动", "平台结算"],
+      "线上活动": ["线上周末挑战礼金", 3, "系统自动", "线上活动"],
+      "线下红利": ["线下运营红利", 1, "人工发放", "运营审批"],
+      "代理彩金": ["代理下级首存彩金", 3, "系统自动", "代理活动"],
+      "官方代理红利": ["官方代理结算红利", 1, "系统自动", "代理结算"],
+      "负数置零": ["负数置零结算", 1, "系统自动", "平台结算"],
+      "会员推荐会员奖励": ["推荐好友奖励", 1, "系统自动", "推广结算"],
+      "人工发彩金": ["运营人工发放彩金", 1, "人工发放", "运营审批"],
+      "余额宝利息": ["余额宝每日利息", 1, "系统自动", "余额宝结算"]
+    };
+    const rows = member488OverviewBonusDetails.map(([type, amount]) => {
+      const example = examples[type];
+      if (!example) throw new Error('缺少红利类型示例：' + type);
+      return [type, example[0], Number(amount.replaceAll(',', '')), example[1], example[2], example[3]];
+    });
+    const body = rows.map((row, index) => {
+      const claimStatus = index % 4 === 1 ? '未领取' : '已领取';
+      const issuedAt = `2026-07-${String(19 - index % 5).padStart(2, '0')} 10:00:00`;
+      const claimTime = claimStatus === '已领取' ? `2026-07-${String(19 - index % 5).padStart(2, '0')} 10:15:00` : '—';
+      const record = { type: row[0], amount: row[2], method: row[4], status: '已发放' };
+      return `<tr data-member-record="${escapeHtml(JSON.stringify(record))}"><td>${index + 1}</td><td><strong class="mono">BN2607${String(1900 + index).padStart(4, '0')}</strong></td><td>${row[0]}</td><td>${row[1]}</td><td><strong class="amount">${money(row[2])}</strong></td><td>${row[3]}</td><td><span class="result-tag approved">已发放</span></td><td><span class="result-tag ${claimStatus === '未领取' ? 'pending' : 'approved'}">${claimStatus}</span></td><td>7</td><td>${row[4]}</td><td>${row[5]}</td><td>${issuedAt}</td><td>${claimTime}</td></tr>`;
+    }).join('');
+    const total = rows.reduce((sum, row) => sum + row[2], 0);
+    return member488DetailPage(page, `<section class="risk-filter-panel annotated member488-record-filters" data-component-id="F01">${componentBadge('F01')}<div class="risk-filter-grid member-record-filters"><div class="risk-field annotated" data-component-id="C01">${componentBadge('C01')}<label>红利类型</label><select data-record-filter="type"><option value="">全部类型</option>${member488OverviewBonusDetails.map(([type]) => `<option>${type}</option>`).join('')}</select></div><div class="risk-field"><label>发放状态</label><select data-record-filter="status"><option value="">全部状态</option><option>未发放</option><option>已发放</option></select></div><div class="risk-field"><label>发放方式</label><select data-record-filter="method"><option value="">全部方式</option><option>系统自动</option><option>人工发放</option></select></div>${filterActions(true)}</div></section><section class="risk-list-card annotated member488-record-list" data-component-id="T01">${componentBadge('T01')}<div class="risk-list-heading"><div><h2>红利信息</h2><span data-record-count>共 ${rows.length} 条</span></div></div><div class="risk-table-wrap" data-page-scroll><table class="risk-table member-record-table"><thead><tr><th>序号</th><th>订单号</th><th>红利类型</th><th>红利标题</th><th>红利金额 CNY</th><th>流水倍数</th><th>发放状态</th><th>领取状态</th><th>领取时限（天）</th><th>发放方式</th><th>备注</th><th>发放时间</th><th>领取时间</th></tr></thead><tbody>${body}</tbody><tfoot><tr class="table-total-row bottom"><td colspan="4"><strong>总计</strong></td><td data-record-total="amount">${money(total)}</td><td colspan="8">—</td></tr></tfoot></table></div>${pagination(20, rows.length)}</section>`);
   }
 
   function member488RebateContent(page) {
-    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid member-record-filters"><div class="risk-field"><label>订单号</label><input type="text" placeholder="请输入单号" /></div><div class="risk-field"><label>返水等级</label><select><option>全部等级</option><option>VIP6</option></select></div><div class="risk-field"><label>返水状态</label><select><option>全部状态</option><option>未领取</option><option>已领取</option><option>已过期</option></select></div>${member488DateRange("", "返水日期", false)}${member488DateRange("", "领取日期", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>返水信息</h2><span>共 16 条</span></div></div><div class="risk-table-wrap"><table class="risk-table"><thead><tr><th>序号</th><th>订单号</th><th>返水等级</th><th>返水金额</th><th>流水倍数</th><th>返水生成时间</th><th>领取时间</th><th>过期时间</th><th>状态</th></tr></thead><tbody>${["已领取","未领取","已过期"].map((s,i)=>`<tr><td>${i+1}</td><td><strong class="mono">RB26071${9-i}008${i}</strong></td><td>VIP6</td><td><strong class="amount">${280-i*60} CNY</strong></td><td>${i+1}</td><td>2026-07-${19-i} 02:00:00</td><td>${i===1?"—":`2026-07-${19-i} 10:18:20`}</td><td>2026-07-${26-i} 23:59:59</td><td><span class="result-tag">${s}</span></td></tr>`).join("")}</tbody></table></div>${pagination(20,16)}</section>`);
-  }
-
-  function member488ManualContent(page) {
-    return member488DetailPage(page, `<section class="member-empty-page annotated" data-component-id="P01">${componentBadge("P01")}<strong>此板块先留空</strong></section>`);
-  }
-
-  function member488AdjustmentContent(page) {
-    return member488DetailPage(page, `<section class="member-empty-page annotated" data-component-id="P01">${componentBadge("P01")}<strong>此板块先留空</strong></section>`);
+    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid member-record-filters"><div class="risk-field"><label>订单号</label><input type="text" placeholder="请输入单号" /></div><div class="risk-field"><label>返水等级</label><select><option>全部等级</option><option>VIP6</option></select></div><div class="risk-field"><label>返水状态</label><select><option>全部状态</option><option>未领取</option><option>已领取</option><option>已过期</option></select></div>${member488DateRange("", "返水日期", false)}${member488DateRange("", "领取日期", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>返水信息</h2><span>共 16 条</span></div></div><div class="risk-table-wrap"><table class="risk-table"><thead><tr><th>序号</th><th>订单号</th><th>返水等级</th><th>返水金额</th><th>流水倍数</th><th>返水生成时间</th><th>领取时间</th><th>过期时间</th><th>状态</th></tr></thead><tbody>${["已领取","未领取","已过期"].map((s,i)=>`<tr><td>${i+1}</td><td><strong class="mono">RB26071${9-i}008${i}</strong></td><td>VIP6</td><td><strong class="amount">${280-i*60} CNY</strong></td><td>${i+1}</td><td>2026-07-${19-i} 02:00:00</td><td>${i!==0?"—":`2026-07-${19-i} 10:18:20`}</td><td>2026-07-${26-i} 23:59:59</td><td><span class="result-tag ${s === "已领取" ? "approved" : s === "未领取" ? "pending" : "failed"}">${s}</span></td></tr>`).join("")}</tbody></table></div>${pagination(20,16)}</section>`);
   }
 
   function member488BalanceContent(page) {
-    const rows = [["BC2607190088","存款","收入","2,000","13,880","15,880","成功","通过支付宝存款2,000 CNY"],["BC2607190072","代理后台代客充值","收入","1,000","14,880","15,880","成功","代理agent_087代客充值1,000元"],["BC2607190069","场馆转入失败","—","0","15,880","15,880","失败","转入AG真人500 CNY失败"]];
-    return member488DetailPage(page, `<section class="risk-filter-panel annotated" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid"><div class="risk-field"><label>账变类型</label><select><option>全部类型</option><option>存款</option><option>提款</option><option>红利</option><option>返水</option><option>账户调整</option><option>手动上下分</option><option>代理后台代客充值</option><option>场馆转入</option><option>场馆转出</option><option>场馆转入失败</option><option>场馆转出失败</option></select></div>${member488DateRange("F01", "账变时间", false)}${filterActions(true)}</div></section><section class="risk-list-card annotated member-488-production-diff" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>账变记录</h2><span>共 286 条</span></div></div><div class="risk-table-wrap"><table class="risk-table"><thead><tr><th>订单号</th><th>账变类型</th><th>收支方向</th><th>账变金额（CNY）</th><th>账变前金额（CNY）</th><th>账变后金额（CNY）</th><th>账变时间</th><th>执行结果</th><th class="annotated member-balance-note-header" data-component-id="C01">${componentBadge("C01")}备注</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td><strong class="mono">${r[0]}</strong></td><td>${r[1]}</td><td>${r[2]}</td><td><strong class="amount">${r[3]}</strong></td><td><strong class="amount">${r[4]}</strong></td><td><strong class="amount">${r[5]}</strong></td><td>2026-07-19 ${12-i}:20:18</td><td><span class="result-tag ${r[6]==="失败"?"failed":""}">${r[6]}</span></td><td>${r[7]}</td></tr>`).join("")}</tbody></table></div>${pagination(20,286)}</section>`);
+    return member488DetailHeader(page) + '<section class="member-empty-page member488-unchanged-page"><strong>与生产一致，无需修改</strong></section>';
   }
 
   function member488RiskContent(page) {
@@ -1454,7 +1486,7 @@
         tooltip.style.width = `${width}px`;
         tooltip.style.left = `${Math.round(left)}px`;
         tooltip.style.right = "auto";
-        tooltip.style.top = `${Math.round(Math.min(rect.bottom + 6, window.innerHeight - Math.min(tooltip.scrollHeight || 260, 420) - 12))}px`;
+        tooltip.style.top = `${Math.round(Math.max(12, Math.min(rect.bottom + 6, window.innerHeight - Math.min(tooltip.scrollHeight || 260, 520) - 12)))}px`;
       };
       preview.addEventListener("mouseenter", positionTooltip);
       preview.addEventListener("focus", positionTooltip);
@@ -1477,8 +1509,6 @@
     if (page.key === "withdrawal-info-488") return member488MoneyRecordContent(page, true);
     if (page.key === "bonus-info-488") return member488BonusContent(page);
     if (page.key === "rebate-info-488") return member488RebateContent(page);
-    if (page.key === "manual-adjustments-488") return member488ManualContent(page);
-    if (page.key === "account-adjustment-488") return member488AdjustmentContent(page);
     if (page.key === "balance-change-488") return member488BalanceContent(page);
     if (page.key === "risk-record-488") return member488RiskContent(page);
     if (page.key === "member-logs-488") return member488LogsContent(page);
@@ -5367,6 +5397,7 @@
   }
 
   function pageContent(page) {
+    if (currentRequirementId === "#1131") return window.Withdraw1131.render(page, { badge: componentBadge, modal, sites: siteOptions, siteSelect: siteMultiSelect, dateControl: agent498DateControl, bindDates: bindAgent498DatePickers, bindSites: bindSiteAutocomplete, bindLinks: bindComponentLinks, activeTab: activePageTab(page), setTab: (tab) => { window.location.hash = `#requirement/%231131/page/${page.key}/menu/${encodeURIComponent(tab)}`; }, rerender: () => detailView(requirements.find((item) => item.id === currentRequirementId), page.key) });
     if (isVenueManagementRequirement(currentRequirementId)) return venueModule(currentRequirementId)?.render(page, { badge: componentBadge, modal, select: selectComponent, bindLinks: bindComponentLinks, activeTab: activePageTab(page), setTab: (tab) => { window.location.hash = `#requirement/${encodeURIComponent(currentRequirementId)}/page/${page.key}/menu/${encodeURIComponent(tab)}`; }, rerender: () => detailView(requirements.find((item) => item.id === currentRequirementId), page.key) }) || "";
     if (currentRequirementId === "#1027") return window.AgentDaily1027.render(page, { badge: componentBadge, bindLinks: bindComponentLinks, select: selectComponent, modal });
     if (currentRequirementId === "#1025") return window.SiteRbac1025.render(page, { badge: componentBadge, modal, rerender: () => detailView(requirements.find((item) => item.id === currentRequirementId), page.key) });
@@ -5398,7 +5429,6 @@
     if (page.key.endsWith("-488")) return member488Content(page);
     if (page.key.endsWith("-493")) return member493Content(page);
     if (["deposit-withdraw-settings", "member-transactions", "agent-transactions", "site-transactions"].includes(page.key)) return financeGroupedContent(page);
-    if (currentRequirementId === "#1131") return window.Withdraw1131.render(page, { badge: componentBadge, modal, sites: siteOptions, siteSelect: siteMultiSelect, dateControl: agent498DateControl, bindDates: bindAgent498DatePickers, bindSites: bindSiteAutocomplete, bindLinks: bindComponentLinks, activeTab: activePageTab(page), setTab: (tab) => { window.location.hash = `#requirement/%231131/page/${page.key}/menu/${encodeURIComponent(tab)}`; }, rerender: () => detailView(requirements.find((item) => item.id === currentRequirementId), page.key) });
     if (page.key === "deposit-audit") return financeStandaloneContent(page, depositAuditContent());
     if (page.key === "withdrawal-audit") return financeStandaloneContent(page, withdrawalAuditContent());
     if (page.key === "withdraw-review") return withdrawReviewContent();
@@ -5555,6 +5585,7 @@
     if (requirementId === "#1131") return;
     splitUpperAgentColumns(root);
     root.querySelectorAll(".risk-content label, .risk-content th, .modal-body label, .modal-body th").forEach((element) => {
+      if (requirementId === "#488" && element.closest(".member488-deposit-table")) return;
       const textNode = Array.from(element.childNodes).find((node) => node.nodeType === Node.TEXT_NODE && node.nodeValue.trim());
       if (!textNode) return;
       const original = textNode.nodeValue.trim();
@@ -6124,11 +6155,22 @@
   function bindSiteAutocomplete() {
     normalizeGlobalFilterFields();
     document.querySelectorAll(".site-field").forEach((field) => { const input = field.querySelector("input"); const options = field.querySelector(".site-options"); const items = Array.from(options.querySelectorAll("button")); const show = () => { const query = input.value.trim(); items.forEach((item) => { item.hidden = Boolean(query) && !item.textContent.includes(query); }); options.hidden = false; }; input.addEventListener("focus", show); input.addEventListener("input", show); items.forEach((item) => item.addEventListener("click", () => { input.value = item.textContent; options.hidden = true; })); input.addEventListener("blur", () => window.setTimeout(() => { options.hidden = true; input.value = input.value.trim(); }, 150)); });
+    const closeSiteOptions = (panel) => {
+      if (!panel) return;
+      panel.hidden = true;
+      const anchor = panel._siteAnchor;
+      if (anchor?.parentNode) { anchor.replaceWith(panel); panel._siteAnchor = null; }
+      panel.removeAttribute("style");
+      panel.removeAttribute("data-floating");
+      panel._siteOwner?.querySelector(".site-multi-trigger")?.setAttribute("aria-expanded", "false");
+    };
     document.querySelectorAll(".site-multi-field").forEach((field) => {
       if (field.dataset.siteMultiBound) return;
       field.dataset.siteMultiBound = "true";
       const trigger = field.querySelector(".site-multi-trigger");
       const options = field.querySelector(".site-multi-options");
+      options._siteOwner = field;
+      field._siteOptions = options;
       const all = field.querySelector("[data-site-all]");
       const choices = Array.from(options.querySelectorAll('input[type="checkbox"]:not([data-site-all])'));
       const sync = () => {
@@ -6137,10 +6179,45 @@
         all.indeterminate = selected.length > 0 && selected.length < choices.length;
         field.querySelector(".site-multi-value").textContent = selected.length === choices.length ? "全部站点" : selected.length ? selected.map((choice) => choice.value).join("、") : "请选择站点";
       };
-      trigger.addEventListener("click", () => { const opening = options.hidden; document.querySelectorAll(".site-multi-options").forEach((panel) => { panel.hidden = true; }); options.hidden = !opening; trigger.setAttribute("aria-expanded", String(opening)); });
+      const positionOptions = () => {
+        const rect = trigger.getBoundingClientRect();
+        const viewportPadding = 8;
+        const below = Math.max(0, window.innerHeight - rect.bottom - viewportPadding);
+        const above = Math.max(0, rect.top - viewportPadding);
+        const desiredHeight = Math.min(250, options.scrollHeight || 250);
+        const openAbove = below < desiredHeight && above > below;
+        const available = Math.max(64, Math.min(desiredHeight, openAbove ? above : below));
+        const width = Math.min(rect.width, window.innerWidth - viewportPadding * 2);
+        const left = Math.max(viewportPadding, Math.min(rect.left, window.innerWidth - width - viewportPadding));
+        options.dataset.floating = "true";
+        options.style.position = "fixed";
+        options.style.left = `${Math.round(left)}px`;
+        options.style.right = "auto";
+        options.style.width = `${Math.round(width)}px`;
+        options.style.maxHeight = `${Math.round(available)}px`;
+        options.style.top = `${Math.round(openAbove ? Math.max(viewportPadding, rect.top - available - 4) : rect.bottom + 4)}px`;
+        options.style.zIndex = field.closest("#modal-root") ? "10010" : "10000";
+      };
+      trigger.addEventListener("click", () => {
+        const opening = options.hidden;
+        document.querySelectorAll(".site-multi-options").forEach(closeSiteOptions);
+        if (opening) {
+          if (options.parentElement !== document.body) {
+            const anchor = document.createComment("site-multi-options-anchor");
+            options.parentNode.insertBefore(anchor, options);
+            options._siteAnchor = anchor;
+            document.body.append(options);
+          }
+          options.hidden = false;
+          trigger.setAttribute("aria-expanded", "true");
+          positionOptions();
+        }
+      });
       all.addEventListener("change", () => { choices.forEach((choice) => { choice.checked = all.checked; }); sync(); });
       choices.forEach((choice) => choice.addEventListener("change", sync));
-      field.closest(".risk-filter-panel")?.querySelectorAll(".reset-action,.exception-agent-reset,.backup-flow-reset").forEach((button) => button.addEventListener("click", () => { choices.forEach((choice) => { choice.checked = true; }); sync(); options.hidden = true; }));
+      field.closest(".risk-filter-panel")?.querySelectorAll(".reset-action,.exception-agent-reset,.backup-flow-reset").forEach((button) => button.addEventListener("click", () => { choices.forEach((choice) => { choice.checked = true; }); sync(); closeSiteOptions(options); }));
+      field.dataset.sitePositionBound = "true";
+      field._positionSiteOptions = positionOptions;
       sync();
     });
     document.querySelectorAll(".agent-smart-field").forEach((field) => {
@@ -6157,7 +6234,14 @@
     });
     if (!document.body.dataset.siteMultiOutsideBound) {
       document.body.dataset.siteMultiOutsideBound = "true";
-      document.addEventListener("click", (event) => { if (!event.target.closest(".site-multi-field")) document.querySelectorAll(".site-multi-options").forEach((panel) => { panel.hidden = true; }); });
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest(".site-multi-field") && !event.target.closest(".site-multi-options")) document.querySelectorAll(".site-multi-options").forEach(closeSiteOptions);
+      });
+      const repositionOpenSiteOptions = () => document.querySelectorAll('.site-multi-field[data-site-position-bound="true"]').forEach((field) => {
+        if (field._siteOptions && !field._siteOptions.hidden) field._positionSiteOptions?.();
+      });
+      window.addEventListener("resize", repositionOpenSiteOptions);
+      window.addEventListener("scroll", repositionOpenSiteOptions, true);
     }
   }
 
@@ -6509,6 +6593,69 @@
     modal(`下注详情 - ${order}`, `<div class="bet-detail-grid"><div><span>会员账号</span><strong>member_10086</strong></div><div><span>场馆</span><strong>DW体育</strong></div><div><span>赛事</span><strong>英格兰超级联赛</strong></div><div><span>对阵</span><strong>阿森纳 vs 切尔西</strong></div><div><span>玩法</span><strong>亚洲让球</strong></div><div><span>盘口</span><strong>主队 -0.5</strong></div><div><span>赔率</span><strong>1.86</strong></div><div><span>下注内容</span><strong>阿森纳</strong></div><div><span>下注金额</span><strong>1,000 CNY</strong></div><div><span>有效下注</span><strong>980 CNY</strong></div><div><span>输赢情况</span><strong>全赢 +860 CNY</strong></div><div><span>状态</span><strong>已结算</strong></div></div>`, "关闭");
   }
 
+  function bindMember488RecordFilters(page) {
+    const panel = document.querySelector('.member488-record-filters');
+    const list = document.querySelector('.member488-record-list');
+    if (!panel || !list) return;
+    const table = list.querySelector('table');
+    const rows = Array.from(table.querySelectorAll('tbody tr[data-member-record]'));
+    const emptyRow = document.createElement('tr');
+    emptyRow.hidden = true;
+    emptyRow.innerHTML = `<td colspan="${table.tHead.rows[0].cells.length}" class="empty-state">暂无数据</td>`;
+    table.tBodies[0].appendChild(emptyRow);
+    const resetDates = () => {
+      panel.querySelectorAll('[data-record-date]').forEach(field => {
+        const empty = page.key === 'bet-records-488' && field.dataset.recordDate !== 'betAt';
+        const values = empty ? ['', ''] : ['2026-07-19 00:00:00', '2026-07-19 18:30:00'];
+        field.querySelectorAll('[data-date-trigger] > span').forEach((span, index) => { span.textContent = values[index] || (index ? '结束时间' : '开始时间'); });
+        field.querySelectorAll("input[type='datetime-local']").forEach((input, index) => { input.value = values[index].replace(' ', 'T'); });
+      });
+    };
+    const apply = () => {
+      const min = panel.querySelector('[data-record-min]')?.value;
+      const max = panel.querySelector('[data-record-max]')?.value;
+      if (min && max && Number(min) > Number(max)) { modal('筛选条件提示', '<p>最小下注金额不得大于最大下注金额。</p>', '关闭'); return; }
+      const matched = [];
+      rows.forEach(row => {
+        const record = JSON.parse(row.dataset.memberRecord);
+        const fieldsMatch = Array.from(panel.querySelectorAll('[data-record-filter]')).every(input => {
+          const value = input.value.trim().toLowerCase();
+          if (!value) return true;
+          const candidate = input.dataset.recordFilter === 'agent' ? `${record.agent} ${record.agentCode}` : String(record[input.dataset.recordFilter] ?? '');
+          return input.tagName === 'SELECT' ? candidate.toLowerCase() === value : candidate.toLowerCase().includes(value);
+        });
+        const dateMatch = Array.from(panel.querySelectorAll('[data-record-date]')).every(field => {
+          const [start, end] = Array.from(field.querySelectorAll('[data-date-trigger] > span')).map(span => span.textContent.trim());
+          if (!/^\d{4}-/.test(start) || !/^\d{4}-/.test(end)) return true;
+          const value = record[field.dataset.recordDate];
+          return value && value >= start && value <= end;
+        });
+        const sites = Array.from(panel.querySelectorAll('.site-multi-options input[value]:checked')).map(input => input.value);
+        const siteMatch = !panel.querySelector('.site-multi-field') || sites.includes(record.site);
+        const amountMatch = (!min || record.bet >= Number(min)) && (!max || record.bet <= Number(max));
+        row.hidden = !(fieldsMatch && dateMatch && siteMatch && amountMatch);
+        if (!row.hidden) matched.push(record);
+      });
+      emptyRow.hidden = matched.length !== 0;
+      list.querySelectorAll('[data-record-total]').forEach(cell => { cell.textContent = money(matched.reduce((sum, record) => sum + Number(record[cell.dataset.recordTotal] || 0), 0)); });
+      list.querySelectorAll('[data-record-count], .full-pagination > span').forEach(counter => { counter.textContent = `共 ${matched.length} 条`; });
+    };
+    resetDates();
+    panel.querySelector('.primary-filter')?.addEventListener('click', apply);
+    panel.querySelector('.reset-action')?.addEventListener('click', () => {
+      panel.querySelectorAll('[data-record-filter], [data-record-min], [data-record-max]').forEach(input => { input.value = ''; });
+      panel.querySelectorAll('.site-multi-options input').forEach(input => { input.checked = true; });
+      const member = panel.querySelector('input[readonly]');
+      if (member) member.value = member488ContextAccount();
+      resetDates();
+      apply();
+    });
+    const paginator = list.querySelector('.full-pagination');
+    paginator?.querySelectorAll('button:not(.active)').forEach(button => { button.hidden = true; });
+    const pageNumber = paginator?.querySelector('input[type="number"]');
+    if (pageNumber) { pageNumber.max = '1'; pageNumber.disabled = true; }
+  }
+
   function bindMember488Behavior(page) {
     if (!page.key.endsWith("-488")) return;
     if (page.key === "member-list-488") {
@@ -6519,6 +6666,7 @@
     if (!page.annotations?.some((annotation) => annotation.id === "B01")) document.querySelectorAll(".risk-filter-actions [data-component-id='B01']").forEach((button) => { button.removeAttribute("data-component-id"); button.classList.remove("annotated"); button.querySelector(".component-badge")?.remove(); });
     bindExportStandardLink(app, page.annotations?.some((annotation) => annotation.id === "B01" && (annotation.name.includes("导出") || annotation.type.includes("导出"))) ? "B01" : "B99");
     bindMember488OverviewTooltips();
+    bindMember488RecordFilters(page);
     document.querySelectorAll(".member-488-detail").forEach((button) => button.addEventListener("click", () => { window.location.hash = `requirement/${encodeURIComponent("#488")}/page/member-basic-488`; }));
     document.querySelectorAll(".member-488-edit").forEach((button) => button.addEventListener("click", () => member488EditModal(button.dataset.member)));
     document.querySelectorAll(".member-edit-tags").forEach((button) => button.addEventListener("click", () => member488TagEditorModal(button.dataset.member)));
@@ -7838,7 +7986,7 @@
     document.querySelector(".backup-flow-export")?.addEventListener("click", () => modal("导出流水统计", "<p>将按当前筛选条件导出会员打码流水统计数据。</p>", "确认导出"));
     document.querySelector(".unified-flow-search")?.addEventListener("click", () => document.querySelectorAll(".unified-flow-filters input[type='text']").forEach((input) => { input.value = input.value.trim(); }));
     document.querySelector(".unified-flow-export")?.addEventListener("click", () => modal("导出会员流水总览", "<p>按当前筛选条件导出会员流水总览；导出范围与当前账号可查询的数据权限一致。</p>", "确认导出"));
-    document.querySelectorAll(".reset-action").forEach((button) => button.addEventListener("click", () => { const panel = button.closest(".risk-filter-panel"); panel?.querySelectorAll("input[type='text']").forEach((input) => { input.value = ""; input.classList.remove("is-invalid"); }); panel?.querySelectorAll("select").forEach((select) => { select.selectedIndex = 0; }); panel?.querySelectorAll(".field-error").forEach((error) => { error.hidden = true; }); }));
+    document.querySelectorAll(".reset-action").forEach((button) => button.addEventListener("click", () => { const panel = button.closest(".risk-filter-panel"); panel?.querySelectorAll("input[type='text']").forEach((input) => { if (input.readOnly && panel.classList.contains("member488-record-filters")) return; input.value = ""; input.classList.remove("is-invalid"); }); panel?.querySelectorAll("select").forEach((select) => { select.selectedIndex = 0; }); panel?.querySelectorAll(".field-error").forEach((error) => { error.hidden = true; }); }));
   }
 
   function openConfigModal() {
