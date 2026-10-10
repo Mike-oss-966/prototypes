@@ -27,6 +27,20 @@
     summer_728: { custom: ["线下补充核验"], system: ["提款挂起"], remark: "提款需重点复核" },
     player_2026: { custom: ["大额存款关注"], system: [], remark: "关注账户恢复情况" }
   };
+  const member488StatusOverrides = {};
+  const member488VipBenefits = {
+    member_10086: { rebate: false, weekly: false },
+    summer_728: { monthly: false, birthday: false },
+    player_2026: { promotion: false }
+  };
+  const member488VipBenefitOptions = [
+    { key: "rebate", label: "VIP返水结算", disabledLabel: "不返水" },
+    { key: "weekly", label: "VIP周礼金结算", disabledLabel: "不发周礼金" },
+    { key: "monthly", label: "VIP月礼金结算", disabledLabel: "不发月礼金" },
+    { key: "birthday", label: "VIP生日礼金结算", disabledLabel: "不发生日礼金" },
+    { key: "promotion", label: "VIP晋升礼金结算", disabledLabel: "不发晋升礼金" }
+  ];
+  let member488VipBenefitFilter = "";
   const riskTags = ["高盈利会员", "职业玩家", "对冲套利风险", "羊毛党用户", "多账号关联", "异常投注用户"];
   const loginRecords = Array.from({ length: 20 }, (_, index) => ({
     id: `LOGIN20260712${String(index + 1).padStart(4, "0")}`,
@@ -1257,38 +1271,144 @@
     return sessionStorage.getItem("prototype-member-detail-account") || "member_10086";
   }
 
+  function member488BenefitsFor(account) {
+    const benefits = member488VipBenefits[account] || (member488VipBenefits[account] = {});
+    member488VipBenefitOptions.forEach(({ key }) => { if (benefits[key] == null) benefits[key] = true; });
+    return benefits;
+  }
+
   function member488DateRange(id, label, annotated = true) {
     const annotation = annotated ? ` annotated" data-component-id="${id}` : "";
     return `<div class="risk-field risk-field-wide date-range-field${annotation}">${annotated ? componentBadge(id) : ""}<div class="field-title-row"><label>${label}</label><div class="quick-ranges"><button type="button">今日</button><button type="button">昨日</button><button type="button">本周</button><button type="button">30天</button><button type="button">90天</button><button type="button">180天</button></div></div><button class="risk-range" type="button" data-date-trigger><span>2026-07-19 00:00:00</span><b>至</b><span>2026-07-19 18:30:00</span></button><div class="date-picker-popover" hidden><div><label>开始时间<input type="datetime-local" step="1" value="2026-07-19T00:00:00" /></label><label>结束时间<input type="datetime-local" step="1" value="2026-07-19T18:30:00" /></label></div><footer><button type="button" class="secondary-action date-close">取消</button><button type="button" class="main-action date-apply">确定</button></footer></div></div>`;
   }
 
   function member488DetailHeader(page) {
-    const memberAccount = escapeHtml(member488ContextAccount());
+    const currentAccount = member488ContextAccount();
+    const memberAccount = escapeHtml(currentAccount);
+    const member = member488Members().find(item => item.account === currentAccount);
+    const memberStatus = member488StatusOverrides[currentAccount] || member?.status || "正常";
     const tabs = member488DetailPages.map(([key, name]) => `<a href="#requirement/${encodeURIComponent("#488")}/page/${key}" class="${key === page.key ? "active" : ""}">${name}</a>`).join("");
     const annotation = page.key === "member-basic-488" ? ` annotated" data-component-id="N01` : "";
-    return `<section class="member-context${annotation}">${page.key === "member-basic-488" ? componentBadge("N01") : ""}<div class="member-context-main"><div class="member-context-identity"><strong>会员账号：${memberAccount}</strong><span>会员ID：<em>10886421</em></span><span>账号状态：<b>正常</b></span><span>会员等级：<b>VIP6</b></span></div><div class="member-context-search"><input type="text" placeholder="请输入会员账号" /><button type="button" class="main-action member-search-action">搜索</button><a href="#requirement/${encodeURIComponent("#488")}/page/member-list-488" aria-label="关闭会员详情" title="关闭会员详情">×</a></div></div><div class="member-detail-section-title">会员信息</div><nav class="member-detail-tabs" aria-label="会员详情三级菜单">${tabs}</nav></section>`;
+    return `<section class="member-context${annotation}">${page.key === "member-basic-488" ? componentBadge("N01") : ""}<div class="member-context-main"><div class="member-context-identity"><strong>会员账号：${memberAccount}</strong><span>会员ID：<em>${member?.id || "—"}</em></span><span>账号状态：<b>${memberStatus}</b></span><span>会员等级：<b>${member?.vip || "—"}</b></span></div><div class="member-context-search"><input type="text" placeholder="请输入会员账号" /><button type="button" class="main-action member-search-action">搜索</button><a href="#requirement/${encodeURIComponent("#488")}/page/member-list-488" aria-label="关闭会员详情" title="关闭会员详情">×</a></div></div><div class="member-detail-section-title">会员信息</div><nav class="member-detail-tabs" aria-label="会员详情三级菜单">${tabs}</nav></section>`;
   }
 
   function member488DetailPage(page, body) {
     return `${member488DetailHeader(page)}<div class="risk-page-heading member-page-heading"><div><h1>${page.name}</h1></div></div>${body}`;
   }
 
-  function member488ListRows() {
-    const rows = [
-      { account: "member_10086", id: "10886421", site: "旺财体育", realName: "陈小明", gender: "男", birthday: "1992-08-18", status: "正常", vip: "VIP6", referral: "REF8M21K", agent: "agent_087", agentNo: "AG10386", region: "中国 / 上海", phone: "13800138899", attribution: "上海移动", qq: "81521086", wechat: "wx_member86", email: "member10086@mail.test", registerType: "代理" },
-      { account: "summer_728", id: "10885137", site: "旺财体育", realName: "林夏", gender: "女", birthday: "1996-03-21", status: "正常", vip: "VIP3", referral: "REF3P18Q", agent: "star_009", agentNo: "AG10218", region: "中国 / 广东", phone: "13699882098", attribution: "广东联通", qq: "—", wechat: "summer728", email: "summer728@mail.test", registerType: "代理" },
-      { account: "player_2026", id: "10883229", site: "彩虹站", realName: "佐藤健", gender: "男", birthday: "1989-11-02", status: "禁用", vip: "VIP1", referral: "REF1A09N", agent: "—", agentNo: "—", region: "日本 / 东京", phone: "08099166132", attribution: "Tokyo Mobile", qq: "—", wechat: "—", email: "player2026@mail.test", registerType: "直客" }
+  function member488Members() {
+    return [
+      { account: "member_10086", id: "10886421", site: "旺财体育", realName: "陈小明", gender: "男", birthday: "1992-08-18", status: "正常", vip: "VIP6", referral: "REF8M21K", agent: "agent_087", agentId: "10087", agentLevel: "3级 / 1星", agentReferrer: "agent_ref_03", developer: "sales_021", region: "中国 / 上海", phone: "13800138899", attribution: "上海移动", qq: "81521086", wechat: "wx_member86", email: "member10086@mail.test", registerRegion: "中国 上海", loginRegion: "中国 上海", registerType: "代理", validBet: 512800 },
+      { account: "summer_728", id: "10885137", site: "旺财体育", realName: "林夏", gender: "女", birthday: "1996-03-21", status: "正常", vip: "VIP3", referral: "REF3P18Q", agent: "star_009", agentId: "10218", agentLevel: "2级 / 2星", agentReferrer: "agent_ref_07", developer: "sales_011", region: "中国 / 广东", phone: "13699882098", attribution: "广东联通", qq: "—", wechat: "summer728", email: "summer728@mail.test", registerRegion: "中国 广东", loginRegion: "中国 广东", registerType: "代理", validBet: 125600 },
+      { account: "player_2026", id: "10883229", site: "彩虹站", realName: "佐藤健", gender: "男", birthday: "1989-11-02", status: "禁用", vip: "VIP1", referral: "REF1A09N", agent: "—", agentId: "—", agentLevel: "—", agentReferrer: "—", developer: "—", region: "日本 / 东京", phone: "08099166132", attribution: "Tokyo Mobile", qq: "—", wechat: "—", email: "player2026@mail.test", registerRegion: "日本 东京", loginRegion: "日本 东京", registerType: "直客", validBet: 18900 }
     ];
+  }
+
+  function member488ListRows() {
+    const rows = member488Members();
+    const line = (label, value, existing = false) => `<span${existing ? ' class="member-488-existing"' : ""}><i>${label}：</i><b>${value}</b></span>`;
     return rows.map((row, index) => {
       const marker = (id) => index === 0 ? ` annotated" data-component-id="${id}` : "";
+      const status = member488StatusOverrides[row.account] || row.status;
+      const remark = escapeHtml(memberTagAssignments[row.account]?.remark || "—");
+      const benefits = member488BenefitsFor(row.account);
+      const benefitTags = member488VipBenefitOptions.filter(({ key }) => !benefits[key]).map(({ disabledLabel }) => `<span class="member-vip-disabled-tag">${disabledLabel}</span>`).join("");
       const registerDate = `2026-06-${12 + index} 10:25:00`;
       const loginDate = `2026-07-${19 - index} ${16 - index}:25:36`;
-      return `<tr><td class="sticky-member-account"><div class="member-list-stack"><div class="member-account-line"><strong>${row.account}</strong><button type="button" class="member-status-switch ${row.status === "禁用" ? "off" : ""}${marker("B02")}" data-member="${row.account}" data-status="${row.status === "禁用" ? "启用" : "禁用"}" aria-label="${row.status === "禁用" ? "启用" : "禁用"}${row.account}">${index === 0 ? componentBadge("B02") : ""}<span></span>${row.status}</button></div><span><i>会员ID：</i><b>${row.id}</b></span><span><i>所属站点：</i><b>${row.site}</b></span><span><i>真实姓名：</i><b>${row.realName}</b></span><span><i>性别 / 生日：</i><b>${row.gender} / ${row.birthday}</b></span><span><i>会员等级：</i><b>${row.vip}</b></span><span><i>推荐码：</i><b>${row.referral}</b></span></div></td><td><div class="member-list-stack"><span><i>中心钱包：</i><b>${money(15880 - index * 3920)} CNY</b></span><span><i>锁定钱包：</i><b>${money(index * 280)} CNY</b></span><span><i>场馆钱包：</i><b>${money(3600 - index * 670)} CNY</b></span><span><i>最后投注时间：</i><b>2026-07-${18-index} 22:18:36</b></span><span><i>最后存款成功：</i><b>2026-07-${17-index} 09:28:11</b></span></div></td><td><div class="member-list-stack"><span><i>国家 / 地区：</i><b>${row.region}</b></span><span><i>手机号：</i><b>${row.phone}</b></span><span><i>归属地：</i><b>${row.attribution}</b></span><span><i>QQ：</i><b>${row.qq}</b></span><span><i>微信：</i><b>${row.wechat}</b></span><span><i>邮箱：</i><b>${row.email}</b></span></div></td><td><div class="member-list-stack"><span><i>上级代理：</i><b>${row.agent}</b></span><span><i>代理编号：</i><b>${row.agentNo}</b></span><span><i>代理级别：</i><b>${row.agent === "—" ? "—" : "3级 / 1星"}</b></span><span><i>是否代理：</i><b>否</b></span></div></td><td><div class="member-list-stack"><span><i>注册时间：</i><b>${registerDate}</b></span><span><i>注册IP：</i><b>103.21.18.${21 + index}</b></span><span><i>登录时间：</i><b>${loginDate}</b></span><span><i>登录IP：</i><b>103.21.19.${31 + index}</b></span><span><i>注册类型：</i><b>${row.registerType}</b></span><span><i>注册设备：</i><b>${index ? "Android 14" : "iPhone 15 Pro / iOS 18"}</b></span><span><i>注册域名：</i><b>m.example.test</b></span><span><i>设备号：</i><b>DEV-${index + 1}8F31-A920</b></span><button type="button" class="link-action member-login-log${marker("B04")}" data-member="${row.account}">${index === 0 ? componentBadge("B04") : ""}查看登录日志</button></div></td><td><div class="member-empty-reserved${marker("S01")}">${index === 0 ? componentBadge("S01") : ""}<span>标签</span><b>—</b><span>备注</span><b>—</b></div></td><td class="row-actions member-list-actions"><button type="button" class="link-action member-488-detail${marker("B01")}" data-member="${row.account}">${index === 0 ? componentBadge("B01") : ""}详情</button><button type="button" class="link-action member-488-edit${marker("M01")}" data-member="${row.account}">${index === 0 ? componentBadge("M01") : ""}编辑</button><button type="button" class="link-action member-account-action${marker("B03")}" data-action="一键回收" data-member="${row.account}">${index === 0 ? componentBadge("B03") : ""}一键回收</button><button type="button" class="link-action member-account-action" data-action="修改登录密码" data-member="${row.account}">修改登录密码</button><button type="button" class="link-action member-account-action" data-action="重置提款密码" data-member="${row.account}">重置提款密码</button></td></tr>`;
+      const parentAgent = row.agent === "—" ? "—" : `${row.agentId} / ${row.agent}`;
+      return `<tr data-member-account="${row.account}">
+        <td class="sticky-member-account"><div class="member-list-stack">
+          <div class="member-account-line"><strong class="member-488-existing">${row.account}</strong></div>
+          ${line("会员ID", row.id, true)}
+          ${line("所属站点", row.site, true)}
+          ${line("真实姓名", row.realName, true)}
+          ${line("性别 / 生日", `${row.gender} / ${row.birthday}`)}
+          ${line("会员等级", row.vip, true)}
+          ${line("推荐码", row.referral, true)}
+          <button type="button" role="switch" aria-checked="${status === "正常"}" class="member-status-switch ${status === "禁用" ? "off" : ""}${marker("B02")}" data-member="${row.account}" data-status="${status === "禁用" ? "解封" : "封禁"}" aria-label="${status === "禁用" ? "解封" : "封禁"}会员${row.account}">${index === 0 ? componentBadge("B02") : ""}<span class="member-status-track"></span><b class="member-status-label">${status}</b></button>
+        </div></td>
+        <td><div class="member-list-stack">
+          ${line("中心钱包", `${money(15880 - index * 3920)} CNY`, true)}
+          ${line("锁定钱包", `${money(index * 280)} CNY`, true)}
+          ${line("场馆钱包", `${money(3600 - index * 670)} CNY`, true)}
+          ${line("累计有效投注", `${money(row.validBet)} CNY`, true)}
+          ${line("最后投注时间", `2026-07-${18 - index} 22:18:36`)}
+          ${line("最后存款成功", `2026-07-${17 - index} 09:28:11`)}
+          <span class="member-account-remark${marker("S01")}">${index === 0 ? componentBadge("S01") : ""}<i>备注：</i><b data-member-remark>${remark}</b><button type="button" class="member-remark-edit" data-member="${row.account}" aria-label="编辑${row.account}备注" title="编辑备注"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5l5 5M4 20l4-1 12-12a2 2 0 0 0-5-5L3 14l-1 6h2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg></button></span>
+          ${benefitTags ? `<div class="member-vip-disabled-tags${marker("S02")}">${index === 0 ? componentBadge("S02") : ""}${benefitTags}</div>` : ""}
+        </div></td>
+        <td><div class="member-list-stack">
+          ${line("国家 / 地区", row.region)}
+          ${line("手机号", row.phone, true)}
+          ${line("归属地", row.attribution)}
+          ${line("QQ", row.qq, true)}
+          ${line("微信", row.wechat, true)}
+          ${line("邮箱", row.email)}
+        </div></td>
+        <td><div class="member-list-stack">
+          ${line("上级代理id/用户名", parentAgent, true)}
+          ${line("上级代理级别/星级", row.agentLevel, true)}
+          ${line("是否代理", "否", true)}
+          ${line("代理推荐人", row.agentReferrer, true)}
+          ${line("发展人", row.developer, true)}
+        </div></td>
+        <td><div class="member-list-stack">
+          ${line("注册时间", registerDate, true)}
+          ${line("注册IP/地区", `103.21.18.${21 + index} / ${row.registerRegion}`, true)}
+          ${line("登录时间", loginDate, true)}
+          ${line("登录IP/地区", `103.21.19.${31 + index} / ${row.loginRegion}`, true)}
+          ${line("注册类型", row.registerType)}
+          ${line("注册设备", index ? "Android 14" : "iPhone 15 Pro / iOS 18")}
+          ${line("注册域名", "m.example.test")}
+          ${line("设备号", `DEV-${index + 1}8F31-A920`)}
+          <button type="button" class="link-action member-login-log${marker("B04")}" data-member="${row.account}">${index === 0 ? componentBadge("B04") : ""}查看登录日志</button>
+        </div></td>
+        <td class="row-actions member-list-actions">
+          <button type="button" class="link-action member-488-detail${marker("B01")}" data-member="${row.account}">${index === 0 ? componentBadge("B01") : ""}详情</button>
+          <button type="button" class="link-action member-488-edit${marker("M01")}" data-member="${row.account}">${index === 0 ? componentBadge("M01") : ""}编辑</button>
+          <button type="button" class="link-action member-edit-tags${marker("M02")}" data-member="${row.account}">${index === 0 ? componentBadge("M02") : ""}编辑标签</button>
+          <button type="button" class="link-action member-account-action${marker("B03")}" data-action="一键回收" data-member="${row.account}">${index === 0 ? componentBadge("B03") : ""}一键回收</button>
+          <button type="button" class="link-action member-account-action" data-action="修改登录密码" data-member="${row.account}">修改登录密码</button>
+          <button type="button" class="link-action member-account-action" data-action="重置提款密码" data-member="${row.account}">重置提款密码</button>
+        </td>
+      </tr>`;
     }).join("");
   }
 
   function member488ListContent() {
-    return `<div class="risk-page-heading"><div><h1>会员列表</h1></div></div><section class="risk-filter-panel annotated member-488-production-diff" data-component-id="F01">${componentBadge("F01")}<div class="risk-filter-grid member-list-filters"><div class="risk-field site-field"><label>站点</label><input type="text" placeholder="请输入站点" /><div class="site-options" hidden><button type="button">旺财体育</button><button type="button">新旺体育</button></div></div><div class="risk-field member-account-batch"><label>会员账号</label><input type="text" placeholder="多个账号用英文逗号分隔，最多200个" /></div><div class="risk-field"><label>手机号</label><input type="text" placeholder="请输入手机号" /></div><div class="risk-field"><label>邮箱</label><input type="text" placeholder="请输入邮箱" /></div><div class="risk-field"><label>代理账号</label><input type="text" placeholder="请输入代理账号" /></div><div class="risk-field"><label>代理编号</label><input type="text" placeholder="请输入代理编号" /></div><div class="risk-field"><label>状态</label><select><option>全部状态</option><option>正常</option><option>禁用</option></select></div><div class="risk-field"><label>会员等级</label><select><option>全部等级</option><option>VIP1</option><option>VIP3</option><option>VIP6</option></select></div><div class="risk-field"><label>最近登录IP</label><input type="text" placeholder="请输入IP" /></div><div class="risk-field"><label>注册IP</label><input type="text" placeholder="请输入IP" /></div><div class="risk-field"><label>会员标签</label><select><option>全部标签</option><option>高盈利会员</option><option>普通会员</option></select></div>${member488DateRange("F02", "注册时间范围")}${member488DateRange("F03", "最后登录时间范围")}${filterActions(false)}</div></section><section class="risk-list-card annotated member-488-production-diff" data-component-id="T01">${componentBadge("T01")}<div class="risk-list-heading"><div><h2>会员列表</h2><span>共 12,680 条</span></div></div><div class="risk-table-wrap"><table class="risk-table member-list-table"><thead><tr><th class="sticky-member-account annotated" data-component-id="C02">${componentBadge("C02")}会员信息</th><th>账户信息</th><th>联系信息</th><th>代理信息</th><th>注册登录信息</th><th>标签与备注</th><th>操作</th></tr></thead><tbody>${member488ListRows()}</tbody></table></div>${pagination(20, 12680)}</section>`;
+    const textField = (label, placeholder, existing = false, extraClass = "") => `<div class="risk-field${existing ? " member-488-existing" : ""}${extraClass ? ` ${extraClass}` : ""}"><label>${label}</label><input type="text" placeholder="${placeholder}" /></div>`;
+    const selectField = (label, options, existing = false) => `<div class="risk-field${existing ? " member-488-existing" : ""}"><label>${label}</label><select>${options.map(option => `<option>${option}</option>`).join("")}</select></div>`;
+    const dateField = (id, label) => `<div class="risk-field date-range-field member-488-list-date annotated" data-component-id="${id}">${componentBadge(id)}<label>${label}</label>${agent498DateControl({ year: 2026, month: 7, startDay: 19, endDay: 19 })}</div>`;
+    return `<div class="risk-page-heading"><div><h1>会员列表</h1></div></div>
+      <section class="risk-filter-panel annotated member-488-production-diff" data-component-id="F01">${componentBadge("F01")}
+        <div class="risk-filter-grid member-list-filters">
+          ${siteMultiSelect("所属站点", "member-488-existing")}
+          ${textField("会员账号", "多个账号用英文逗号分隔，最多200个", true, "member-account-batch")}
+          ${textField("手机号", "请输入手机号")}
+          ${textField("邮箱", "请输入邮箱")}
+          ${agentSmartField("member-488-existing", "上级代理")}
+          ${textField("代理推荐人", "请输入代理推荐人", true)}
+          ${textField("发展人", "请输入发展人", true)}
+          ${selectField("状态", ["全部状态", "正常", "禁用"], true)}
+          ${selectField("是否已实名", ["全部", "已实名", "未实名"], true)}
+          ${selectField("谷歌验证状态", ["全部状态", "已绑定", "未绑定"], true)}
+          ${selectField("会员等级", ["全部等级", "VIP1", "VIP3", "VIP6"])}
+          ${textField("最近登录IP", "请输入IP")}
+          ${textField("注册IP", "请输入IP")}
+          ${selectField("风控标签", ["全部风控标签", ...riskTags], true)}
+          <div class="risk-field"><label for="member-vip-benefit-filter">VIP福利发放</label><select id="member-vip-benefit-filter" data-member-vip-filter><option value="">全部</option>${member488VipBenefitOptions.map(({ key, disabledLabel }) => `<option value="${key}"${member488VipBenefitFilter === key ? " selected" : ""}>${disabledLabel}</option>`).join("")}</select></div>
+          ${dateField("F02", "注册时间范围")}
+          ${dateField("F03", "最后登录时间范围")}
+          ${filterActions(false)}
+        </div>
+      </section>
+      <section class="risk-list-card annotated member-488-production-diff" data-component-id="T01">${componentBadge("T01")}
+        <div class="risk-list-heading"><div><h2>会员列表</h2><span>共 12,680 条</span></div></div>
+        <div class="risk-table-wrap"><table class="risk-table member-list-table">
+          <thead><tr><th class="sticky-member-account annotated" data-component-id="C02">${componentBadge("C02")}会员信息</th><th>账户信息</th><th>联系信息</th><th>代理信息</th><th>注册登录信息</th><th>操作</th></tr></thead>
+          <tbody>${member488ListRows()}<tr data-member-vip-empty hidden><td colspan="6" class="empty-state">暂无符合条件的会员</td></tr></tbody>
+        </table></div>${pagination(20, 12680)}
+      </section>`;
   }
 
   function memberTagOption(name, system = false) {
@@ -1303,21 +1423,25 @@
     return `<span class="member-tag-chip ${system ? "is-system" : "is-custom"}" data-current-tag="${escapeHtml(tag.name)}" data-tag-system="${system}"><b>${escapeHtml(tag.name)}</b>${hint}${remove}</span>`;
   }
 
-  function hydrateMember488Tags() {
-    document.querySelectorAll(".member-list-table tbody tr").forEach((row, index) => {
-      const member = row.querySelector(".member-account-line > strong")?.textContent.trim();
-      const assignment = memberTagAssignments[member] || { custom: [], system: [], remark: "—" };
-      const cell = row.children[5];
-      if (!cell) return;
-      const currentTags = [...assignment.custom.map((name) => member488TagChip(name)), ...assignment.system.map((name) => member488TagChip(name, true))].join("");
-      cell.innerHTML = `<div class="member-tags-current${index === 0 ? ' annotated" data-component-id="S01' : ""}">${index === 0 ? componentBadge("S01") : ""}${currentTags || '<span class="member-no-tags">暂无标签</span>'}</div><div class="member-tag-remark"><span>备注</span><p>${escapeHtml(assignment.remark || "—")}</p></div><button type="button" class="secondary-action member-edit-tags${index === 0 ? ' annotated" data-component-id="M02' : ""}" data-member="${escapeHtml(member)}">${index === 0 ? componentBadge("M02") : ""}编辑标签</button>`;
-    });
-  }
-
   function member488BasicContent(page) {
     const group = (title, fields) => `<section><h2>${title}</h2><div class="member-info-grid">${fields.map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`).join("")}</div></section>`;
     const multi = (...values) => `<span class="member-multi-values">${values.map((value) => `<b>${value}</b>`).join("")}</span>`;
-    const body = `<div class="member-profile-groups annotated" data-component-id="P01">${componentBadge("P01")}${group("会员信息", [["所属站点","旺财体育"],["账号状态","正常"],["会员等级","VIP6"],["上级代理","agent_087"],["上级代理编号","AG10386"],["会员标签","高盈利会员、重点观察"]])}${group("个人资料", [["真实姓名","陈小明"],["性别","男"],["生日","1992-08-18"],["手机号","13800138899"],["邮箱","member10086@mail.test"],["QQ","81521086"],["微信","wx_member86"]])}${group("注册信息", [["注册时间","2026-06-12 10:25:00"],["最后登录时间","2026-07-19 16:25:36"],["注册IP","103.21.18.21"],["最近登录IP","103.21.19.31"],["注册设备","iPhone 15 Pro / iOS 18"],["最近登录设备","Chrome Mobile / Android 14"],["注册域名","m.example.test"],["最近登录设备号","DEV-8F31-A920"]])}${group("收款信息", [["银行卡信息",multi("招商银行 6225886500011886","中国银行 6217856100266931")],["EB地址",multi("EB-928351","EB-116820")],["支付宝账户",multi("member10086@alipay.test","13800138899")],["微信账户",multi("wx_member86","wx_member_backup")],["数字人民币账户",multi("DCEP-10886421","DCEP-10886421-02")],["USDT地址",multi("TRC20: TQx8bN7VKL3e2Fm9R4Jc6P1sA5dHv2Nc","ERC20: 0x86d94a62b1705e810a468f1d029ec251")]])}</div>`;
+    const account = member488ContextAccount();
+    const member = member488Members().find(item => item.account === account) || member488Members()[0];
+    const index = Math.max(0, member488Members().findIndex(item => item.account === account));
+    const basicFields = [
+      ["用户名", escapeHtml(account)], ["实名信息", member.realName],
+      ["风控标签", `<div class="member-basic-risk-tags"><span>高盈利会员 ×</span><span>重点观察 ×</span><button type="button" disabled>＋ 添加</button></div>`], ["用户ID", member.id],
+      ["状态", member488StatusOverrides[account] || member.status], ["VIP等级", `<div class="member-basic-value-action"><span>${member.vip}</span><button type="button" disabled>✎ 修改</button></div>`],
+      ["所属站点", member.site], ["上级代理", `<div class="member-basic-value-action"><span>${member.agentId === "—" ? "—" : `${member.agentId} / ${member.agent}`}</span><button type="button" disabled>✎ 修正</button></div>`],
+      ["注册来源", index ? "H5" : "APP"], ["注册IP", `103.21.18.${21 + index}`],
+      ["注册地区", member.registerRegion], ["最后登录时间", `2026-07-${19 - index} ${16 - index}:25:36`],
+      ["最后登录IP", `103.21.19.${31 + index}`], ["最后登录地区", member.loginRegion],
+      ["注册时间", `2026-06-${12 + index} 10:25:00`], ["会员标识", member.id]
+    ];
+    const profileFields = [["性别", member.gender], ["出生日期", member.birthday], ["所在地", member.region], ["QQ", member.qq], ["微信", member.wechat], ["邮箱", member.email]];
+    const fieldTable = (fields, className = "") => `<table class="member-basic-table ${className}"><tbody>${Array.from({ length: Math.ceil(fields.length / 2) }, (_, rowIndex) => `<tr>${fields.slice(rowIndex * 2, rowIndex * 2 + 2).map(([label, value]) => `<th>${label}</th><td>${value}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    const body = `<div class="member-basic-production unchanged-production"><div class="member-basic-caption">基本信息</div>${fieldTable(basicFields)}${fieldTable(profileFields, "member-basic-profile-table")}</div><div class="member-profile-groups annotated" data-component-id="P01">${componentBadge("P01")}${group("收款信息", [["银行卡信息",multi("招商银行 6225886500011886","中国银行 6217856100266931")],["EB地址",multi("EB-928351","EB-116820")],["支付宝账户",multi("member10086@alipay.test","13800138899")],["微信账户",multi("wx_member86","wx_member_backup")],["数字人民币账户",multi("DCEP-10886421","DCEP-10886421-02")],["USDT地址",multi("TRC20: TQx8bN7VKL3e2Fm9R4Jc6P1sA5dHv2Nc","ERC20: 0x86d94a62b1705e810a468f1d029ec251")]])}</div>`;
     return member488DetailPage(page, body);
   }
 
@@ -1335,7 +1459,11 @@
     const detailCell = (value, details, annotated = false) => `<div class="overview-table-value bonus-hover${annotated ? ' annotated" data-component-id="C01' : ""}" tabindex="0">${annotated ? componentBadge("C01") : ""}<strong class="amount">${value}</strong><div class="bonus-tooltip">${details.map(([name, amount]) => `<span><b>${name}</b><em>${amount}</em></span>`).join("")}</div></div>`;
     const productionIndexes = new Set([0, 1, 2, 3, 10]);
     const cells = values.map((value, index) => `<td class="${productionIndexes.has(index) ? "production-same" : ""}">${index === 5 ? detailCell(value, incomeDetails, true) : index === 7 ? detailCell(value, bonusDetails) : `<strong class="amount">${value}</strong>`}</td>`).join("");
-    return member488DetailPage(page, `<section class="risk-filter-panel"><div class="risk-filter-grid">${member488DateRange("F01", "统计时间")}${filterActions()}</div></section><section class="risk-list-card annotated member-488-production-diff" data-component-id="P01">${componentBadge("P01")}<div class="risk-table-wrap"><table class="risk-table member-overview-table"><thead><tr>${headers.map(headerCell).join("")}</tr></thead><tbody><tr>${cells}</tr></tbody></table></div></section>`);
+    const account = member488ContextAccount();
+    const benefits = member488BenefitsFor(account);
+    const benefitCards = member488VipBenefitOptions.map(({ key, label }) => `<div class="member-vip-benefit-item"><strong>${label}</strong><button type="button" role="switch" aria-checked="${benefits[key]}" aria-label="${label}" class="member-vip-benefit-switch${benefits[key] ? "" : " off"}" data-vip-benefit="${key}"><span class="member-vip-benefit-track"></span><b>${benefits[key] ? "开启" : "关闭"}</b></button></div>`).join("");
+    const schedule = [["VIP升级", "每日 14:00", ""], ["VIP保级", "每日 15:00", ""], ["VIP返水结算", "每日 凌晨 01:10", "同时处理推广投注返佣"], ["VIP周礼金生成", "每周一 凌晨 01:15", ""], ["VIP月礼金生成", "每月1日 凌晨 01:20", ""], ["VIP生日礼金生成", "每小时", "扫描符合条件的会员进行发放"]];
+    return member488DetailPage(page, `<section class="risk-filter-panel"><div class="risk-filter-grid">${member488DateRange("F01", "统计时间")}${filterActions()}</div></section><section class="risk-list-card annotated member-488-production-diff" data-component-id="P01">${componentBadge("P01")}<div class="risk-table-wrap"><table class="risk-table member-overview-table"><thead><tr>${headers.map(headerCell).join("")}</tr></thead><tbody><tr>${cells}</tr></tbody></table></div></section><div class="member-vip-settings-layout"><section class="member-vip-benefits-panel annotated" data-component-id="P02">${componentBadge("P02")}<h2>福利独立配置</h2><div class="member-vip-benefit-grid">${benefitCards}</div></section><section class="member-vip-schedule annotated" data-component-id="S01">${componentBadge("S01")}<h2>VIP任务脚本执行说明</h2><div class="member-vip-schedule-table"><table><thead><tr><th>任务</th><th>执行时间</th><th>说明</th></tr></thead><tbody>${schedule.map(([task, time, note]) => `<tr><td>${task}</td><td>${time}</td><td>${note || "—"}</td></tr>`).join("")}</tbody></table></div></section></div>`);
   }
 
   function member488WalletContent(page) {
@@ -1444,7 +1572,20 @@
   }
 
   function member488BalanceContent(page) {
-    return member488DetailHeader(page) + '<section class="member-empty-page member488-unchanged-page"><strong>与生产一致，无需修改</strong></section>';
+    const today = new Date();
+    const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    const types = ["存款", "提款", "红利", "返水", "账户调整", "手动上下分", "代理后台代客充值", "场馆转入", "场馆转出", "场馆转入失败", "场馆转出失败"];
+    const records = [
+      ["LC2600010081", "存款", "收入", "+1,000.00", "14,880.00", "15,880.00", "3,680.00", `${date} 09:15:20`, "成功", "银行卡存款到账"],
+      ["LC2600010082", "场馆转入", "支出", "-800.00", "15,880.00", "15,080.00", "4,480.00", `${date} 10:23:48`, "成功", "转入 DW 体育"],
+      ["LC2600010083", "场馆转出", "收入", "+500.00", "15,080.00", "15,580.00", "3,980.00", `${date} 11:08:16`, "成功", "由 DW 体育转回"],
+      ["LC2600010084", "红利", "收入", "+300.00", "15,580.00", "15,880.00", "3,980.00", `${date} 12:20:06`, "成功", "VIP 周礼金"]
+    ];
+    const headings = ["单号", "账变类型", "收支方向", "账变金额（CNY）", "账变前中心钱包（CNY）", "账变后中心钱包（CNY）", "账变后场馆余额（CNY）", "账变时间", "执行结果", "备注"];
+    const rows = records.map((row) => `<tr data-ledger-type="${row[1]}" data-ledger-time="${row[7]}">${row.map((value, index) => `<td class="${[4, 5, 6].includes(index) ? "member-488-ledger-changed" : "member-488-ledger-existing"}${index >= 3 && index <= 6 ? " member-488-ledger-money" : ""}${index === 0 ? " member-488-ledger-order" : ""}${index === 9 ? " member-488-ledger-remark" : ""}">${index === 8 ? `<span class="member-488-ledger-result">${value}</span>` : value}</td>`).join("")}</tr>`).join("");
+    const filter = `<section class="member-488-ledger-filter annotated" data-component-id="F01">${componentBadge("F01")}<div class="member-488-ledger-field"><label for="member-488-ledger-type">账变类型</label><select id="member-488-ledger-type"><option value="">全部类型</option>${types.map((type) => `<option>${type}</option>`).join("")}</select></div><div class="member-488-ledger-field member-488-ledger-time"><span>账变时间</span><div class="member-488-ledger-quick">${[["今日", "0"], ["昨日", "1"], ["本周", "week"], ["30天", "30"], ["90天", "90"], ["180天", "180"]].map(([label, value], index) => `<button type="button" data-ledger-quick="${value}" class="${index === 0 ? "active" : ""}">${label}</button>`).join("")}</div>${agent498DateControl({ year: today.getFullYear(), month: today.getMonth() + 1, startDay: today.getDate(), endDay: today.getDate() })}</div><div class="member-488-ledger-actions"><button type="button" class="main-action member-488-ledger-search">筛选</button><button type="button" class="secondary-action member-488-ledger-reset">重置</button><button type="button" class="secondary-action member-488-ledger-export">导出表格</button></div></section>`;
+    const table = `<section class="member-488-ledger-list annotated" data-component-id="T01">${componentBadge("T01")}<div class="member-488-ledger-heading"><strong>账变记录</strong><span data-ledger-count>共 ${records.length} 条</span></div><div class="risk-table-wrap member-488-ledger-table-wrap" data-page-scroll><table class="risk-table member-488-ledger-table"><thead><tr>${headings.map((heading, index) => `<th class="${[4, 5, 6].includes(index) ? "member-488-ledger-changed" : "member-488-ledger-existing"}">${heading}</th>`).join("")}</tr></thead><tbody>${rows}<tr class="member-488-ledger-empty" hidden><td colspan="10">暂无数据</td></tr></tbody></table></div>${pagination(20, records.length)}</section>`;
+    return member488DetailPage(page, `<div class="member-488-ledger-page">${filter}${table}</div>`);
   }
 
   function member488RiskContent(page) {
@@ -3842,7 +3983,7 @@
     const startTime = options.startTime || "00:00:00";
     const endTime = options.endTime || "23:59:59";
     const dateOnly = options.dateOnly === true;
-    const calendarDays = (selectedDay) => (dateOnly || ["#510", "#911", "#971"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dateOnly || ["#510", "#911", "#971"].includes(currentRequirementId) ? new Date(year, month, 0).getDate() : 31 }, (_, index) => {
+    const calendarDays = (selectedDay) => (dateOnly || ["#488", "#510", "#911", "#971"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dateOnly || ["#488", "#510", "#911", "#971"].includes(currentRequirementId) ? new Date(year, month, 0).getDate() : 31 }, (_, index) => {
       const day = index + 1;
       return `<button type="button" class="calendar-day${day === selectedDay ? " selected" : ""}" data-day="${day}">${day}</button>`;
     }).join("");
@@ -6014,7 +6155,7 @@
         panel.dataset.year = String(year);
         panel.dataset.month = String(month);
         panel.querySelector("header strong").textContent = `${year}年${month}月`;
-        panel.querySelector(".calendar-days").innerHTML = (dateOnly || ["#510", "#911", "#971"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dayCount }, (_, index) => {
+        panel.querySelector(".calendar-days").innerHTML = (dateOnly || ["#488", "#510", "#911", "#971"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dayCount }, (_, index) => {
           const day = index + 1;
           return `<button type="button" class="calendar-day${day === selectedDay ? " selected" : ""}" data-day="${day}">${day}</button>`;
         }).join("");
@@ -6066,6 +6207,11 @@
       field.querySelector(".date-close")?.addEventListener("click", close);
       field.querySelector(".site-695-date-clear")?.addEventListener("click", () => {
         if (["#510", "#911", "#971"].includes(currentRequirementId)) delete trigger.dataset.n911RangeBefore;
+        if (field.closest(".member-488-list-date")) {
+          const times = popover.querySelectorAll(".calendar-panel input[type='time']");
+          if (times[0]) times[0].value = "00:00:00";
+          if (times[1]) times[1].value = "23:59:59";
+        }
         trigger.innerHTML = dateOnly ? `<span>开始日期</span><b>至</b><span>结束日期</span>` : `<span>开始时间</span><b>至</b><span>结束时间</span>`;
         trigger.classList.remove("range-selected");
         close();
@@ -6087,7 +6233,7 @@
         }
         const quickButton = event.target.closest("[data-range-days]");
         if (!quickButton) return;
-        const end = dateOnly || ["#510", "#911", "#971"].includes(currentRequirementId) ? new Date() : currentRequirementId === "#776" ? new Date(2026, 7, 21) : field.closest(".site-member-695-app") ? new Date(2026, 7, 13) : new Date(2026, 6, 31);
+        const end = dateOnly || ["#488", "#510", "#911", "#971"].includes(currentRequirementId) ? new Date() : currentRequirementId === "#776" ? new Date(2026, 7, 21) : field.closest(".site-member-695-app") ? new Date(2026, 7, 13) : new Date(2026, 6, 31);
         let start = new Date(end);
         const range = quickButton.dataset.rangeDays;
         if (range === "1") {
@@ -6142,6 +6288,7 @@
       const accountField = findField(["代理账号", "上级代理"]);
       const numberField = findField(["代理编号", "上级代理编号"]);
       if (!accountField && !numberField) return;
+      if (panel.querySelector(".member-list-filters") && accountField?.classList.contains("agent-smart-field") && !numberField) return;
       const anchor = accountField || numberField;
       const upperAgent = [accountField, numberField].some((field) => field?.querySelector(":scope > label")?.textContent.includes("上级"));
       const classNames = Array.from(anchor.classList).filter((name) => !["risk-field", "unchanged-production"].includes(name));
@@ -6536,6 +6683,19 @@
     bindComponentLinks();
   }
 
+  function member488RemarkModal(member) {
+    const remark = memberTagAssignments[member]?.remark || "";
+    modal(`编辑备注 - ${escapeHtml(member)}`, `<div class="member-edit-form"><label class="member-edit-note">备注<textarea data-member-remark-input placeholder="请输入会员备注">${escapeHtml(remark)}</textarea></label></div>`, "保存");
+    document.querySelector("#modal-root .risk-modal")?.classList.add("member-remark-modal");
+    document.querySelector("#modal-root .modal-confirm")?.addEventListener("click", () => {
+      const value = document.querySelector("#modal-root [data-member-remark-input]").value.trim();
+      const assignment = memberTagAssignments[member] || (memberTagAssignments[member] = { custom: [], system: [] });
+      assignment.remark = value;
+      const row = Array.from(document.querySelectorAll(".member-list-table tr[data-member-account]")).find(item => item.dataset.memberAccount === member);
+      if (row) row.querySelector("[data-member-remark]").textContent = value || "—";
+    }, { capture: true, once: true });
+  }
+
   function member488EditModal(member) {
     modal(`编辑会员信息 - ${member}`, `<div class="member-edit-form"><label class="member-region-edit">国家/地区<div><select><option>中国</option><option>日本</option></select><select><option>上海市</option><option>广东省</option></select><select><option>浦东新区</option><option>黄浦区</option></select></div></label><label>手机号<input type="text" value="13800138899" /></label><label>邮箱<input type="email" value="member10086@mail.test" /></label><label>会员生日<input type="date" value="1992-08-18" /></label><label>真实姓名<input type="text" value="陈小明" /></label><label>性别<div class="radio-row"><span><input type="radio" name="member-gender" checked /> 男</span><span><input type="radio" name="member-gender" /> 女</span></div></label><label class="member-edit-note">修改备注<textarea placeholder="请输入修改原因，必填"></textarea></label><button type="button" class="secondary-action member-edit-history">查看修改历史</button></div>`, "保存修改");
     document.querySelector(".member-edit-history")?.addEventListener("click", () => modal(`修改历史 - ${member}`, `<div class="risk-table-wrap"><table class="risk-table member-history-table"><thead><tr><th>修改字段</th><th>修改前</th><th>修改后</th><th>修改时间</th><th>修改备注</th><th>修改人</th></tr></thead><tbody><tr><td>手机号</td><td>13800136621</td><td>13800138899</td><td>2026-07-16 10:28:16</td><td>会员提交客服修改</td><td>mike.cs</td></tr><tr><td>会员生日</td><td>1992-08-08</td><td>1992-08-18</td><td>2026-07-10 11:09:22</td><td>资料校正</td><td>amy.cs</td></tr></tbody></table></div>${pagination(20,2)}`, "关闭"));
@@ -6656,21 +6816,113 @@
     if (pageNumber) { pageNumber.max = '1'; pageNumber.disabled = true; }
   }
 
+  function bindMember488LedgerBehavior() {
+    const root = document.querySelector(".member-488-ledger-page");
+    if (!root) return;
+    bindAgent498DatePickers();
+    const type = root.querySelector("#member-488-ledger-type");
+    const range = root.querySelector(".agent-498-date");
+    const quickButtons = Array.from(root.querySelectorAll("[data-ledger-quick]"));
+    const rows = Array.from(root.querySelectorAll(".member-488-ledger-table tbody tr[data-ledger-type]"));
+    const filter = () => {
+      const [start, end] = Array.from(range.querySelectorAll("span")).map((item) => item.textContent.trim());
+      const count = rows.reduce((total, row) => {
+        const matchesType = !type.value || row.dataset.ledgerType === type.value;
+        const matchesTime = (!start || start === "开始时间" || row.dataset.ledgerTime >= start) && (!end || end === "结束时间" || row.dataset.ledgerTime <= end);
+        row.hidden = !(matchesType && matchesTime);
+        return total + Number(!row.hidden);
+      }, 0);
+      root.querySelector("[data-ledger-count]").textContent = `共 ${count} 条`;
+      root.querySelector(".member-488-ledger-empty").hidden = count > 0;
+      const pager = root.querySelector(".full-pagination");
+      pager.querySelector(":scope > span").textContent = `共 ${count} 条`;
+      pager.querySelectorAll("button").forEach((button, index) => { if (index > 1) button.hidden = true; });
+      const pageInput = pager.querySelector("input[type='number']");
+      pageInput.max = "1";
+      pageInput.disabled = true;
+    };
+    quickButtons.forEach((button) => button.addEventListener("click", () => {
+      root.querySelector(`.agent-498-date-quick [data-range-days='${button.dataset.ledgerQuick}']`)?.click();
+      quickButtons.forEach((item) => item.classList.toggle("active", item === button));
+      filter();
+    }));
+    root.querySelector(".date-apply")?.addEventListener("click", () => {
+      if (root.querySelector(".agent-498-date-popover").hidden) quickButtons.forEach((button) => button.classList.remove("active"));
+    });
+    root.querySelector(".member-488-ledger-search")?.addEventListener("click", filter);
+    root.querySelector(".member-488-ledger-reset")?.addEventListener("click", () => { type.value = ""; quickButtons[0]?.click(); });
+    root.querySelector(".member-488-ledger-export")?.addEventListener("click", () => modal("导出账变记录", "<p>按当前账变类型和账变时间导出全部命中记录，导出字段与列表一致。</p>", "确认导出"));
+    filter();
+  }
+
+  function applyMember488VipFilter() {
+    const rows = Array.from(document.querySelectorAll(".member-list-table tr[data-member-account]"));
+    rows.forEach(row => { row.hidden = Boolean(member488VipBenefitFilter && member488BenefitsFor(row.dataset.memberAccount)[member488VipBenefitFilter]); });
+    const count = rows.filter(row => !row.hidden).length;
+    const empty = document.querySelector("[data-member-vip-empty]");
+    if (empty) empty.hidden = count > 0;
+    const total = member488VipBenefitFilter ? count : 12680;
+    document.querySelectorAll(".member-list-table").forEach(table => {
+      const card = table.closest(".risk-list-card");
+      const label = card.querySelector(".risk-list-heading span");
+      const paginationLabel = card.querySelector(".full-pagination > span");
+      if (label) label.textContent = `共 ${total.toLocaleString("en-US")} 条`;
+      if (paginationLabel) paginationLabel.textContent = `共 ${total} 条`;
+      card.querySelectorAll(".full-pagination button").forEach(button => {
+        if (/^[23]$/.test(button.textContent.trim())) button.hidden = Boolean(member488VipBenefitFilter);
+        if (button.hasAttribute("aria-label")) button.disabled = Boolean(member488VipBenefitFilter);
+      });
+    });
+  }
+
   function bindMember488Behavior(page) {
     if (!page.key.endsWith("-488")) return;
     if (page.key === "member-list-488") {
-      hydrateMember488Tags();
+      bindAgent498DatePickers();
+      applyMember488VipFilter();
+      document.querySelector(".member-list-filters .primary-filter")?.addEventListener("click", () => {
+        member488VipBenefitFilter = document.querySelector("[data-member-vip-filter]").value;
+        applyMember488VipFilter();
+      });
+      document.querySelector(".member-list-filters .reset-action")?.addEventListener("click", () => {
+        document.querySelectorAll(".member-488-list-date .site-695-date-clear").forEach(button => button.click());
+        member488VipBenefitFilter = "";
+        document.querySelector("[data-member-vip-filter]").value = "";
+        applyMember488VipFilter();
+      });
       bindComponentLinks();
     }
+    if (page.key === "balance-change-488") bindMember488LedgerBehavior();
     bindMember488RelationLinks();
     if (!page.annotations?.some((annotation) => annotation.id === "B01")) document.querySelectorAll(".risk-filter-actions [data-component-id='B01']").forEach((button) => { button.removeAttribute("data-component-id"); button.classList.remove("annotated"); button.querySelector(".component-badge")?.remove(); });
     bindExportStandardLink(app, page.annotations?.some((annotation) => annotation.id === "B01" && (annotation.name.includes("导出") || annotation.type.includes("导出"))) ? "B01" : "B99");
     bindMember488OverviewTooltips();
     bindMember488RecordFilters(page);
-    document.querySelectorAll(".member-488-detail").forEach((button) => button.addEventListener("click", () => { window.location.hash = `requirement/${encodeURIComponent("#488")}/page/member-basic-488`; }));
+    document.querySelectorAll(".member-488-detail").forEach((button) => button.addEventListener("click", () => { sessionStorage.setItem("prototype-member-detail-account", button.dataset.member); window.location.hash = `requirement/${encodeURIComponent("#488")}/page/member-basic-488`; }));
     document.querySelectorAll(".member-488-edit").forEach((button) => button.addEventListener("click", () => member488EditModal(button.dataset.member)));
+    document.querySelectorAll(".member-remark-edit").forEach((button) => button.addEventListener("click", () => member488RemarkModal(button.dataset.member)));
     document.querySelectorAll(".member-edit-tags").forEach((button) => button.addEventListener("click", () => member488TagEditorModal(button.dataset.member)));
-    document.querySelectorAll(".member-status-switch").forEach((button) => button.addEventListener("click", () => modal(`${button.dataset.status}会员`, `<p class="danger-confirm">您现在操作的是<strong>【${button.dataset.status}】</strong></p><label class="modal-field">操作原因<textarea placeholder="请输入原因，必填"></textarea></label><p class="member-pending-note">该操作的业务影响范围沿用生产现有逻辑。</p>`, `确认${button.dataset.status}`)));
+    document.querySelectorAll(".member-status-switch").forEach((button) => button.addEventListener("click", () => {
+      const action = button.dataset.status;
+      modal(`${action}会员`, `<p>是否确认${action}会员 <strong>${escapeHtml(button.dataset.member)}</strong>？</p>`, `确认${action}`);
+      document.querySelector("#modal-root .modal-confirm")?.addEventListener("click", () => {
+        const nextStatus = action === "封禁" ? "禁用" : "正常";
+        member488StatusOverrides[button.dataset.member] = nextStatus;
+        button.classList.toggle("off", nextStatus === "禁用");
+        button.dataset.status = nextStatus === "禁用" ? "解封" : "封禁";
+        button.setAttribute("aria-checked", String(nextStatus === "正常"));
+        button.setAttribute("aria-label", `${button.dataset.status}会员${button.dataset.member}`);
+        button.querySelector(".member-status-label").textContent = nextStatus;
+      }, { capture: true, once: true });
+    }));
+    document.querySelectorAll(".member-vip-benefit-switch").forEach((button) => button.addEventListener("click", () => {
+      const benefits = member488BenefitsFor(member488ContextAccount());
+      const enabled = !benefits[button.dataset.vipBenefit];
+      benefits[button.dataset.vipBenefit] = enabled;
+      button.classList.toggle("off", !enabled);
+      button.setAttribute("aria-checked", String(enabled));
+      button.querySelector("b").textContent = enabled ? "开启" : "关闭";
+    }));
     document.querySelectorAll(".member-account-action").forEach((button) => button.addEventListener("click", () => modal(`${button.dataset.action} - ${button.dataset.member}`, `<p>确认对会员 <strong>${button.dataset.member}</strong> 执行【${button.dataset.action}】？</p>${button.dataset.action === "重置提款密码" ? '<p class="member-pending-note">重置后由前端用户自行重新设置提款密码。</p>' : ""}`, "确认执行")));
     document.querySelectorAll(".member-login-log").forEach((button) => button.addEventListener("click", () => { window.location.hash = `requirement/${encodeURIComponent("#406")}/page/member-login-log`; }));
     document.querySelector(".member-search-action")?.addEventListener("click", () => modal("切换会员", "<p>已按输入的会员账号加载对应会员详情；未找到时保留当前会员并提示无匹配结果。</p>", "关闭"));
