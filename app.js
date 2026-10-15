@@ -1265,7 +1265,7 @@
 
   const member488DetailPages = requirements.find(item => item.id === "#488").pages
     .filter(page => !["member-list-488", "member-logs-488"].includes(page.key))
-    .map(page => [page.key, page.name]);
+    .map(page => [page.key, page.name, page.changeLabel]);
 
   function member488ContextAccount() {
     return sessionStorage.getItem("prototype-member-detail-account") || "member_10086";
@@ -1287,7 +1287,7 @@
     const memberAccount = escapeHtml(currentAccount);
     const member = member488Members().find(item => item.account === currentAccount);
     const memberStatus = member488StatusOverrides[currentAccount] || member?.status || "正常";
-    const tabs = member488DetailPages.map(([key, name]) => `<a href="#requirement/${encodeURIComponent("#488")}/page/${key}" class="${key === page.key ? "active" : ""}">${name}</a>`).join("");
+    const tabs = member488DetailPages.map(([key, name, changeLabel]) => `<a href="#requirement/${encodeURIComponent("#488")}/page/${key}" class="${key === page.key ? "active" : ""}">${name}${changeLabel ? `<em class="menu-change-badge is-new">${changeLabel}</em>` : ""}</a>`).join("");
     const annotation = page.key === "member-basic-488" ? ` annotated" data-component-id="N01` : "";
     return `<section class="member-context${annotation}">${page.key === "member-basic-488" ? componentBadge("N01") : ""}<div class="member-context-main"><div class="member-context-identity"><strong>会员账号：${memberAccount}</strong><span>会员ID：<em>${member?.id || "—"}</em></span><span>账号状态：<b>${memberStatus}</b></span><span>会员等级：<b>${member?.vip || "—"}</b></span></div><div class="member-context-search"><input type="text" placeholder="请输入会员账号" /><button type="button" class="main-action member-search-action">搜索</button><a href="#requirement/${encodeURIComponent("#488")}/page/member-list-488" aria-label="关闭会员详情" title="关闭会员详情">×</a></div></div><div class="member-detail-section-title">会员信息</div><nav class="member-detail-tabs" aria-label="会员详情三级菜单">${tabs}</nav></section>`;
   }
@@ -1366,7 +1366,6 @@
         <td class="row-actions member-list-actions">
           <button type="button" class="link-action member-488-detail${marker("B01")}" data-member="${row.account}">${index === 0 ? componentBadge("B01") : ""}详情</button>
           <button type="button" class="link-action member-488-edit${marker("M01")}" data-member="${row.account}">${index === 0 ? componentBadge("M01") : ""}编辑</button>
-          <button type="button" class="link-action member-edit-tags${marker("M02")}" data-member="${row.account}">${index === 0 ? componentBadge("M02") : ""}编辑标签</button>
           <button type="button" class="link-action member-account-action${marker("B03")}" data-action="一键回收" data-member="${row.account}">${index === 0 ? componentBadge("B03") : ""}一键回收</button>
           <button type="button" class="link-action member-account-action" data-action="修改登录密码" data-member="${row.account}">修改登录密码</button>
           <button type="button" class="link-action member-account-action" data-action="重置提款密码" data-member="${row.account}">重置提款密码</button>
@@ -1411,18 +1410,6 @@
       </section>`;
   }
 
-  function memberTagOption(name, system = false) {
-    return (system ? memberSystemTagOptions : memberCustomTagOptions).find((tag) => tag.name === name);
-  }
-
-  function member488TagChip(name, system = false, removable = false) {
-    const tag = memberTagOption(name, system);
-    if (!tag) return "";
-    const hint = system ? `<span class="functional-tag-hint" tabindex="0" role="note" title="${escapeHtml(tag.description)}" aria-label="${escapeHtml(tag.name)}用途：${escapeHtml(tag.description)}" data-tooltip="${escapeHtml(tag.description)}">?</span>` : "";
-    const remove = removable ? `<button type="button" class="member-tag-remove" data-tag-name="${escapeHtml(tag.name)}" data-tag-system="${system}" aria-label="删除${escapeHtml(tag.name)}标签" title="删除标签">×</button>` : "";
-    return `<span class="member-tag-chip ${system ? "is-system" : "is-custom"}" data-current-tag="${escapeHtml(tag.name)}" data-tag-system="${system}"><b>${escapeHtml(tag.name)}</b>${hint}${remove}</span>`;
-  }
-
   function member488BasicContent(page) {
     const group = (title, fields) => `<section><h2>${title}</h2><div class="member-info-grid">${fields.map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`).join("")}</div></section>`;
     const multi = (...values) => `<span class="member-multi-values">${values.map((value) => `<b>${value}</b>`).join("")}</span>`;
@@ -1459,11 +1446,15 @@
     const detailCell = (value, details, annotated = false) => `<div class="overview-table-value bonus-hover${annotated ? ' annotated" data-component-id="C01' : ""}" tabindex="0">${annotated ? componentBadge("C01") : ""}<strong class="amount">${value}</strong><div class="bonus-tooltip">${details.map(([name, amount]) => `<span><b>${name}</b><em>${amount}</em></span>`).join("")}</div></div>`;
     const productionIndexes = new Set([0, 1, 2, 3, 10]);
     const cells = values.map((value, index) => `<td class="${productionIndexes.has(index) ? "production-same" : ""}">${index === 5 ? detailCell(value, incomeDetails, true) : index === 7 ? detailCell(value, bonusDetails) : `<strong class="amount">${value}</strong>`}</td>`).join("");
+    return member488DetailPage(page, `<section class="risk-filter-panel"><div class="risk-filter-grid">${member488DateRange("F01", "统计时间")}${filterActions()}</div></section><section class="risk-list-card annotated member-488-production-diff" data-component-id="P01">${componentBadge("P01")}<div class="risk-table-wrap"><table class="risk-table member-overview-table"><thead><tr>${headers.map(headerCell).join("")}</tr></thead><tbody><tr>${cells}</tr></tbody></table></div></section>`);
+  }
+
+  function member488VipBenefitsContent(page) {
     const account = member488ContextAccount();
     const benefits = member488BenefitsFor(account);
     const benefitCards = member488VipBenefitOptions.map(({ key, label }) => `<div class="member-vip-benefit-item"><strong>${label}</strong><button type="button" role="switch" aria-checked="${benefits[key]}" aria-label="${label}" class="member-vip-benefit-switch${benefits[key] ? "" : " off"}" data-vip-benefit="${key}"><span class="member-vip-benefit-track"></span><b>${benefits[key] ? "开启" : "关闭"}</b></button></div>`).join("");
     const schedule = [["VIP升级", "每日 14:00", ""], ["VIP保级", "每日 15:00", ""], ["VIP返水结算", "每日 凌晨 01:10", "同时处理推广投注返佣"], ["VIP周礼金生成", "每周一 凌晨 01:15", ""], ["VIP月礼金生成", "每月1日 凌晨 01:20", ""], ["VIP生日礼金生成", "每小时", "扫描符合条件的会员进行发放"]];
-    return member488DetailPage(page, `<section class="risk-filter-panel"><div class="risk-filter-grid">${member488DateRange("F01", "统计时间")}${filterActions()}</div></section><section class="risk-list-card annotated member-488-production-diff" data-component-id="P01">${componentBadge("P01")}<div class="risk-table-wrap"><table class="risk-table member-overview-table"><thead><tr>${headers.map(headerCell).join("")}</tr></thead><tbody><tr>${cells}</tr></tbody></table></div></section><div class="member-vip-settings-layout"><section class="member-vip-benefits-panel annotated" data-component-id="P02">${componentBadge("P02")}<h2>福利独立配置</h2><div class="member-vip-benefit-grid">${benefitCards}</div></section><section class="member-vip-schedule annotated" data-component-id="S01">${componentBadge("S01")}<h2>VIP任务脚本执行说明</h2><div class="member-vip-schedule-table"><table><thead><tr><th>任务</th><th>执行时间</th><th>说明</th></tr></thead><tbody>${schedule.map(([task, time, note]) => `<tr><td>${task}</td><td>${time}</td><td>${note || "—"}</td></tr>`).join("")}</tbody></table></div></section></div>`);
+    return member488DetailPage(page, `<div class="member-vip-settings-layout"><section class="member-vip-benefits-panel annotated" data-component-id="P02">${componentBadge("P02")}<h2>福利独立配置</h2><div class="member-vip-benefit-grid">${benefitCards}</div></section><section class="member-vip-schedule annotated" data-component-id="S01">${componentBadge("S01")}<h2>VIP任务脚本执行说明</h2><div class="member-vip-schedule-table"><table><thead><tr><th>任务</th><th>执行时间</th><th>说明</th></tr></thead><tbody>${schedule.map(([task, time, note]) => `<tr><td>${task}</td><td>${time}</td><td>${note || "—"}</td></tr>`).join("")}</tbody></table></div></section></div>`);
   }
 
   function member488WalletContent(page) {
@@ -1643,6 +1634,7 @@
     if (page.key === "member-list-488") return member488ListContent();
     if (page.key === "member-basic-488") return member488BasicContent(page);
     if (page.key === "member-overview-488") return member488OverviewContent(page);
+    if (page.key === "member-vip-benefits-488") return member488VipBenefitsContent(page);
     if (page.key === "member-wallet-488") return member488WalletContent(page);
     if (page.key === "member-statistics-488") return member488StatisticsContent(page);
     if (page.key === "bet-records-488") return member488BetContent(page);
@@ -6701,54 +6693,6 @@
     document.querySelector(".member-edit-history")?.addEventListener("click", () => modal(`修改历史 - ${member}`, `<div class="risk-table-wrap"><table class="risk-table member-history-table"><thead><tr><th>修改字段</th><th>修改前</th><th>修改后</th><th>修改时间</th><th>修改备注</th><th>修改人</th></tr></thead><tbody><tr><td>手机号</td><td>13800136621</td><td>13800138899</td><td>2026-07-16 10:28:16</td><td>会员提交客服修改</td><td>mike.cs</td></tr><tr><td>会员生日</td><td>1992-08-08</td><td>1992-08-18</td><td>2026-07-10 11:09:22</td><td>资料校正</td><td>amy.cs</td></tr></tbody></table></div>${pagination(20,2)}`, "关闭"));
   }
 
-  function member488TagEditorModal(member) {
-    const assignment = memberTagAssignments[member] || { custom: [], system: [], remark: "—" };
-    const currentTags = [...assignment.custom.map((name) => member488TagChip(name, false, true)), ...assignment.system.map((name) => member488TagChip(name, true, true))].join("");
-    const choices = (tags, system) => tags.map((tag) => `<label><input type="checkbox" value="${escapeHtml(tag.name)}" data-tag-system="${system}" /><span>${escapeHtml(tag.name)}</span>${system ? `<span class="functional-tag-hint" tabindex="0" role="note" title="${escapeHtml(tag.description)}" aria-label="${escapeHtml(tag.name)}用途：${escapeHtml(tag.description)}" data-tooltip="${escapeHtml(tag.description)}">?</span>` : ""}<small>${escapeHtml(tag.description)}</small></label>`).join("");
-    const historyRows = [
-      ["系统标签", "不返水", "增加", "mike.risk", "2026-08-03 16:28:10", "返水审核确认"],
-      ["自定义标签", "世界杯高活跃", "增加", "amy.ops", "2026-08-01 10:06:32", "活动会员分组"],
-      ["自定义标签", "线下补充核验", "删除", "mike.cs", "2026-07-28 14:42:16", "资料已补充完成"]
-    ];
-    modal(`编辑标签 - ${member}`, `<div class="member-tag-editor"><section class="member-current-tags"><header><strong>当前标签</strong><span>点击标签后的 × 可删除</span></header><div>${currentTags || '<span class="member-no-tags">暂无标签</span>'}</div></section><section class="member-tag-selector"><header><strong>增加标签</strong><span>标签选项读取#509标签管理当前有效配置</span></header><nav class="segmented-control member-tag-type-tabs"><button type="button" class="active" data-member-tag-view="custom">自定义标签</button><button type="button" data-member-tag-view="system">系统标签</button></nav><div class="member-tag-choice-panel" data-member-tag-panel="custom">${choices(memberCustomTagOptions, false)}</div><div class="member-tag-choice-panel" data-member-tag-panel="system" hidden>${choices(memberSystemTagOptions, true)}</div><div class="member-tag-selector-footer"><label>操作备注<input type="text" class="member-tag-note" placeholder="请输入本次调整备注" /></label><button type="button" class="main-action member-tag-add-selected">增加所选标签</button></div></section><section class="member-tag-history"><header><strong>标签编辑历史</strong><span>共 3 条</span></header><div class="risk-table-wrap"><table class="risk-table member-tag-history-table"><thead><tr><th>标签类型</th><th>标签名称</th><th>操作类型</th><th>操作人</th><th>操作时间</th><th>备注</th></tr></thead><tbody>${historyRows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${pagination(20, 3)}</section></div>`, "保存标签");
-    const root = document.getElementById("modal-root");
-    const current = root.querySelector(".member-current-tags > div");
-    const historyBody = root.querySelector(".member-tag-history-table tbody");
-    const addHistory = (system, name, action) => {
-      const note = root.querySelector(".member-tag-note")?.value.trim() || "后台调整标签";
-      historyBody?.insertAdjacentHTML("afterbegin", `<tr><td>${system ? "系统标签" : "自定义标签"}</td><td>${escapeHtml(name)}</td><td>${action}</td><td>mike.ops</td><td>2026-08-04 11:30:00</td><td>${escapeHtml(note)}</td></tr>`);
-      const count = root.querySelectorAll(".member-tag-history-table tbody tr").length;
-      const countLabel = root.querySelector(".member-tag-history > header span");
-      if (countLabel) countLabel.textContent = `共 ${count} 条`;
-    };
-    root.querySelectorAll("[data-member-tag-view]").forEach((button) => button.addEventListener("click", () => {
-      const view = button.dataset.memberTagView;
-      root.querySelectorAll("[data-member-tag-view]").forEach((item) => item.classList.toggle("active", item === button));
-      root.querySelectorAll("[data-member-tag-panel]").forEach((panel) => { panel.hidden = panel.dataset.memberTagPanel !== view; });
-    }));
-    current?.addEventListener("click", (event) => {
-      const remove = event.target.closest(".member-tag-remove");
-      if (!remove) return;
-      const chip = remove.closest(".member-tag-chip");
-      addHistory(remove.dataset.tagSystem === "true", remove.dataset.tagName, "删除");
-      chip?.remove();
-      if (!current.querySelector(".member-tag-chip")) current.innerHTML = '<span class="member-no-tags">暂无标签</span>';
-    });
-    root.querySelector(".member-tag-add-selected")?.addEventListener("click", () => {
-      const visiblePanel = Array.from(root.querySelectorAll("[data-member-tag-panel]")).find((panel) => !panel.hidden);
-      const selected = Array.from(visiblePanel?.querySelectorAll('input[type="checkbox"]:checked') || []);
-      selected.forEach((input) => {
-        const system = input.dataset.tagSystem === "true";
-        if (current.querySelector(`[data-current-tag="${CSS.escape(input.value)}"][data-tag-system="${system}"]`)) return;
-        current.querySelector(".member-no-tags")?.remove();
-        current.insertAdjacentHTML("beforeend", member488TagChip(input.value, system, true));
-        addHistory(system, input.value, "增加");
-        input.checked = false;
-      });
-    });
-    applyTableRowLimits(root);
-  }
-
   function member488BetModal(order) {
     modal(`下注详情 - ${order}`, `<div class="bet-detail-grid"><div><span>会员账号</span><strong>member_10086</strong></div><div><span>场馆</span><strong>DW体育</strong></div><div><span>赛事</span><strong>英格兰超级联赛</strong></div><div><span>对阵</span><strong>阿森纳 vs 切尔西</strong></div><div><span>玩法</span><strong>亚洲让球</strong></div><div><span>盘口</span><strong>主队 -0.5</strong></div><div><span>赔率</span><strong>1.86</strong></div><div><span>下注内容</span><strong>阿森纳</strong></div><div><span>下注金额</span><strong>1,000 CNY</strong></div><div><span>有效下注</span><strong>980 CNY</strong></div><div><span>输赢情况</span><strong>全赢 +860 CNY</strong></div><div><span>状态</span><strong>已结算</strong></div></div>`, "关闭");
   }
@@ -6901,7 +6845,6 @@
     document.querySelectorAll(".member-488-detail").forEach((button) => button.addEventListener("click", () => { sessionStorage.setItem("prototype-member-detail-account", button.dataset.member); window.location.hash = `requirement/${encodeURIComponent("#488")}/page/member-basic-488`; }));
     document.querySelectorAll(".member-488-edit").forEach((button) => button.addEventListener("click", () => member488EditModal(button.dataset.member)));
     document.querySelectorAll(".member-remark-edit").forEach((button) => button.addEventListener("click", () => member488RemarkModal(button.dataset.member)));
-    document.querySelectorAll(".member-edit-tags").forEach((button) => button.addEventListener("click", () => member488TagEditorModal(button.dataset.member)));
     document.querySelectorAll(".member-status-switch").forEach((button) => button.addEventListener("click", () => {
       const action = button.dataset.status;
       modal(`${action}会员`, `<p>是否确认${action}会员 <strong>${escapeHtml(button.dataset.member)}</strong>？</p>`, `确认${action}`);

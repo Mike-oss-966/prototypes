@@ -3767,7 +3767,7 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .member-context-main > div strong { margin-top: 3px; color: #17201b; font-size: 13px; }
 .member-back { flex: 0 0 auto; color: var(--green); font-size: 13px; font-weight: 700; text-decoration: none; }
 .member-detail-tabs { display: flex; align-items: stretch; gap: 0; padding: 0 8px; overflow-x: auto; }
-.member-detail-tabs a { flex: 0 0 auto; min-height: 43px; display: flex; align-items: center; padding: 0 12px; color: #56625b; border-bottom: 2px solid transparent; font-size: 13px; text-decoration: none; }
+.member-detail-tabs a { flex: 0 0 auto; min-height: 43px; display: flex; align-items: center; gap: 6px; padding: 0 12px; color: #56625b; border-bottom: 2px solid transparent; font-size: 13px; text-decoration: none; }
 .member-detail-tabs a:hover { color: var(--green); background: #f6f9f7; }
 .member-detail-tabs a.active { color: var(--green); border-bottom-color: var(--green); font-weight: 700; }
 .member-page-heading { margin-bottom: 12px; }
