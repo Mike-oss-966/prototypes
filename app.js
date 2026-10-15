@@ -476,6 +476,7 @@
   }
 
   function sidebar(requirement, page) {
+    if (requirement.id === "#1191") return window.SiteOpening1191.sidebar(requirement, page);
     if (requirement.id === "#1131") return window.Withdraw1131.sidebar(requirement, page);
     if (isVenueManagementRequirement(requirement.id)) return venueModule(requirement.id)?.sidebar(page) || "";
     if (requirement.id === "#1027") return window.AgentDaily1027.sidebar(page);
@@ -3975,7 +3976,7 @@
     const startTime = options.startTime || "00:00:00";
     const endTime = options.endTime || "23:59:59";
     const dateOnly = options.dateOnly === true;
-    const calendarDays = (selectedDay) => (dateOnly || ["#488", "#510", "#911", "#971"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dateOnly || ["#488", "#510", "#911", "#971"].includes(currentRequirementId) ? new Date(year, month, 0).getDate() : 31 }, (_, index) => {
+    const calendarDays = (selectedDay) => (dateOnly || ["#488", "#510", "#911", "#971", "#1191"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dateOnly || ["#488", "#510", "#911", "#971", "#1191"].includes(currentRequirementId) ? new Date(year, month, 0).getDate() : 31 }, (_, index) => {
       const day = index + 1;
       return `<button type="button" class="calendar-day${day === selectedDay ? " selected" : ""}" data-day="${day}">${day}</button>`;
     }).join("");
@@ -5530,6 +5531,7 @@
   }
 
   function pageContent(page) {
+    if (currentRequirementId === "#1191") return window.SiteOpening1191.render(page, { badge: componentBadge, modal, sites: siteOptions, dateControl: agent498DateControl, bindDates: bindAgent498DatePickers, bindLinks: bindComponentLinks, activeTab: activePageTab(page), setTab: (tab) => { window.location.hash = `#requirement/%231191/page/${page.key}/menu/${encodeURIComponent(tab)}`; }, rerender: () => detailView(requirements.find((item) => item.id === currentRequirementId), page.key) });
     if (currentRequirementId === "#1131") return window.Withdraw1131.render(page, { badge: componentBadge, modal, sites: siteOptions, siteSelect: siteMultiSelect, dateControl: agent498DateControl, bindDates: bindAgent498DatePickers, bindSites: bindSiteAutocomplete, bindLinks: bindComponentLinks, activeTab: activePageTab(page), setTab: (tab) => { window.location.hash = `#requirement/%231131/page/${page.key}/menu/${encodeURIComponent(tab)}`; }, rerender: () => detailView(requirements.find((item) => item.id === currentRequirementId), page.key) });
     if (isVenueManagementRequirement(currentRequirementId)) return venueModule(currentRequirementId)?.render(page, { badge: componentBadge, modal, select: selectComponent, bindLinks: bindComponentLinks, activeTab: activePageTab(page), setTab: (tab) => { window.location.hash = `#requirement/${encodeURIComponent(currentRequirementId)}/page/${page.key}/menu/${encodeURIComponent(tab)}`; }, rerender: () => detailView(requirements.find((item) => item.id === currentRequirementId), page.key) }) || "";
     if (currentRequirementId === "#1027") return window.AgentDaily1027.render(page, { badge: componentBadge, bindLinks: bindComponentLinks, select: selectComponent, modal });
@@ -5715,7 +5717,7 @@
   }
 
   function normalizeConfirmedFieldNames(root = document, requirementId = "", pageKey = "") {
-    if (requirementId === "#1131") return;
+    if (["#1131", "#1191"].includes(requirementId)) return;
     splitUpperAgentColumns(root);
     root.querySelectorAll(".risk-content label, .risk-content th, .modal-body label, .modal-body th").forEach((element) => {
       if (requirementId === "#488" && element.closest(".member488-deposit-table")) return;
@@ -6025,6 +6027,11 @@
     const agent498Role = requirement.id === "#498" && agent498Portal !== "AGENT" ? (agent498Portal === "CONTROL" ? "总控管理员" : "站点管理员") : agent498IdentityConfig[agent498Identity]?.label;
     app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${escapeHtml(requirement.displayId ?? requirement.id)}</strong><span>${requirement.title}</span></div><nav${["#509", "#643", "#828", "#971"].includes(requirement.id) || venue599Mode || isAgent498Requirement(requirement.id) ? ' class="prototype-endpoint-nav"' : ""} aria-label="当前原型页面">${prototypeEndpointSwitch(requirement, page)}</nav></header><div class="prototype-canvas${memberMobileMode ? " member-mobile-canvas" : ""}${vipAlgorithmMode ? " vip-algorithm-canvas" : ""}${profitSimulatorMode ? " profit-simulator-canvas" : ""}${risk680Mode ? " risk-680-canvas" : ""}${risk784Mode || risk830Mode ? " risk-784-canvas" : ""}${privacy862Mode ? " privacy-862-canvas" : ""}">${prototypeBody}</div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${agent498Mode ? escapeHtml(agent498Role) : site695Mode ? escapeHtml(site695IdentityConfig[site695Identity].label) : page.role}</span>${privacy862Mode ? "" : `<span>页面：${page.id}</span>`}</div><div class="spec-title-row"><div><h2>${displayPageName}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll">${permissionReview}<div class="spec-top-notices">${topSpecNotices}</div><div class="questions-slot">${questionsBlock(page)}</div>${pageNoteBlock(page)}${pageLogic}${extraNotice}${adjustmentNotice}${exportNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${cardAnnotations.length} 项</span></div><div class="annotation-list">${cardAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"${memberModuleMode || publicAgent498Mode || risk784Mode || risk830Mode || requirement.id === "#828" || finance971Mode || agent1027Mode || venue599Mode ? ` class="${venue599SiteMode ? "production-site-ui-695" : "production-admin-ui-488"}"` : risk680Mode ? ' class="risk-680-modal-root"' : ""}></div>`;
     window.PrototypeUI?.bindMenuToggles(app);
+    if (requirement.id === "#1191") {
+      app.querySelector(".risk-app")?.classList.add("production-admin-ui-488", "s1191-app");
+      document.getElementById("modal-root")?.classList.add("production-admin-ui-488", "s1191-modal-root");
+      window.SiteOpening1191.bind();
+    }
     if (withdraw1131Mode) {
       app.querySelector(".risk-app")?.classList.add("production-admin-ui-488", "withdraw1131-app");
       app.querySelector(".prototype-canvas")?.classList.add("withdraw1131-canvas");
@@ -6147,7 +6154,7 @@
         panel.dataset.year = String(year);
         panel.dataset.month = String(month);
         panel.querySelector("header strong").textContent = `${year}年${month}月`;
-        panel.querySelector(".calendar-days").innerHTML = (dateOnly || ["#488", "#510", "#911", "#971"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dayCount }, (_, index) => {
+        panel.querySelector(".calendar-days").innerHTML = (dateOnly || ["#488", "#510", "#911", "#971", "#1191"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dayCount }, (_, index) => {
           const day = index + 1;
           return `<button type="button" class="calendar-day${day === selectedDay ? " selected" : ""}" data-day="${day}">${day}</button>`;
         }).join("");
@@ -6225,7 +6232,7 @@
         }
         const quickButton = event.target.closest("[data-range-days]");
         if (!quickButton) return;
-        const end = dateOnly || ["#488", "#510", "#911", "#971"].includes(currentRequirementId) ? new Date() : currentRequirementId === "#776" ? new Date(2026, 7, 21) : field.closest(".site-member-695-app") ? new Date(2026, 7, 13) : new Date(2026, 6, 31);
+        const end = dateOnly || ["#488", "#510", "#911", "#971", "#1191"].includes(currentRequirementId) ? new Date() : currentRequirementId === "#776" ? new Date(2026, 7, 21) : field.closest(".site-member-695-app") ? new Date(2026, 7, 13) : new Date(2026, 6, 31);
         let start = new Date(end);
         const range = quickButton.dataset.rangeDays;
         if (range === "1") {
@@ -8233,7 +8240,7 @@
       const requestedMenu = decodeURIComponent(match[3]);
       if (targetPage?.tabs?.includes(requestedMenu)) agent498SubViewState[targetPage.key] = requestedMenu;
     }
-    if (["#971", "#1131"].includes(requirement.id)) {
+    if (["#971", "#1131", "#1191"].includes(requirement.id)) {
       const replacement = { "agent-dashboard-971": "agent-financial-report-971", "site-dashboard-971": "site-financial-report-971" }[match[2]];
       if (replacement) { window.location.replace(`#requirement/%23971/page/${replacement}`); return; }
       const targetPage = requirement.pages.find((item) => item.key === match[2]);
