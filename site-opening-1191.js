@@ -81,6 +81,7 @@
     { title: "首次开放确认", items: [
       ["vipJobs", "VIP相关脚本服务是否已加入本站", "技术确认"],
       ["domainPool", "域名池是否都可以正常访问", "技术确认"],
+      ["shortDomain", "短域名技术配置", "技术确认"],
       ["androidClient", "Android端是否正常下载和使用"],
       ["iosClient", "iOS端是否正常下载和使用"],
       ["customerService", "客服账号是否正常收发消息"]
