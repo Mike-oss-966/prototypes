@@ -4,7 +4,7 @@
   const LIST = "control-site-list-1191", CONFIG = "control-site-config-1191";
   const siteTypes = ["自营", "旗舰", "客户"];
   const appLanguages = ["中文", "英文", "泰语", "马来西亚语", "越南语"];
-  const paymentCurrencies = ["CNY", "USD", "THB", "MYR", "VND", "USDT"];
+  const paymentCurrencies = () => window.Exchange1251.getAvailableCurrencies().map((row) => row.code);
   const requiredDomains = [
     { key: "siteAdmin", label: "站点后台域名", platform: "PC", agent: false, prefix: "admin", aliases: [] },
     { key: "agentAdmin", label: "代理后台域名", platform: "PC", agent: true, prefix: "agent", aliases: ["代理域名"] },
@@ -135,7 +135,7 @@
   }
   function newConfig(index = 0) {
     return {
-      siteType: siteTypes[index % siteTypes.length], businessTypes: [], appLanguage: "中文", paymentCurrency: "CNY", cnyExchangeRate: 1,
+      siteType: siteTypes[index % siteTypes.length], businessTypes: [], appLanguage: "中文", paymentCurrency: "CNY",
       security: Object.fromEntries(securitySettings.map((item) => [item.key, 1])),
       telegram: { chineseName: index < 0 ? "" : "演示站点机器人", englishName: index < 0 ? "" : `demo_site_${index + 1}_bot`, botId: index < 0 ? "" : `DEMO-BOT-${index + 1}`, token: "", welcomeText: index < 0 ? "" : "欢迎来到演示站点" },
       firstOpening: { sources: {}, saved: false }, openingChecklist: {}, maintenance: null, controlLogs: [],
@@ -162,8 +162,8 @@
       : site.closed || legacyStatus === 0 || site.reviewStatus !== 4 ? "closed" : legacyStatus === 2 ? "maintenance" : "enabled";
     delete site.status; delete site.closed;
     site.appLanguage = appLanguages.includes(site.appLanguage) ? site.appLanguage : defaults.appLanguage;
-    site.paymentCurrency = paymentCurrencies.includes(site.paymentCurrency) ? site.paymentCurrency : defaults.paymentCurrency;
-    site.cnyExchangeRate = site.paymentCurrency === "CNY" ? 1 : site.cnyExchangeRate ?? "";
+    site.paymentCurrency = window.Exchange1251.getCurrencies().some((row) => row.code === site.paymentCurrency) ? site.paymentCurrency : defaults.paymentCurrency;
+    delete site.cnyExchangeRate;
     site.security = { ...defaults.security, ...site.security };
     site.telegram = { ...defaults.telegram, ...site.telegram };
     const existingOpening = site.firstOpening;
@@ -282,11 +282,22 @@
       <td>${site.applyDate}</td><td class="s1191-operations">${button("⚙ 配置", "config", site.id, "text")}${button("删除", "sites-delete", site.id, "text danger-text")}</td></tr>`);
     return `<div class="s1191-view">${filters}${toolbar("sites", "站点")}${annotated("T01", table([["站点ID", 75], ["站点编码", 108], ["站点名称", 130], ["站点英文名称", 130], ["站点管理员账号", 156], ["审核状态", 100], ["站点状态", 190], ["申请时间", 128], ["操作", 125]], body, null, "s1191-site-table") + pager("sites", result.length))}</div>`;
   }
+  function sharedCurrencyInfo(code) {
+    const currency = window.Exchange1251.getCurrencies().find((row) => row.code === code);
+    const format = (value) => Number(value).toLocaleString("en-US", { maximumFractionDigits: 8 });
+    return `${field("对CNY汇率", input("sharedExchangeRate", currency ? `1 ${currency.code} = ${format(currency.rate)} CNY` : "未配置", 'readonly aria-label="统一对CNY汇率"'))}${field("精度收缩（倍）", input("sharedDisplayScale", currency ? `${format(currency.scale)} 倍` : "未配置", 'readonly aria-label="统一精度收缩倍数"'))}<small class="s1191-tip s1191-span-full">汇率和展示收缩倍数由【资源管理 - 汇率控制】统一维护。${currency && !currency.enabled ? `${currency.code}已停用，代理、站点和会员端展示与筛选回退人民币；站点实际支付币种保留原配置。` : ""}</small>`;
+  }
+  function paymentCurrencyControl(draft, site) {
+    const enabled = paymentCurrencies();
+    const retained = draft.paymentCurrency === site.paymentCurrency && !enabled.includes(site.paymentCurrency);
+    const retainedOption = retained ? `<option value="${esc(site.paymentCurrency)}" selected hidden>${esc(site.paymentCurrency)}（已停用，原配置保留）</option>` : "";
+    return `<select name="paymentCurrency" aria-label="站点支付币种" required>${retainedOption}${options(enabled, draft.paymentCurrency, retained ? undefined : "请选择启用币种")}</select>`;
+  }
   function basic(site) {
     const types = [...new Set((window.PROTOTYPE_VENUE_GAMES || []).map((v) => v.type).filter(Boolean))];
     if (!basicDraft || basicDraft.siteId !== site.id) basicDraft = { siteId: site.id, ...clone(site) };
     const draft = basicDraft, control = site.siteState;
-    const payment = annotated("F03", `<div class="s1191-form-grid">${field("APP默认语言", select("appLanguage", appLanguages, draft.appLanguage, undefined, 'aria-label="APP默认语言" required'), true)}${field("站点支付币种", select("paymentCurrency", paymentCurrencies, draft.paymentCurrency, undefined, 'aria-label="站点支付币种" required'), true)}<div data-s1191-exchange${draft.paymentCurrency === "CNY" ? " hidden" : ""}>${field("对CNY汇率", `<div class="s1191-exchange-equation"><span data-s1191-exchange-unit>1 ${esc(draft.paymentCurrency)} =</span>${input("cnyExchangeRate", draft.cnyExchangeRate, `type="number" min="0" step="any" aria-label="对CNY汇率" placeholder="请输入汇率"${draft.paymentCurrency === "CNY" ? " disabled" : " required"}`)}<span>CNY</span></div>`, true)}</div></div>`, "s1191-span-full");
+    const payment = annotated("F03", `<div class="s1191-form-grid">${field("APP默认语言", select("appLanguage", appLanguages, draft.appLanguage, undefined, 'aria-label="APP默认语言" required'), true)}${field("站点支付币种", paymentCurrencyControl(draft, site), true)}<div class="s1191-form-grid s1191-span-full" data-s1191-exchange>${sharedCurrencyInfo(draft.paymentCurrency)}</div></div>`, "s1191-span-full");
     const controller = annotated("C01", `<section class="s1191-console ${control}"><div class="s1191-console-heading"><strong>站点控制台</strong>${tag(controlState(site), control === "closed" ? "danger" : control === "maintenance" ? "warning" : control === "enabled" ? "success" : "info")}${button("操作日志", "control-logs", "", "text s1191-console-log-link")}</div><div class="s1191-console-controls" role="group" aria-label="站点状态">${[["enabled", "开启"], ["maintenance", "维护中"], ["closed", "关站"]].map(([value, label]) => `<button type="button" class="s1191-control ${value}${value === control ? " active" : ""}" data-s1191-action="site-control" data-id="${value}" aria-pressed="${value === control}"${!canEdit(site) ? " disabled" : ""}>${label}</button>`).join("")}</div>${site.siteState === "maintenance" && site.maintenance ? `<div class="s1191-maintenance-summary"><span><b>维护原因：</b>${esc(site.maintenance.reason)}</span><span><b>维护时间段：</b>${esc(site.maintenance.start)} 至 ${esc(site.maintenance.end)}</span>${site.maintenance.message ? `<span><b>提示文字：</b>${esc(site.maintenance.message)}</span>` : ""}</div>` : ""}</section>`);
     const base = annotated("P01", `<section class="s1191-card"><header>基本信息</header><div class="s1191-card-body"><div class="s1191-form-grid">${field("站点编码", input("code", site.code, "disabled"))}${field("中文名称", input("name", draft.name, 'required placeholder="请输入站点中文名称"'), true)}${field("英文名称", input("englishName", draft.englishName, 'placeholder="请输入站点英文名称"'))}${field("后台账号", input("account", draft.account, 'required placeholder="请输入后台登录账号"'), true)}${field("站点类型", annotated("F02", select("siteType", siteTypes, draft.siteType, "请选择站点类型")))}${field("经营类型", `<details class="s1191-multiselect"><summary><span>${esc(draft.businessTypes.join("、") || "请选择经营类型")}</span><i aria-hidden="true"></i></summary><div class="s1191-multiselect-options">${types.length ? types.map((t) => `<label><input type="checkbox" name="businessTypes" value="${esc(t)}"${draft.businessTypes.includes(t) ? " checked" : ""} />${esc(t)}</label>`).join("") : '<span class="s1191-tip">暂无经营类型数据</span>'}</div></details>`)}${payment}</div></div></section>`);
     const telegram = annotated("P03", `<section class="s1191-card"><header>Telegram信息</header><div class="s1191-card-body"><div class="s1191-form-grid">${field("中文名", input("telegramChineseName", site.telegram.chineseName, 'readonly placeholder="未配置"'))}${field("机器人英文名", input("telegramEnglishName", site.telegram.englishName, 'readonly placeholder="未配置"'))}${field("机器人ID", input("telegramBotId", site.telegram.botId, 'readonly placeholder="未配置"'))}${field("token", input("telegramToken", site.telegram.token, 'type="password" readonly autocomplete="off" placeholder="未配置"'))}${field("欢迎文案", `<textarea name="telegramWelcome" readonly rows="3" placeholder="未配置">${esc(site.telegram.welcomeText)}</textarea>`, false, "s1191-span-full")}</div></div></section>`);
@@ -582,19 +593,13 @@
       if (!basicForm || !basicDraft) return;
       const f = new FormData(basicForm);
       ["name", "account", "englishName", "siteType", "appLanguage", "paymentCurrency"].forEach((key) => { basicDraft[key] = String(f.get(key) || ""); });
-      basicDraft.cnyExchangeRate = basicDraft.paymentCurrency === "CNY" ? 1 : String(f.get("cnyExchangeRate") || "");
       basicDraft.businessTypes = f.getAll("businessTypes");
     };
     basicForm?.addEventListener("input", updateBasicDraft);
     basicForm?.addEventListener("change", (e) => {
       updateBasicDraft();
       if (e.target.name !== "paymentCurrency") return;
-      const foreign = basicDraft.paymentCurrency !== "CNY", rate = basicForm.elements.cnyExchangeRate;
-      basicDraft.cnyExchangeRate = foreign ? "" : 1;
-      rate.value = basicDraft.cnyExchangeRate;
-      rate.disabled = !foreign; rate.required = foreign;
-      basicForm.querySelector("[data-s1191-exchange]").hidden = !foreign;
-      basicForm.querySelector("[data-s1191-exchange-unit]").textContent = `1 ${basicDraft.paymentCurrency} =`;
+      basicForm.querySelector("[data-s1191-exchange]").innerHTML = sharedCurrencyInfo(basicDraft.paymentCurrency);
       basicForm.querySelector(".s1191-error").hidden = true;
     });
     basicForm?.addEventListener("submit", (e) => {
@@ -604,11 +609,9 @@
       if (!siteUnique(form, saved, s.id)) return;
       const appLanguage = String(f.get("appLanguage") || ""), paymentCurrency = String(f.get("paymentCurrency") || "");
       if (!appLanguages.includes(appLanguage)) return error(form, "请选择APP默认语言", "appLanguage");
-      if (!paymentCurrencies.includes(paymentCurrency)) return error(form, "请选择站点支付币种", "paymentCurrency");
-      const cnyExchangeRate = paymentCurrency === "CNY" ? 1 : Number(f.get("cnyExchangeRate"));
-      if (!Number.isFinite(cnyExchangeRate) || cnyExchangeRate <= 0) return error(form, "请填写大于0的对CNY汇率", "cnyExchangeRate");
+      if (!paymentCurrency || (!paymentCurrencies().includes(paymentCurrency) && paymentCurrency !== s.paymentCurrency)) return error(form, "币种未启用，请重新选择启用的站点支付币种", "paymentCurrency");
       updateBasicDraft();
-      Object.assign(s, saved, { siteType: f.get("siteType"), businessTypes: f.getAll("businessTypes"), appLanguage, paymentCurrency, cnyExchangeRate });
+      Object.assign(s, saved, { siteType: f.get("siteType"), businessTypes: f.getAll("businessTypes"), appLanguage, paymentCurrency });
       basicDraft = null; commit("基本配置已保存");
     });
     document.querySelectorAll("[data-s1191-check]").forEach((control) => control.addEventListener("change", () => {
