@@ -21,6 +21,8 @@
 .fx1251-button:disabled { color: #c0c4cc; border-color: #ebeef5; background: #fff; cursor: not-allowed; }
 .fx1251-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 16px; }
 .fx1251-heading h2 { margin: 0; color: #303133; font-size: 16px; font-weight: 500; }
+.fx1251-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; }
+.fx1251-title > span { color: #909399; font-size: 12px; }
 .fx1251-annotated { position: relative; min-width: 0; }
 .fx1251-table { min-width: 1086px; table-layout: fixed; }
 .fx1251-table th[data-component-id="C01"] > .component-badge { top: 2px; right: 2px; }

@@ -65,7 +65,7 @@
   function render(page, api) {
     helpers = api;
     store = readStore();
-    const rows = store.rows.filter((row) => `${row.name} ${row.code} ${row.symbol}`.toLowerCase().includes(query.toLowerCase()) && (!statusFilter || row.enabled === (statusFilter === "enabled")));
+    const rows = store.rows.filter((row) => row.code !== "CNY" && `${row.name} ${row.code} ${row.symbol}`.toLowerCase().includes(query.toLowerCase()) && (!statusFilter || row.enabled === (statusFilter === "enabled")));
     const cells = rows.map((row) => `<tr>
       <td>${esc(row.name)}</td><td class="fx1251-code">${row.code}</td><td class="fx1251-symbol">${esc(row.symbol)}</td>
       <td><span class="fx1251-rate">1 ${row.code} = <strong>${number(row.rate)}</strong> CNY</span>${row.code === "CNY" ? '<span class="fx1251-fixed">固定</span>' : ""}</td>
@@ -81,7 +81,7 @@
         <button type="submit" class="fx1251-button primary">查询</button><button type="button" class="fx1251-button" data-fx1251-reset>重置</button>
       </form></section>
       <section class="fx1251-card">
-        <header class="fx1251-heading"><h2>汇率控制</h2>${annotated("B01", '<button type="button" class="fx1251-button" data-fx1251-logs>操作日志</button>', "div")}</header>
+        <header class="fx1251-heading"><div class="fx1251-title"><h2>汇率控制</h2><span>汇率均以CNY为基准汇率</span></div>${annotated("B01", '<button type="button" class="fx1251-button" data-fx1251-logs>操作日志</button>', "div")}</header>
         ${notice ? `<div class="fx1251-notice" role="status">${esc(notice)}</div>` : ""}
         ${annotated("T01", `<div class="risk-table-wrap" data-page-scroll><table class="risk-table fx1251-table" data-preserve-currency><colgroup><col style="width:130px"><col style="width:95px"><col style="width:95px"><col style="width:255px"><col style="width:155px"><col style="width:110px"><col style="width:170px"><col style="width:76px"></colgroup><thead><tr><th>币种中文</th><th>币种单位</th><th>币种符号</th><th>对人民币汇率</th><th>精度收缩（倍）</th><th class="fx1251-annotated" data-component-id="C01">${helpers.badge("C01")}状态</th><th>最后修改</th><th>操作</th></tr></thead><tbody>${cells || '<tr><td colspan="8" class="fx1251-empty">暂无符合条件的币种</td></tr>'}</tbody></table></div>`)}
         <footer class="fx1251-list-footer">共 ${rows.length} 种币种<span>展示金额 = 原金额 ÷ 收缩倍数</span></footer>
