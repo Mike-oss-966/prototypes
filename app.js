@@ -5901,6 +5901,7 @@
   }
 
   function prototypeEndpointSwitch(requirement, page) {
+    if (requirement.id === "#1251") return window.Exchange1251.endpoints(requirement, page);
     if (isVenueManagementRequirement(requirement.id)) {
       const route = encodeURIComponent(requirement.id);
       if (requirement.id === "#599") {
@@ -5982,6 +5983,7 @@
     const memberModuleMode = requirement.id === "#488";
     const member493Mode = requirement.id === "#493";
     const memberDetailMode = requirement.id === "#488" && member488DetailPages.some(([key]) => key === page.key);
+    const exchange1251MemberMode = requirement.id === "#1251" && page.portal === "会员";
     const venue599MemberMode = isVenueManagementRequirement(requirement.id) && page.portal === "会员";
     const member509MobileMode = ["#509", "#643"].includes(requirement.id) && memberVipMobileKeys.includes(page.key);
     const member739MobileMode = requirement.id === "#739" && member739MobileKeys.includes(page.key);
@@ -6016,7 +6018,9 @@
     const suppressUnchangedExportNotice = (requirement.id === "#776" && page.key === "agent-finance-management-776") || ["#830", "#911", "#1027"].includes(requirement.id) || privacy862Mode;
     const exportNotice = renderedPageContent.includes("导出") && !suppressUnchangedExportNotice ? exportStandardNotice(exportAnnotation) : "";
     const topSpecNotices = `${productionComparisonNotice(requirement, page)}${scopeSpecNotice(scopeAnnotation)}`;
-    const prototypeBody = venue599MemberMode
+    const prototypeBody = exchange1251MemberMode
+      ? renderedPageContent
+      : venue599MemberMode
       ? `<div class="venue599-member-stage">${renderedPageContent}</div>`
       : profitSimulatorMode
       ? `<div class="profit-simulator-stage">${renderedPageContent}</div>`
@@ -6030,6 +6034,10 @@
     app.innerHTML = `<main class="detail-shell"><section class="prototype-pane" aria-label="高保真原型展示区"><header class="prototype-context"><div><span class="prototype-mark">PROTOTYPE</span><strong>${escapeHtml(requirement.displayId ?? requirement.id)}</strong><span>${requirement.title}</span></div><nav${["#509", "#643", "#828", "#971"].includes(requirement.id) || venue599Mode || isAgent498Requirement(requirement.id) ? ' class="prototype-endpoint-nav"' : ""} aria-label="当前原型页面">${prototypeEndpointSwitch(requirement, page)}</nav></header><div class="prototype-canvas${memberMobileMode ? " member-mobile-canvas" : ""}${vipAlgorithmMode ? " vip-algorithm-canvas" : ""}${profitSimulatorMode ? " profit-simulator-canvas" : ""}${risk680Mode ? " risk-680-canvas" : ""}${risk784Mode || risk830Mode ? " risk-784-canvas" : ""}${privacy862Mode ? " privacy-862-canvas" : ""}">${prototypeBody}</div></section><aside class="spec-pane" aria-label="说明区"><div class="spec-sticky-header"><a class="back-link" href="#"><span>←</span> 返回需求列表</a><div class="spec-meta-line"><strong>开发说明</strong><span>角色：${agent498Mode ? escapeHtml(agent498Role) : site695Mode ? escapeHtml(site695IdentityConfig[site695Identity].label) : page.role}</span>${privacy862Mode ? "" : `<span>页面：${page.id}</span>`}</div><div class="spec-title-row"><div><h2>${displayPageName}</h2></div><span class="version">V1.0</span></div></div><div class="spec-scroll">${permissionReview}<div class="spec-top-notices">${topSpecNotices}</div><div class="questions-slot">${questionsBlock(page)}</div>${pageNoteBlock(page)}${pageLogic}${extraNotice}${adjustmentNotice}${exportNotice}<div class="spec-section-heading"><h2>组件说明</h2><span>${cardAnnotations.length} 项</span></div><div class="annotation-list">${cardAnnotations.map(annotationCard).join("")}</div></div></aside></main><div id="modal-root"${memberModuleMode || publicAgent498Mode || risk784Mode || risk830Mode || requirement.id === "#828" || finance971Mode || agent1027Mode || venue599Mode ? ` class="${venue599SiteMode ? "production-site-ui-695" : "production-admin-ui-488"}"` : risk680Mode ? ' class="risk-680-modal-root"' : ""}></div>`;
     window.PrototypeUI?.bindMenuToggles(app);
     if (requirement.id === "#1251") {
+      if (exchange1251MemberMode) {
+        app.querySelector(".detail-shell")?.classList.add("fx1251-member-shell");
+        app.querySelector(".prototype-canvas")?.classList.add("fx1251-member-canvas");
+      }
       app.querySelector(".risk-app")?.classList.add("production-admin-ui-488", "fx1251-app");
       document.getElementById("modal-root")?.classList.add("production-admin-ui-488", "fx1251-modal-root");
       window.Exchange1251.bind();
