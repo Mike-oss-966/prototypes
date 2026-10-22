@@ -129,7 +129,7 @@
 
   function render(page, api) {
     helpers = api;
-    if (page.key === MEMBER_PAGE) return '<div class="fx1251-member-image-stage"><img src="./assets/1251/member-currency-settings.png" alt="会员端币种设置页面原型" /></div>';
+    if (page.key === MEMBER_PAGE) return '<div class="fx1251-member-image-stage"><img src="./assets/1251/member-currency-settings.png?build=member-currency-settings-20261022-02" alt="会员端币种设置页面原型" /></div>';
     store = readStore();
     const rows = store.rows.filter((row) => row.code !== "CNY" && `${row.name} ${row.code} ${row.symbol}`.toLowerCase().includes(query.toLowerCase()) && (!statusFilter || row.enabled === (statusFilter === "enabled")));
     const cells = rows.map((row) => `<tr>
