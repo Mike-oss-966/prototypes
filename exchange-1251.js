@@ -5,20 +5,20 @@
   const PAGE = "control-exchange-1251";
   const MEMBER_PAGE = "member-currency-1251";
   const currencies = [
-    { id: "currency-CNY", name: "人民币", code: "CNY", symbol: "¥", flag: "🇨🇳", flagFile: "./assets/1251/flags/cn.png", rate: 1, scale: 1 },
-    { id: "currency-HKD", name: "港币", code: "HKD", symbol: "HK$", flag: "🇭🇰", flagFile: "./assets/1251/flags/hk.png", rate: 0.92, scale: 1 },
-    { id: "currency-JPY", name: "日元", code: "JPY", symbol: "JP¥", flag: "🇯🇵", flagFile: "./assets/1251/flags/jp.png", rate: 0.047, scale: 100 },
-    { id: "currency-THB", name: "泰铢", code: "THB", symbol: "฿", flag: "🇹🇭", flagFile: "./assets/1251/flags/th.png", rate: 0.21, scale: 1 },
-    { id: "currency-USD", name: "美元", code: "USD", symbol: "$", flag: "🇺🇸", flagFile: "./assets/1251/flags/us.png", rate: 7.2, scale: 1 },
-    { id: "currency-USDT", name: "泰达币", code: "USDT", symbol: "₮", flag: "₮", rate: 7.2, scale: 1 },
-    { id: "currency-KRW", name: "韩元", code: "KRW", symbol: "₩", flag: "🇰🇷", flagFile: "./assets/1251/flags/kr.png", rate: 0.0052, scale: 1000 },
-    { id: "currency-VND", name: "越南盾", code: "VND", symbol: "₫", flag: "🇻🇳", flagFile: "./assets/1251/flags/vn.png", rate: 0.00028, scale: 1000 },
-    { id: "currency-EUR", name: "欧元", code: "EUR", symbol: "€", flag: "🇪🇺", flagFile: "./assets/1251/flags/eu.png", rate: 7.8, scale: 1 },
-    { id: "currency-GBP", name: "英镑", code: "GBP", symbol: "£", flag: "🇬🇧", flagFile: "./assets/1251/flags/gb.png", rate: 9.2, scale: 1 },
-    { id: "currency-INR", name: "印度卢比", code: "INR", symbol: "₹", flag: "🇮🇳", flagFile: "./assets/1251/flags/in.png", rate: 0.086, scale: 1 },
-    { id: "currency-RUB", name: "俄罗斯卢布", code: "RUB", symbol: "₽", flag: "🇷🇺", flagFile: "./assets/1251/flags/ru.png", rate: 0.078, scale: 1 },
-    { id: "currency-MYR", name: "马来西亚令吉", code: "MYR", symbol: "RM", flag: "🇲🇾", flagFile: "./assets/1251/flags/my.png", rate: 1.62, scale: 1 },
-    { id: "currency-KHR", name: "柬埔寨瑞尔", code: "KHR", symbol: "៛", flag: "🇰🇭", flagFile: "./assets/1251/flags/kh.png", rate: 0.0018, scale: 1000 }
+    { id: "currency-CNY", name: "人民币", country: "中国", code: "CNY", symbol: "¥", flag: "🇨🇳", flagFile: "./assets/1251/flags/cn.png", rate: 1, scale: 1 },
+    { id: "currency-HKD", name: "港币", country: "中国香港", code: "HKD", symbol: "HK$", flag: "🇭🇰", flagFile: "./assets/1251/flags/hk.png", rate: 0.92, scale: 1 },
+    { id: "currency-JPY", name: "日元", country: "日本", code: "JPY", symbol: "JP¥", flag: "🇯🇵", flagFile: "./assets/1251/flags/jp.png", rate: 0.047, scale: 100 },
+    { id: "currency-THB", name: "泰铢", country: "泰国", code: "THB", symbol: "฿", flag: "🇹🇭", flagFile: "./assets/1251/flags/th.png", rate: 0.21, scale: 1 },
+    { id: "currency-USD", name: "美元", country: "美国", code: "USD", symbol: "$", flag: "🇺🇸", flagFile: "./assets/1251/flags/us.png", rate: 7.2, scale: 1 },
+    { id: "currency-USDT", name: "泰达币", country: "不适用", code: "USDT", symbol: "₮", flag: "₮", rate: 7.2, scale: 1 },
+    { id: "currency-KRW", name: "韩元", country: "韩国", code: "KRW", symbol: "₩", flag: "🇰🇷", flagFile: "./assets/1251/flags/kr.png", rate: 0.0052, scale: 1000 },
+    { id: "currency-VND", name: "越南盾", country: "越南", code: "VND", symbol: "₫", flag: "🇻🇳", flagFile: "./assets/1251/flags/vn.png", rate: 0.00028, scale: 1000 },
+    { id: "currency-EUR", name: "欧元", country: "欧盟", code: "EUR", symbol: "€", flag: "🇪🇺", flagFile: "./assets/1251/flags/eu.png", rate: 7.8, scale: 1 },
+    { id: "currency-GBP", name: "英镑", country: "英国", code: "GBP", symbol: "£", flag: "🇬🇧", flagFile: "./assets/1251/flags/gb.png", rate: 9.2, scale: 1 },
+    { id: "currency-INR", name: "印度卢比", country: "印度", code: "INR", symbol: "₹", flag: "🇮🇳", flagFile: "./assets/1251/flags/in.png", rate: 0.086, scale: 1 },
+    { id: "currency-RUB", name: "俄罗斯卢布", country: "俄罗斯", code: "RUB", symbol: "₽", flag: "🇷🇺", flagFile: "./assets/1251/flags/ru.png", rate: 0.078, scale: 1 },
+    { id: "currency-MYR", name: "马来西亚令吉", country: "马来西亚", code: "MYR", symbol: "RM", flag: "🇲🇾", flagFile: "./assets/1251/flags/my.png", rate: 1.62, scale: 1 },
+    { id: "currency-KHR", name: "柬埔寨瑞尔", country: "柬埔寨", code: "KHR", symbol: "៛", flag: "🇰🇭", flagFile: "./assets/1251/flags/kh.png", rate: 0.0018, scale: 1000 }
   ];
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const number = (value) => Number(value).toLocaleString("en-US", { maximumFractionDigits: 8 });
@@ -30,7 +30,7 @@
   const now = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).format(new Date());
   const href = () => `#requirement/%231251/page/${PAGE}`;
   const portals = ["site", "agent", "member"];
-  let helpers, store = readStore(), query = "", statusFilter = "", notice = "";
+  let helpers, store = readStore(), query = "", countryFilter = "", statusFilter = "", notice = "";
 
   function readStore() {
     let saved;
@@ -43,7 +43,7 @@
       const row = index >= 0 ? savedRows[index] : null;
       if (index >= 0) usedSaved.add(index);
       if (base.code !== "CNY" && deletedIds.has(base.id)) return result;
-      result.push({ ...base, ...(row || {}), id: base.id, rate: base.code === "CNY" ? 1 : row && rateValid(row.rate) ? Number(row.rate) : base.rate,
+      result.push({ ...base, ...(row || {}), id: base.id, country: textValid(row?.country) ? row.country.trim() : base.country, rate: base.code === "CNY" ? 1 : row && rateValid(row.rate) ? Number(row.rate) : base.rate,
         scale: row && scaleValid(row.scale) ? Number(row.scale) : base.scale,
         enabled: base.code === "CNY" || row?.enabled !== false,
         revision: Number.isInteger(row?.revision) ? row.revision : 0,
@@ -53,7 +53,7 @@
     savedRows.forEach((row, index) => {
       if (usedSaved.has(index) || !row?.id || !row.code || !codeValid(row.code) || deletedIds.has(row.id)) return;
       if (rows.some((item) => item.id === row.id || item.code === row.code)) return;
-      rows.push({ ...row, rate: rateValid(row.rate) ? Number(row.rate) : 1, scale: scaleValid(row.scale) ? Number(row.scale) : 1,
+      rows.push({ ...row, country: textValid(row.country) ? row.country.trim() : "", rate: rateValid(row.rate) ? Number(row.rate) : 1, scale: scaleValid(row.scale) ? Number(row.scale) : 1,
         enabled: row.enabled !== false, revision: Number.isInteger(row.revision) ? row.revision : 0,
         updatedAt: row.updatedAt || "", operator: row.operator || "" });
     });
@@ -131,9 +131,9 @@
     helpers = api;
     if (page.key === MEMBER_PAGE) return '<div class="fx1251-member-image-stage"><img src="./assets/1251/member-currency-settings.png?build=member-currency-settings-20261022-02" alt="会员端币种设置页面原型" /></div>';
     store = readStore();
-    const rows = store.rows.filter((row) => row.code !== "CNY" && `${row.name} ${row.code} ${row.symbol}`.toLowerCase().includes(query.toLowerCase()) && (!statusFilter || row.enabled === (statusFilter === "enabled")));
+    const rows = store.rows.filter((row) => row.code !== "CNY" && `${row.name} ${row.code} ${row.symbol}`.toLowerCase().includes(query.toLowerCase()) && row.country.toLowerCase().includes(countryFilter.toLowerCase()) && (!statusFilter || row.enabled === (statusFilter === "enabled")));
     const cells = rows.map((row) => `<tr>
-      <td>${esc(row.name)}</td><td class="fx1251-flag-cell">${flagMarkup(row)}</td><td class="fx1251-code">${row.code}</td><td class="fx1251-symbol">${esc(row.symbol)}</td>
+      <td>${esc(row.name)}</td><td>${esc(row.country || "—")}</td><td class="fx1251-flag-cell">${flagMarkup(row)}</td><td class="fx1251-code">${row.code}</td><td class="fx1251-symbol">${esc(row.symbol)}</td>
       <td><span class="fx1251-rate">1 ${row.code} = <strong>${number(row.rate)}</strong> CNY</span>${row.code === "CNY" ? '<span class="fx1251-fixed">固定</span>' : ""}</td>
       <td><strong class="fx1251-scale">${number(row.scale)} 倍</strong><small class="fx1251-cell-help">${row.scale === 1 ? "原金额展示" : `100,000 → ${number(100000 / row.scale)}`}</small></td>
       <td><div class="fx1251-status"><button type="button" role="switch" aria-checked="${row.enabled}" aria-label="${esc(row.name)}启用状态" class="fx1251-switch${row.enabled ? " is-enabled" : ""}" data-fx1251-toggle="${row.code}"${row.code === "CNY" ? ' disabled title="人民币为默认币种，不可停用"' : ""}><span></span></button><span class="${row.enabled ? "fx1251-enabled" : "fx1251-disabled"}">${row.enabled ? "启用" : "停用"}</span></div></td>
@@ -143,13 +143,14 @@
     return `<div class="fx1251-view">
       <section class="fx1251-card"><form class="fx1251-query" data-fx1251-query>
         <label>币种<input name="keyword" value="${esc(query)}" placeholder="币种中文 / 代码 / 符号" autocomplete="off" /></label>
+        <label>国家<input name="country" value="${esc(countryFilter)}" placeholder="请输入国家或地区" autocomplete="off" maxlength="32" /></label>
         <label>状态<select name="status" aria-label="币种状态"><option value="">全部状态</option><option value="enabled"${statusFilter === "enabled" ? " selected" : ""}>启用</option><option value="disabled"${statusFilter === "disabled" ? " selected" : ""}>停用</option></select></label>
         <button type="submit" class="fx1251-button primary">查询</button><button type="button" class="fx1251-button" data-fx1251-reset>重置</button>
       </form></section>
       <section class="fx1251-card">
         <header class="fx1251-heading"><div class="fx1251-title"><h2>汇率控制</h2><div class="fx1251-base-rate"><span>汇率均以CNY为基准汇率</span><button type="button" class="fx1251-button fx1251-base-flag-button" data-fx1251-cny-flag aria-label="修改人民币国旗">${flagMarkup(store.rows.find((row) => row.code === "CNY"))}<span>国旗</span></button></div></div><div class="fx1251-heading-actions">${annotated("B01", '<button type="button" class="fx1251-button" data-fx1251-logs>操作日志</button>', "div")}<button type="button" class="fx1251-button primary" data-fx1251-add>新增币种</button></div></header>
         ${notice ? `<div class="fx1251-notice" role="status">${esc(notice)}</div>` : ""}
-        ${annotated("T01", `<div class="risk-table-wrap" data-page-scroll><table class="risk-table fx1251-table" data-preserve-currency><colgroup><col style="width:130px"><col style="width:60px"><col style="width:75px"><col style="width:75px"><col style="width:150px"><col style="width:115px"><col style="width:90px"><col style="width:170px"><col style="width:116px"></colgroup><thead><tr><th>币种中文</th><th>国旗</th><th>币种代码</th><th>币种符号</th><th>对人民币汇率</th><th>精度收缩（倍）</th><th class="fx1251-annotated" data-component-id="C01">${helpers.badge("C01")}状态</th><th>最后修改</th><th>操作</th></tr></thead><tbody>${cells || '<tr><td colspan="9" class="fx1251-empty">暂无符合条件的币种</td></tr>'}</tbody></table></div>`)}
+        ${annotated("T01", `<div class="risk-table-wrap" data-page-scroll><table class="risk-table fx1251-table" data-preserve-currency><colgroup><col style="width:130px"><col style="width:110px"><col style="width:60px"><col style="width:75px"><col style="width:75px"><col style="width:150px"><col style="width:115px"><col style="width:90px"><col style="width:170px"><col style="width:116px"></colgroup><thead><tr><th>币种中文</th><th>国家</th><th>国旗</th><th>币种代码</th><th>币种符号</th><th>对人民币汇率</th><th>精度收缩（倍）</th><th class="fx1251-annotated" data-component-id="C01">${helpers.badge("C01")}状态</th><th>最后修改</th><th>操作</th></tr></thead><tbody>${cells || '<tr><td colspan="10" class="fx1251-empty">暂无符合条件的币种</td></tr>'}</tbody></table></div>`)}
         <footer class="fx1251-list-footer">共 ${rows.length} 种币种<span>展示金额 = 原金额 ÷ 收缩倍数</span></footer>
       </section>
     </div>`;
@@ -185,7 +186,7 @@
     if (current.code === "CNY" && values.enabled === false) return { error: "人民币为默认兜底币种，不可停用。" };
     if (current.code === "CNY" && values.code && values.code !== "CNY") return { error: "人民币币种代码固定为 CNY。" };
     if (values.code && latest.rows.some((item) => item.id !== current.id && item.code === values.code)) return { error: "币种代码已存在，请更换后再保存。" };
-    const names = { name: "币种中文", code: "币种代码", symbol: "币种符号", flagImage: "国旗图片", rate: "对人民币汇率", scale: "精度收缩", enabled: "状态" };
+    const names = { name: "币种中文", country: "国家", code: "币种代码", symbol: "币种符号", flagImage: "国旗图片", rate: "对人民币汇率", scale: "精度收缩", enabled: "状态" };
     const changes = Object.entries(values).filter(([key, value]) => current[key] !== value).map(([key, value]) => key === "flagImage"
       ? { field: key, name: names[key], before: flagImageValid(current.flagImage) ? "已上传图片" : "预置国旗", after: "已更换图片" }
       : { field: key, name: names[key], before: current[key], after: value });
@@ -210,6 +211,7 @@
     const body = annotated("M04", `<form id="${formId}" class="fx1251-form" novalidate>
       <div class="fx1251-state-message">新增后默认启用，代理端、站点端和会员端可选择此币种。</div>
       <label class="fx1251-field"><span>币种中文 <b>*</b></span><input name="name" maxlength="32" placeholder="请输入币种中文名称" autocomplete="off" /></label>
+      <label class="fx1251-field"><span>国家 <b>*</b></span><input name="country" maxlength="32" placeholder="请输入国家或地区，无对应国家填不适用" autocomplete="off" /></label>
       <label class="fx1251-field"><span>国旗图片 <b>*</b></span><div class="fx1251-flag-upload"><span class="fx1251-flag-preview" data-fx1251-flag-preview></span><input type="file" name="flagImage" accept="image/png,image/jpeg,image/webp" /><span class="fx1251-upload-button">选择图片</span></div><small>支持 PNG、JPG、JPEG、WebP，大小不超过 2MB</small></label>
       <label class="fx1251-field"><span>币种代码 <b>*</b></span><input name="code" maxlength="10" placeholder="例如 USD" autocomplete="off" /><small>使用 2 至 10 位大写英文字母或数字，保存后可修改。</small></label>
       <label class="fx1251-field"><span>币种符号 <b>*</b></span><input name="symbol" maxlength="8" placeholder="例如 $、€、៛" autocomplete="off" /></label>
@@ -228,9 +230,10 @@
     });
     form.addEventListener("submit", (event) => {
       event.preventDefault();
-      const name = form.elements.name.value.trim(), code = form.elements.code.value.trim().toUpperCase(), symbol = form.elements.symbol.value.trim();
+      const name = form.elements.name.value.trim(), country = form.elements.country.value.trim(), code = form.elements.code.value.trim().toUpperCase(), symbol = form.elements.symbol.value.trim();
       const rateText = form.elements.rate.value.trim(), scaleText = form.elements.scale.value.trim(), remark = form.elements.remark.value.trim();
       if (!textValid(name)) return showError(form, "请输入币种中文名称，最多 32 个字符。", "name");
+      if (!textValid(country)) return showError(form, "请输入国家或地区，最多 32 个字符；无对应国家请填写不适用。", "country");
       const flagImage = getFlagImage();
       if (!flagImage) return showError(form, "请上传国旗图片。", "flagImage");
       if (!codeValid(code)) return showError(form, "币种代码须为 2 至 10 位大写英文字母或数字，且首位必须是字母。", "code");
@@ -239,9 +242,9 @@
       if (!rateValid(rateText)) return showError(form, "汇率必须大于 0，最多 6 位整数和 8 位小数。", "rate");
       if (!scaleValid(scaleText)) return showError(form, "收缩倍数须为 1 至 1,000,000,000 的整数。", "scale");
       if (remark.length > 200) return showError(form, "备注最多 200 字。", "remark");
-      const latest = readStore(), time = now(), row = { id: `currency-custom-${Date.now()}`, name, code, symbol, flagImage, rate: Number(rateText), scale: Number(scaleText), enabled: true, revision: 0, updatedAt: time, operator: "Mike" };
+      const latest = readStore(), time = now(), row = { id: `currency-custom-${Date.now()}`, name, country, code, symbol, flagImage, rate: Number(rateText), scale: Number(scaleText), enabled: true, revision: 0, updatedAt: time, operator: "Mike" };
       latest.rows.push(row);
-      latest.logs.unshift({ id: `fx-${Date.now()}-create`, currencyId: row.id, code: row.code, name: row.name, time, operator: "Mike", remark, changes: [{ field: "created", name: "新增币种", before: "—", after: `${row.name}（${row.code} / ${row.symbol}）` }, { field: "flagImage", name: "国旗图片", before: "未上传", after: "已上传图片" }] });
+      latest.logs.unshift({ id: `fx-${Date.now()}-create`, currencyId: row.id, code: row.code, name: row.name, time, operator: "Mike", remark, changes: [{ field: "created", name: "新增币种", before: "—", after: `${row.name}（${row.code} / ${row.symbol}）` }, { field: "country", name: "国家", before: "—", after: country }, { field: "flagImage", name: "国旗图片", before: "未上传", after: "已上传图片" }] });
       try { localStorage.setItem(STORAGE, JSON.stringify(latest)); } catch (_) { return showError(form, "保存失败，请检查浏览器本地存储后重试。本次修改未生效。"); }
       root.innerHTML = ""; store = latest; notice = `${row.name}已新增。`; helpers.rerender();
     });
@@ -309,6 +312,7 @@
     const body = annotated("M01", `<form id="${formId}" class="fx1251-form" novalidate>
       <div class="fx1251-currency-header"><strong data-fx1251-title>${esc(row.name)}</strong><span data-fx1251-code>${esc(row.code)}</span><span data-fx1251-symbol>${esc(row.symbol)}</span></div>
       <label class="fx1251-field"><span>币种中文 <b>*</b></span><input name="name" maxlength="32" value="${esc(row.name)}" autocomplete="off" /></label>
+      <label class="fx1251-field"><span>国家 <b>*</b></span><input name="country" maxlength="32" value="${esc(row.country || "")}" placeholder="请输入国家或地区，无对应国家填不适用" autocomplete="off" /></label>
       <label class="fx1251-field"><span>国旗图片</span><div class="fx1251-flag-upload"><span class="fx1251-flag-preview" data-fx1251-flag-preview></span><input type="file" name="flagImage" accept="image/png,image/jpeg,image/webp" /><span class="fx1251-upload-button">重新上传</span></div><small>不重新上传则保留当前国旗；支持 PNG、JPG、JPEG、WebP，大小不超过 2MB</small></label>
       <label class="fx1251-field"><span>币种代码 <b>*</b></span><input name="code" maxlength="10" value="${esc(row.code)}" autocomplete="off"${row.code === "CNY" ? ' readonly aria-readonly="true"' : ""} /><small>${row.code === "CNY" ? "人民币的币种代码固定为 CNY" : "2 至 10 位大写英文字母或数字，首位必须是字母"}</small></label>
       <label class="fx1251-field"><span>币种符号 <b>*</b></span><input name="symbol" maxlength="8" value="${esc(row.symbol)}" autocomplete="off" /></label>
@@ -335,9 +339,10 @@
     form.addEventListener("input", updatePreview); updatePreview();
     form.addEventListener("submit", (event) => {
       event.preventDefault();
-      const name = form.elements.name.value.trim(), code = form.elements.code.value.trim().toUpperCase(), symbol = form.elements.symbol.value.trim();
+      const name = form.elements.name.value.trim(), country = form.elements.country.value.trim(), code = form.elements.code.value.trim().toUpperCase(), symbol = form.elements.symbol.value.trim();
       const rateText = form.elements.rate.value.trim(), scaleText = form.elements.scale.value.trim(), remark = form.elements.remark.value.trim();
       if (!textValid(name)) return showError(form, "请输入币种中文名称，最多 32 个字符。", "name");
+      if (!textValid(country)) return showError(form, "请输入国家或地区，最多 32 个字符；无对应国家请填写不适用。", "country");
       if (!codeValid(code)) return showError(form, "币种代码须为 2 至 10 位大写英文字母或数字，且首位必须是字母。", "code");
       if (!rateValid(rateText)) return showError(form, "汇率必须大于 0，最多 6 位整数和 8 位小数，不支持科学计数法。", "rate");
       if (row.code === "CNY" && Number(rateText) !== 1) return showError(form, "人民币对自身汇率固定为 1。", "rate");
@@ -345,7 +350,7 @@
       if (!textValid(symbol, 8)) return showError(form, "请输入币种符号，最多 8 个字符。", "symbol");
       if (remark.length > 200) return showError(form, "备注最多 200 字。", "remark");
       const flagImage = getFlagImage();
-      const values = { name, code, symbol, rate: Number(rateText), scale: Number(scaleText) };
+      const values = { name, country, code, symbol, rate: Number(rateText), scale: Number(scaleText) };
       if (flagImage && flagImage !== row.flagImage) values.flagImage = flagImage;
       const result = saveChanges(snapshot, values, remark);
       if (result.error) return showError(form, result.error);
@@ -382,7 +387,7 @@
     const logCurrencies = [...new Map([...store.rows, ...store.logs.map((log) => ({ name: log.name, code: log.code }))].filter((row) => row.code).map((row) => [row.code, row])).values()];
     const body = annotated("M02", `<div class="fx1251-logs"><form class="fx1251-log-query" data-fx1251-log-query>
       <label>币种<select name="currency" aria-label="日志币种"><option value="">全部币种</option>${logCurrencies.map((row) => `<option value="${esc(row.code)}">${esc(row.name)}（${esc(row.code)}）</option>`).join("")}</select></label>
-      <label>修改项<select name="field" aria-label="日志修改项"><option value="">全部修改项</option><option value="created">新增币种</option><option value="deleted">删除币种</option><option value="name">币种中文</option><option value="code">币种代码</option><option value="symbol">币种符号</option><option value="flagImage">国旗图片</option><option value="rate">对人民币汇率</option><option value="scale">精度收缩</option><option value="enabled">状态</option></select></label>
+      <label>修改项<select name="field" aria-label="日志修改项"><option value="">全部修改项</option><option value="created">新增币种</option><option value="deleted">删除币种</option><option value="name">币种中文</option><option value="country">国家</option><option value="code">币种代码</option><option value="symbol">币种符号</option><option value="flagImage">国旗图片</option><option value="rate">对人民币汇率</option><option value="scale">精度收缩</option><option value="enabled">状态</option></select></label>
       <label>操作人<input name="operator" aria-label="日志操作人" placeholder="请输入操作人" /></label>
       <button type="submit" class="fx1251-button primary">查询</button><button type="reset" class="fx1251-button">重置</button>
     </form><div class="risk-table-wrap" data-page-scroll><table class="risk-table fx1251-log-table" data-preserve-currency><thead><tr><th>操作时间</th><th>币种</th><th>修改项</th><th>修改前</th><th>修改后</th><th>操作人</th><th>备注</th></tr></thead><tbody data-fx1251-log-rows></tbody></table></div><div class="fx1251-log-footer" data-fx1251-log-footer></div></div>`);
@@ -394,7 +399,7 @@
       const count = Math.max(1, Math.ceil(all.length / size)); page = Math.min(page, count);
       root.querySelector("[data-fx1251-log-rows]").innerHTML = all.slice((page - 1) * size, page * size).map((log) => {
         const value = (change, key) => change.field === "enabled" ? (change[key] ? "启用" : "停用") : change.field === "scale" ? `${number(change[key])} 倍` : change.field === "rate" ? `1 ${log.code} = ${number(change[key])} CNY` : String(change[key] ?? "—");
-        return `<tr><td>${esc(log.time)}</td><td>${esc(log.name)}<small class="fx1251-cell-help">${log.code}</small></td><td>${log.changes.map((c) => `<div class="fx1251-log-line">${esc(c.name)}</div>`).join("")}</td><td>${log.changes.map((c) => `<div class="fx1251-log-line">${value(c, "before")}</div>`).join("")}</td><td>${log.changes.map((c) => `<div class="fx1251-log-line">${value(c, "after")}</div>`).join("")}</td><td>${esc(log.operator)}</td><td class="fx1251-log-remark">${esc(log.remark || "—")}</td></tr>`;
+        return `<tr><td>${esc(log.time)}</td><td>${esc(log.name)}<small class="fx1251-cell-help">${log.code}</small></td><td>${log.changes.map((c) => `<div class="fx1251-log-line">${esc(c.name)}</div>`).join("")}</td><td>${log.changes.map((c) => `<div class="fx1251-log-line">${esc(value(c, "before"))}</div>`).join("")}</td><td>${log.changes.map((c) => `<div class="fx1251-log-line">${esc(value(c, "after"))}</div>`).join("")}</td><td>${esc(log.operator)}</td><td class="fx1251-log-remark">${esc(log.remark || "—")}</td></tr>`;
       }).join("") || '<tr><td colspan="7" class="fx1251-empty">暂无操作日志</td></tr>';
       root.querySelector("[data-fx1251-log-footer]").innerHTML = `<span>共 ${all.length} 条</span><select aria-label="日志每页条数" data-fx1251-log-size>${[10, 20, 50, 100, 200].map((n) => `<option value="${n}"${size === n ? " selected" : ""}>${n} 条/页</option>`).join("")}</select><button type="button" class="fx1251-button" data-fx1251-prev${page === 1 ? " disabled" : ""}>上一页</button><span>${page} / ${count}</span><button type="button" class="fx1251-button" data-fx1251-next${page === count ? " disabled" : ""}>下一页</button>`;
       root.querySelector("[data-fx1251-prev]").onclick = () => { page--; update(); };
@@ -407,8 +412,8 @@
   }
 
   function bind() {
-    document.querySelector("[data-fx1251-query]")?.addEventListener("submit", (event) => { event.preventDefault(); query = event.target.elements.keyword.value.trim(); statusFilter = event.target.elements.status.value; notice = ""; helpers.rerender(); });
-    document.querySelector("[data-fx1251-reset]")?.addEventListener("click", () => { query = ""; statusFilter = ""; notice = ""; helpers.rerender(); });
+    document.querySelector("[data-fx1251-query]")?.addEventListener("submit", (event) => { event.preventDefault(); query = event.target.elements.keyword.value.trim(); countryFilter = event.target.elements.country.value.trim(); statusFilter = event.target.elements.status.value; notice = ""; helpers.rerender(); });
+    document.querySelector("[data-fx1251-reset]")?.addEventListener("click", () => { query = ""; countryFilter = ""; statusFilter = ""; notice = ""; helpers.rerender(); });
     document.querySelectorAll("[data-fx1251-edit]").forEach((button) => button.addEventListener("click", () => editCurrency(button.dataset.fx1251Edit)));
     document.querySelectorAll("[data-fx1251-delete]").forEach((button) => button.addEventListener("click", () => deleteCurrency(button.dataset.fx1251Delete)));
     document.querySelectorAll("[data-fx1251-toggle]").forEach((button) => button.addEventListener("click", () => toggleCurrency(button.dataset.fx1251Toggle)));
