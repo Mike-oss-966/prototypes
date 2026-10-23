@@ -2518,3 +2518,53 @@ VIP等级: {{VIP等级}}
   });
   window.PROTOTYPE_DATA.requirements.sort((a, b) => (b.listPriority || 0) - (a.listPriority || 0) || Number(b.id.replace(/\D/g, "")) - Number(a.id.replace(/\D/g, "")));
 })();
+
+(function registerRiskNegativeProfitAnalysis1261() {
+  const note = (id, name, type, rules) => ({ id, name, type, summary: "", rules });
+  window.PROTOTYPE_DATA.requirements.push({
+    id: "#1261",
+    title: "风控-负盈利代理数据分析表",
+    summary: "总控按团队查看负盈利代理的会员规模、资金、投注和费用数据，并展开查看团队内代理明细。",
+    owner: "Mike",
+    status: "进行中",
+    priority: "P1",
+    startDate: "2026-10-22",
+    completionDate: "-",
+    updatedAt: "2026-10-23 17:54",
+    annotationEditing: true,
+    moduleName: "风控管理",
+    workspaceName: "总控后台",
+    roleName: "总控管理员、风控管理人员",
+    defaultPageKey: "risk-negative-profit-analysis-1261",
+    pages: [{
+      id: "P01",
+      key: "risk-negative-profit-analysis-1261",
+      name: "负盈利代理数据分析",
+      menuGroup: "风控管理",
+      portal: "总控",
+      role: "总控管理员、风控管理人员",
+      pageType: "new",
+      annotations: [
+        note("N01", "风控管理菜单", "导航", [
+          "总控后台【风控管理】下新增【负盈利代理数据分析】菜单，页面表格和展开明细沿用生产【负盈利代理佣金报表】的样式。"
+        ]),
+        note("F01", "筛选条件", "组合筛选", [
+          "可按站点、佣金周期、统计开始/结束日期、团队名称和代理名称筛选；站点默认全选，佣金周期默认最近周期。",
+          "查询按站点、周期和统计时间共同筛选；开始日期不得晚于结束日期。重置恢复全部站点、最近周期和空白日期/名称条件。"
+        ]),
+        note("T01", "团队数据分析表", "可展开汇总表", [
+          "表格按站点、佣金周期和团队显示一行团队汇总；团队行可展开，明细行显示该团队负责人及副线代理的各自数据。",
+          "团队汇总数据按团队成员数据聚合；下级会员按各代理直属会员数汇总。展开明细仅用于查看，不重复计入表格底部总计。",
+          "底部总计基于全部符合筛选条件的团队，不受当前页码及展开状态影响。金额列以CNY显示，单位放在表头。"
+        ]),
+        note("R01", "数据指标口径", "指标口径", [
+          "代理类型展示团队汇总，或团队代理多线中的负责人/副线。",
+          "下级会员为当前直属会员数量；注册人数为完成平台注册的人数；首存人数为注册后首次存款人数。",
+          "活跃人数按统计区间内投注额大于0计算；新增活跃人数为统计区间内新注册且投注额大于0的人数。",
+          "投注金额为投注总额；盈亏金额按盈利金额减亏损金额计算，正数表示盈利、负数表示亏损。红利彩金为用户领取的活动彩金，返水金额为投注产生的返水。"
+        ])
+      ]
+    }]
+  });
+  window.PROTOTYPE_DATA.requirements.sort((a, b) => (b.listPriority || 0) - (a.listPriority || 0) || Number(b.id.replace(/\D/g, "")) - Number(a.id.replace(/\D/g, "")));
+})();

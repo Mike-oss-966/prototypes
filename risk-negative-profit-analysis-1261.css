@@ -1,0 +1,120 @@
+.risk1261-app .risk-784-sidebar { min-height: 100%; }
+.risk1261-app .risk-content { min-width: 0; padding: 20px; background: #f0f2f5; }
+.risk1261-app .risk1261-sidebar .risk-784-menu-tree { padding: 0; }
+.risk1261-app .risk1261-sidebar .risk-784-menu-parent { width: 100%; }
+.risk1261-app .risk1261-sidebar .risk1261-disabled-menu { color: #bfcbd9; cursor: default; }
+.risk1261-app .risk1261-sidebar .risk1261-disabled-menu:hover { color: #bfcbd9; background: #1f2d3d; }
+.risk1261-app .risk1261-sidebar .risk1261-menu-link { grid-template-columns: 15px minmax(0, 1fr); }
+.risk1261-app .risk1261-sidebar .risk1261-menu-link .menu-name { display: flex; align-items: center; gap: 8px; }
+.risk1261-page { min-width: 0; color: #606266; font: 13px/1.5 "Helvetica Neue", Arial, "Microsoft YaHei", sans-serif; }
+.risk1261-page .risk-page-heading { margin-bottom: 16px; }
+.risk1261-page .risk-page-heading p { margin: 0 0 4px; color: #909399; font-size: 13px; }
+.risk1261-page .risk-page-heading h1 { margin: 0; color: #303133; font-size: 20px; font-weight: 500; }
+.risk1261-filter-panel,
+.risk1261-table-card { position: relative; margin-bottom: 16px; padding: 16px; border: 1px solid #ebeef5; background: #fff; }
+.risk1261-filter-grid { position: relative; display: grid; grid-template-columns: repeat(3, minmax(190px, 1fr)); gap: 14px 16px; align-items: end; }
+.risk1261-field { min-width: 0; display: grid; gap: 6px; color: #606266; font-size: 12px; }
+.risk1261-field > label,
+.risk1261-field > span { color: #606266; font-weight: 500; }
+.risk1261-field > input,
+.risk1261-field > select,
+.risk1261-site-picker > summary { width: 100%; height: 36px; padding: 0 10px; border: 1px solid #dcdfe6; border-radius: 4px; outline: 0; color: #606266; background: #fff; font: inherit; }
+.risk1261-field > input:focus,
+.risk1261-field > select:focus { border-color: #409eff; }
+.risk1261-site-field { position: relative; z-index: 18; }
+.risk1261-site-picker { position: relative; }
+.risk1261-site-picker > summary { display: flex; align-items: center; justify-content: space-between; list-style: none; cursor: pointer; }
+.risk1261-site-picker > summary::-webkit-details-marker { display: none; }
+.risk1261-site-picker > summary::after { width: 7px; height: 7px; margin: -4px 2px 0 8px; border-right: 1px solid #909399; border-bottom: 1px solid #909399; content: ""; transform: rotate(45deg); }
+.risk1261-site-picker[open] > summary::after { margin-top: 4px; transform: rotate(225deg); }
+.risk1261-site-options { position: absolute; top: calc(100% + 4px); left: 0; z-index: 20; width: 100%; max-height: 240px; overflow-y: auto; padding: 6px; border: 1px solid #dcdfe6; border-radius: 4px; background: #fff; box-shadow: none; }
+.risk1261-site-options label { min-height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 8px; cursor: pointer; }
+.risk1261-site-options label:hover { background: #f5f7fa; }
+.risk1261-site-options input { margin: 0; accent-color: #409eff; }
+.risk1261-site-options .risk1261-check-all { margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px solid #ebeef5; font-weight: 600; }
+.risk1261-filter-actions { display: flex; align-items: center; gap: 8px; }
+.risk1261-filter-actions button { min-width: 72px; min-height: 36px; }
+.risk1261-error { position: absolute; right: 0; bottom: -20px; margin: 0; color: #f56c6c; font-size: 12px; }
+.risk1261-table-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; color: #909399; font-size: 12px; }
+.risk1261-table-toolbar button { min-height: 32px; padding: 0 12px; }
+.risk1261-table-wrap { max-width: 100%; overflow-x: auto !important; overflow-y: hidden !important; border: 1px solid #ebeef5; }
+.risk1261-table { width: var(--risk1261-table-width); min-width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; color: #606266; font-size: 13px; }
+.risk1261-detail-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; color: #606266; font-size: 13px; }
+.risk1261-table th,
+.risk1261-table td,
+.risk1261-detail-table th,
+.risk1261-detail-table td { position: relative; height: 46px; padding: 10px 11px; border-right: 1px solid #ebeef5; border-bottom: 1px solid #ebeef5; background: #fff; text-align: center; white-space: nowrap; }
+.risk1261-table th,
+.risk1261-detail-table th { height: 50px; color: #909399; background: #f5f7fa; font-weight: 600; }
+.risk1261-header-label { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.risk1261-page .risk1261-header-help { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 16px; width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 50%; color: #909399; background: transparent; line-height: 1; cursor: pointer; }
+.risk1261-header-help svg { display: block; width: 16px; height: 16px; }
+.risk1261-page .risk1261-header-help:hover,
+.risk1261-page .risk1261-header-help:focus-visible { color: #409eff; }
+.risk1261-field-definition { position: fixed; inset: auto; box-sizing: border-box; width: 280px; max-width: calc(100vw - 16px); margin: 0; padding: 12px 14px; border: 1px solid #dcdfe6; border-radius: 4px; background: #fff; color: #606266; font: 13px/1.7 "Helvetica Neue", Arial, "Microsoft YaHei", sans-serif; }
+.risk1261-field-definition h2 { margin: 0 0 6px; color: #303133; font-size: 13px; font-weight: 600; }
+.risk1261-field-definition p { margin: 0; }
+.risk1261-table > tbody > tr:nth-child(4n + 1) > td { background: #fff; }
+.risk1261-table tbody tr.risk1261-group-row:hover > td { background: #f5f7fa; }
+.risk1261-table tbody tr.risk1261-group-row > td { background: #f9fbfd; }
+.risk1261-table tbody tr.risk1261-group-row.is-expanded > td { background: #f1f7ff; }
+.risk1261-table .risk1261-expand-head,
+.risk1261-table .risk1261-expand-cell { position: sticky; left: 0; z-index: 7; width: 44px; min-width: 44px; padding: 0; }
+.risk1261-table .risk1261-expand-head { z-index: 10; background: #f5f7fa; }
+.risk1261-table .risk1261-expand-cell { background: #f9fbfd; }
+.risk1261-table tr.is-expanded .risk1261-expand-cell { background: #f1f7ff; }
+.risk1261-table > :is(thead, tbody, tfoot) > tr > :nth-child(2) { position: sticky; left: 44px; z-index: 6; background: #f9fbfd; }
+.risk1261-table > :is(thead, tbody, tfoot) > tr > :nth-child(3) { position: sticky; left: 140px; z-index: 6; background: #f9fbfd; box-shadow: 5px 0 8px -7px rgba(0, 0, 0, .42); }
+.risk1261-table > thead > tr > :nth-child(2),
+.risk1261-table > thead > tr > :nth-child(3) { z-index: 9; background: #f5f7fa; }
+.risk1261-expand-button { width: 28px; height: 28px; display: inline-grid; place-items: center; border: 0; border-radius: 4px; background: transparent; cursor: pointer; }
+.risk1261-expand-button:hover { background: #e8f2ff; }
+.risk1261-expand-button > span { width: 8px; height: 8px; border-right: 1.5px solid #606266; border-bottom: 1.5px solid #606266; transform: rotate(-45deg); transition: transform .12s ease; }
+.risk1261-expand-button[aria-expanded="true"] > span { transform: rotate(45deg) translate(-1px, -1px); }
+.risk1261-agent-name { text-align: left !important; }
+.risk1261-agent-name strong,
+.risk1261-agent-name small { display: block; }
+.risk1261-agent-name strong { color: #303133; font-weight: 500; }
+.risk1261-agent-name small { margin-top: 2px; color: #909399; font-size: 11px; }
+.risk1261-team-tag,
+.risk1261-role-tag { display: inline-block; padding: 2px 7px; border: 1px solid #d9ecff; border-radius: 3px; color: #409eff; background: #ecf5ff; font-size: 11px; }
+.risk1261-team-tag { color: #606266; border-color: #dcdfe6; background: #f5f7fa; }
+.risk1261-role-tag.is-leader { color: #67c23a; border-color: #c2e7b0; background: #f0f9eb; }
+.risk1261-number { font-variant-numeric: tabular-nums; }
+.risk1261-money { text-align: right !important; }
+.risk1261-table .risk1261-statistics-time { white-space: normal; }
+.risk1261-detail-row > td { padding: 0 !important; border-right: 0; background: #f6f8fb !important; }
+.risk1261-detail-wrap { box-sizing: border-box; width: 100%; overflow: visible; padding: 10px 0 12px; }
+.risk1261-detail-table th:first-child,
+.risk1261-detail-table td:first-child { position: sticky; left: 0; z-index: 5; width: 44px; padding: 0; background: #fff; }
+.risk1261-detail-table th:nth-child(2),
+.risk1261-detail-table td:nth-child(2) { position: sticky; left: 44px; z-index: 5; background: #fff; }
+.risk1261-detail-table th:nth-child(3),
+.risk1261-detail-table td:nth-child(3) { position: sticky; left: 140px; z-index: 5; background: #fff; box-shadow: 5px 0 8px -7px rgba(0, 0, 0, .32); }
+.risk1261-detail-table thead th:first-child,
+.risk1261-detail-table thead th:nth-child(2),
+.risk1261-detail-table thead th:nth-child(3) { z-index: 8; background: #f5f7fa; }
+.risk1261-table > tfoot > .risk1261-total-row > td { background: #f5f7fa; border-top: 2px solid #dcdfe6; font-weight: 600; }
+.risk1261-table tfoot .risk1261-money { color: #303133; }
+.risk1261-empty { height: 112px !important; color: #909399; text-align: center !important; }
+.risk1261-pagination { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-height: 46px; padding-top: 12px; color: #606266; font-size: 12px; }
+.risk1261-pagination > span { margin-right: auto; color: #909399; }
+.risk1261-pagination button { min-width: 28px; height: 28px; padding: 0 6px; border: 0; border-radius: 3px; color: #606266; background: transparent; cursor: pointer; }
+.risk1261-pagination button:hover:not(:disabled),
+.risk1261-pagination button.active { color: #fff; background: #409eff; }
+.risk1261-pagination button:disabled { color: #c0c4cc; cursor: not-allowed; }
+.risk1261-pagination select { height: 28px; border: 1px solid #dcdfe6; border-radius: 3px; color: #606266; background: #fff; }
+.risk1261-page-gap { padding: 0 2px; color: #909399; }
+
+@media (max-width: 1180px) {
+  .risk1261-app.risk-app { grid-template-columns: 220px minmax(0, 1fr); }
+  .risk1261-filter-grid { grid-template-columns: repeat(2, minmax(170px, 1fr)); }
+}
+@media (max-width: 760px) {
+  .risk1261-app.risk-app { display: block; }
+  .risk1261-app .risk1261-sidebar { width: 100%; max-height: 320px; }
+  .risk1261-app .risk-content { padding: 14px 10px; }
+  .risk1261-filter-grid { grid-template-columns: 1fr; }
+  .risk1261-table-toolbar { align-items: flex-start; }
+  .risk1261-pagination { flex-wrap: wrap; justify-content: center; }
+}
