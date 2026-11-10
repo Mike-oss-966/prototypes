@@ -2431,6 +2431,28 @@ VIP等级: {{VIP等级}}
 
 (function () {
   window.PROTOTYPE_DATA.requirements.push({
+    id: "#1300",
+    localOnly: false,
+    annotationEditing: true,
+    title: "平台安全验证补齐方案",
+    owner: "Mike",
+    status: "方案评审",
+    priority: "P1",
+    startDate: "2026-11-05",
+    completionDate: "-",
+    updatedAt: "2026-11-10 10:08",
+    summary: "先评审会员安全增强方案的展示形式，规则用说明表达，仅用三个局部界面示例辅助讨论。",
+    moduleName: "平台安全方案",
+    workspaceName: "方案评审",
+    roleName: "产品与管理评审",
+    defaultPageKey: "security-plan-1300",
+    pages: [{ id: "SOLUTION", key: "security-plan-1300", name: "方案说明", portal: "方案", moduleName: "平台安全方案", role: "方案评审", pageType: "solution", annotations: [] }]
+  });
+  window.PROTOTYPE_DATA.requirements.sort((a, b) => (b.listPriority || 0) - (a.listPriority || 0) || Number(b.id.replace(/\D/g, "")) - Number(a.id.replace(/\D/g, "")));
+})();
+
+(function () {
+  window.PROTOTYPE_DATA.requirements.push({
     id: "#1251", title: "汇率换算表", owner: "Mike", status: "进行中", priority: "P1",
     startDate: "2026-10-20", completionDate: "-", updatedAt: "2026-10-22 20:13",
     summary: "统一管理币种的名称、代码、符号、汇率、金额展示倍数及启停，支持新增和删除；停用后代理、站点、会员端展示回退人民币，原币账务保留并记录日志。",

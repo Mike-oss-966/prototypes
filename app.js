@@ -5974,6 +5974,10 @@
     currentPageKey = page.key;
     if (requirement.id === "#828" && page.key === "control-site-config-828" && !financeTabState[page.key]) financeTabState[page.key] = "合营联系方式";
     if (page.key !== requestedPageKey) window.history.replaceState(null, "", `#requirement/${encodeURIComponent(requirement.id)}/page/${page.key}`);
+    if (requirement.id === "#1300") {
+      window.Security1300.mount({ app, requirement });
+      return;
+    }
     if (requirement.id === "#510") { detailBonus510(requirement, page); return; }
     if (page.key === "member-login-log") loginState.searched = false;
     if (page.key === "transaction-query") transactionState.searched = false;
