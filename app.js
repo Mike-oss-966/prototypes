@@ -3978,7 +3978,7 @@
     const startTime = options.startTime || "00:00:00";
     const endTime = options.endTime || "23:59:59";
     const dateOnly = options.dateOnly === true;
-    const calendarDays = (selectedDay) => (dateOnly || ["#488", "#510", "#911", "#971", "#1191"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dateOnly || ["#488", "#510", "#911", "#971", "#1191"].includes(currentRequirementId) ? new Date(year, month, 0).getDate() : 31 }, (_, index) => {
+    const calendarDays = (selectedDay) => (dateOnly || ["#488", "#510", "#911", "#971", "#1191", "#1261"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dateOnly || ["#488", "#510", "#911", "#971", "#1191", "#1261"].includes(currentRequirementId) ? new Date(year, month, 0).getDate() : 31 }, (_, index) => {
       const day = index + 1;
       return `<button type="button" class="calendar-day${day === selectedDay ? " selected" : ""}" data-day="${day}">${day}</button>`;
     }).join("");
@@ -5535,7 +5535,7 @@
   function pageContent(page) {
     if (currentRequirementId === "#1251") return window.Exchange1251.render(page, { badge: componentBadge, modal, bindLinks: bindComponentLinks, rerender: () => detailView(requirements.find((item) => item.id === currentRequirementId), page.key) });
     if (currentRequirementId === "#1191") return window.SiteOpening1191.render(page, { badge: componentBadge, modal, sites: siteOptions, dateControl: agent498DateControl, bindDates: bindAgent498DatePickers, bindLinks: bindComponentLinks, activeTab: activePageTab(page), setTab: (tab) => { window.location.hash = `#requirement/%231191/page/${page.key}/menu/${encodeURIComponent(tab)}`; }, rerender: () => detailView(requirements.find((item) => item.id === currentRequirementId), page.key) });
-    if (currentRequirementId === "#1261") return window.RiskNegativeProfitAnalysis1261.render(page, { badge: componentBadge, sites: siteOptions });
+    if (currentRequirementId === "#1261") return window.RiskNegativeProfitAnalysis1261.render(page, { badge: componentBadge, sites: siteOptions, dateControl: agent498DateControl, bindDates: bindAgent498DatePickers });
     if (currentRequirementId === "#1131") return window.Withdraw1131.render(page, { badge: componentBadge, modal, sites: siteOptions, siteSelect: siteMultiSelect, dateControl: agent498DateControl, bindDates: bindAgent498DatePickers, bindSites: bindSiteAutocomplete, bindLinks: bindComponentLinks, activeTab: activePageTab(page), setTab: (tab) => { window.location.hash = `#requirement/%231131/page/${page.key}/menu/${encodeURIComponent(tab)}`; }, rerender: () => detailView(requirements.find((item) => item.id === currentRequirementId), page.key) });
     if (isVenueManagementRequirement(currentRequirementId)) return venueModule(currentRequirementId)?.render(page, { badge: componentBadge, modal, select: selectComponent, bindLinks: bindComponentLinks, activeTab: activePageTab(page), setTab: (tab) => { window.location.hash = `#requirement/${encodeURIComponent(currentRequirementId)}/page/${page.key}/menu/${encodeURIComponent(tab)}`; }, rerender: () => detailView(requirements.find((item) => item.id === currentRequirementId), page.key) }) || "";
     if (currentRequirementId === "#1027") return window.AgentDaily1027.render(page, { badge: componentBadge, bindLinks: bindComponentLinks, select: selectComponent, modal });
@@ -6177,7 +6177,7 @@
         panel.dataset.year = String(year);
         panel.dataset.month = String(month);
         panel.querySelector("header strong").textContent = `${year}年${month}月`;
-        panel.querySelector(".calendar-days").innerHTML = (dateOnly || ["#488", "#510", "#911", "#971", "#1191"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dayCount }, (_, index) => {
+        panel.querySelector(".calendar-days").innerHTML = (dateOnly || ["#488", "#510", "#911", "#971", "#1191", "#1261"].includes(currentRequirementId) ? '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) : "") + Array.from({ length: dayCount }, (_, index) => {
           const day = index + 1;
           return `<button type="button" class="calendar-day${day === selectedDay ? " selected" : ""}" data-day="${day}">${day}</button>`;
         }).join("");
@@ -6208,7 +6208,7 @@
         popover.style.maxHeight = `${Math.max(260, visibleBottom - visibleTop)}px`;
       };
       const close = () => {
-        if (["#510", "#911", "#971"].includes(currentRequirementId) && trigger.dataset.n911RangeBefore !== undefined) {
+        if (["#510", "#911", "#971", "#1261"].includes(currentRequirementId) && trigger.dataset.n911RangeBefore !== undefined) {
           trigger.innerHTML = trigger.dataset.n911RangeBefore;
           delete trigger.dataset.n911RangeBefore;
         }
@@ -6222,13 +6222,13 @@
         popover.hidden = !opening;
         trigger.setAttribute("aria-expanded", String(opening));
         if (opening) {
-          if (["#510", "#911", "#971"].includes(currentRequirementId)) trigger.dataset.n911RangeBefore = trigger.innerHTML;
+          if (["#510", "#911", "#971", "#1261"].includes(currentRequirementId)) trigger.dataset.n911RangeBefore = trigger.innerHTML;
           positionPopover();
         }
       });
       field.querySelector(".date-close")?.addEventListener("click", close);
       field.querySelector(".site-695-date-clear")?.addEventListener("click", () => {
-        if (["#510", "#911", "#971"].includes(currentRequirementId)) delete trigger.dataset.n911RangeBefore;
+        if (["#510", "#911", "#971", "#1261"].includes(currentRequirementId)) delete trigger.dataset.n911RangeBefore;
         if (field.closest(".member-488-list-date")) {
           const times = popover.querySelectorAll(".calendar-panel input[type='time']");
           if (times[0]) times[0].value = "00:00:00";
@@ -6255,7 +6255,7 @@
         }
         const quickButton = event.target.closest("[data-range-days]");
         if (!quickButton) return;
-        const end = dateOnly || ["#488", "#510", "#911", "#971", "#1191"].includes(currentRequirementId) ? new Date() : currentRequirementId === "#776" ? new Date(2026, 7, 21) : field.closest(".site-member-695-app") ? new Date(2026, 7, 13) : new Date(2026, 6, 31);
+        const end = dateOnly || ["#488", "#510", "#911", "#971", "#1191", "#1261"].includes(currentRequirementId) ? new Date() : currentRequirementId === "#776" ? new Date(2026, 7, 21) : field.closest(".site-member-695-app") ? new Date(2026, 7, 13) : new Date(2026, 6, 31);
         let start = new Date(end);
         const range = quickButton.dataset.rangeDays;
         if (range === "1") {
@@ -6288,7 +6288,7 @@
         }
         trigger.innerHTML = `<span>${values[0]}</span><b>至</b><span>${values[1]}</span>`;
         trigger.classList.add("range-selected");
-        if (["#510", "#911", "#971"].includes(currentRequirementId)) delete trigger.dataset.n911RangeBefore;
+        if (["#510", "#911", "#971", "#1261"].includes(currentRequirementId)) delete trigger.dataset.n911RangeBefore;
         close();
       });
     });

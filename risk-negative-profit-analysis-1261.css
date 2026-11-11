@@ -12,10 +12,14 @@
 .risk1261-page .risk-page-heading h1 { margin: 0; color: #303133; font-size: 20px; font-weight: 500; }
 .risk1261-filter-panel,
 .risk1261-table-card { position: relative; margin-bottom: 16px; padding: 16px; border: 1px solid #ebeef5; background: #fff; }
+.risk1261-filter-panel:has(.date-picker-popover:not([hidden]), .risk1261-site-picker[open]) { z-index: 70; }
 .risk1261-filter-grid { position: relative; display: grid; grid-template-columns: repeat(3, minmax(190px, 1fr)); gap: 14px 16px; align-items: end; }
 .risk1261-field { min-width: 0; display: grid; gap: 6px; color: #606266; font-size: 12px; }
 .risk1261-field > label,
 .risk1261-field > span { color: #606266; font-weight: 500; }
+.risk1261-date-field { grid-column: span 2; }
+.risk1261-date-field .agent-498-date { min-height: 36px; height: 36px; border: 1px solid #dcdfe6; border-radius: 4px; color: #606266; }
+.risk1261-date-field .date-picker-popover { position: fixed; box-shadow: none; }
 .risk1261-field > input,
 .risk1261-field > select,
 .risk1261-site-picker > summary { width: 100%; height: 36px; padding: 0 10px; border: 1px solid #dcdfe6; border-radius: 4px; outline: 0; color: #606266; background: #fff; font: inherit; }
@@ -34,7 +38,7 @@
 .risk1261-site-options .risk1261-check-all { margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px solid #ebeef5; font-weight: 600; }
 .risk1261-filter-actions { display: flex; align-items: center; gap: 8px; }
 .risk1261-filter-actions button { min-width: 72px; min-height: 36px; }
-.risk1261-error { position: absolute; right: 0; bottom: -20px; margin: 0; color: #f56c6c; font-size: 12px; }
+.risk1261-error { grid-column: 1 / -1; margin: 0; color: #f56c6c; font-size: 12px; }
 .risk1261-table-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; color: #909399; font-size: 12px; }
 .risk1261-table-toolbar button { min-height: 32px; padding: 0 12px; }
 .risk1261-table-wrap { max-width: 100%; overflow-x: auto !important; overflow-y: hidden !important; border: 1px solid #ebeef5; }
@@ -75,6 +79,7 @@
 .risk1261-agent-name strong,
 .risk1261-agent-name small { display: block; }
 .risk1261-agent-name strong { color: #303133; font-weight: 500; }
+.risk1261-agent-name.is-match strong { color: #409eff; font-weight: 600; }
 .risk1261-agent-name small { margin-top: 2px; color: #909399; font-size: 11px; }
 .risk1261-team-tag,
 .risk1261-role-tag { display: inline-block; padding: 2px 7px; border: 1px solid #d9ecff; border-radius: 3px; color: #409eff; background: #ecf5ff; font-size: 11px; }
@@ -115,6 +120,7 @@
   .risk1261-app .risk1261-sidebar { width: 100%; max-height: 320px; }
   .risk1261-app .risk-content { padding: 14px 10px; }
   .risk1261-filter-grid { grid-template-columns: 1fr; }
+  .risk1261-date-field { grid-column: auto; }
   .risk1261-table-toolbar { align-items: flex-start; }
   .risk1261-pagination { flex-wrap: wrap; justify-content: center; }
 }

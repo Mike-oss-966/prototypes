@@ -2,11 +2,9 @@
   "use strict";
 
   let siteNames = [];
-  const cycles = [
-    { label: "2026-10-16 至 2026-10-31", start: "2026-10-16", end: "2026-10-31", asOf: "2026-10-22 23:59:59" },
-    { label: "2026-10-01 至 2026-10-15", start: "2026-10-01", end: "2026-10-15", asOf: "2026-10-15 23:59:59" },
-    { label: "2026-09-16 至 2026-09-30", start: "2026-09-16", end: "2026-09-30", asOf: "2026-09-30 23:59:59" }
-  ];
+  const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  const dayAt = (offset) => new Date(Date.parse(`${today}T12:00:00Z`) + offset * 86400000).toISOString().slice(0, 10);
+  const defaultRange = () => ({ start: `${dayAt(-6)} 00:00:00`, end: `${today} 23:59:59` });
   const teams = [
     ["XY体育", "华东团队", "TM10001", ["agent_mike", "east_sub_01", "east_sub_02"]],
     ["XY体育", "江南团队", "TM10002", ["south_line", "south_sub_01"]],
@@ -22,8 +20,6 @@
   const fields = [
     { key: "siteName", label: "站点", width: 96, kind: "text" },
     { key: "agentName", label: "代理名称", width: 132, kind: "agent" },
-    { key: "cycle", label: "佣金周期", width: 174, kind: "text" },
-    { key: "statisticsTime", label: "统计时间", width: 210, kind: "text" },
     { key: "teamName", label: "团队名称", width: 125, kind: "text" },
     { key: "agentType", label: "代理类型", width: 190, kind: "type" },
     { key: "members", label: "下级会员", width: 104, kind: "count", definition: "当前直属会员数量。代理行统计该代理的直属会员；团队行汇总团队内各代理的直属会员。" },
@@ -35,8 +31,9 @@
     { key: "withdrawAmount", label: "提款金额（CNY）", width: 130, kind: "money" },
     { key: "betAmount", label: "投注金额（CNY）", width: 130, kind: "money" },
     { key: "profitLossAmount", label: "盈亏金额（CNY）", width: 130, kind: "money" },
-    { key: "bonusAmount", label: "红利彩金（CNY）", width: 130, kind: "money" },
-    { key: "rebateAmount", label: "返水金额（CNY）", width: 130, kind: "money" }
+    { key: "bonusAmount", label: "红利彩金（CNY）", width: 150, kind: "money", definition: "统计时间范围内，直属会员实际领取的活动彩金金额合计，按领取时间统计；未领取的彩金和投注产生的返水不计入。团队行汇总团队内全部代理的数据。" },
+    { key: "rebateAmount", label: "返水金额（CNY）", width: 130, kind: "money" },
+    { key: "statisticsTime", label: "统计时间", width: 210, kind: "text" }
   ];
   const numericFields = fields.filter((field) => ["count", "money"].includes(field.kind)).map((field) => field.key);
   const tableWidth = 44 + fields.reduce((total, field) => total + field.width, 0);
@@ -44,62 +41,74 @@
   const e = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const numberFormat = (value) => Number(value || 0).toLocaleString("zh-CN");
   const moneyFormat = (value) => Number(value || 0).toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const cycleOptions = cycles.map((cycle) => cycle.label);
-  const freshFilter = () => ({ sites: [...siteNames], cycle: cycleOptions[0], startDate: "", endDate: "", team: "", agent: "" });
+  const freshFilter = () => ({ sites: [...siteNames], ...defaultRange(), team: "", agent: "" });
   const state = { draft: freshFilter(), applied: freshFilter(), page: 1, size: 20, expanded: new Set(), error: "", sitesInitialized: false };
   let context = {};
 
-  function makeAgent(team, cycleIndex, agentIndex) {
-    const seed = team.teamIndex * 19 + cycleIndex * 13 + agentIndex * 7;
-    const registrations = 5 + seed % 12;
-    const members = 76 + (team.teamIndex * 17) % 118 + agentIndex * 21 + cycleIndex * 4;
-    const firstDeposits = Math.min(registrations, 2 + (seed * 3) % 7);
-    const activeMembers = 24 + (team.teamIndex * 9 + agentIndex * 12 + cycleIndex * 5) % 94;
-    const newActiveMembers = Math.min(registrations, 1 + (seed * 5) % 5);
-    const depositAmount = 42800 + team.teamIndex * 11750 + agentIndex * 9200 + cycleIndex * 3800;
-    const withdrawAmount = 29100 + team.teamIndex * 8350 + agentIndex * 6700 + cycleIndex * 2900;
-    const betAmount = 286000 + team.teamIndex * 82400 + agentIndex * 73500 + cycleIndex * 24000;
-    const profitLossAmount = ((team.teamIndex + agentIndex + cycleIndex) % 3 === 0 ? -1 : 1) * (8300 + team.teamIndex * 2100 + agentIndex * 3100 + cycleIndex * 1200);
-    const bonusAmount = 2200 + team.teamIndex * 680 + agentIndex * 530 + cycleIndex * 260;
-    const rebateAmount = 5300 + team.teamIndex * 1450 + agentIndex * 980 + cycleIndex * 420;
+  // 独立的会员与事件样例，按所选时间聚合，不再以佣金账期生成报表。
+  function makeAgent(team, agentIndex) {
+    const seed = team.teamIndex * 19 + agentIndex * 7;
+    const members = 76 + (team.teamIndex * 17) % 118 + agentIndex * 21;
+    const memberSamples = Array.from({ length: members }, (_, index) => {
+      const recent = index < 18;
+      const registrationDay = recent ? -17 + index : -120 - index;
+      const registrationTime = `${dayAt(registrationDay)} 08:00:00`;
+      const firstDepositTime = registrationDay + 2 <= 0 ? `${dayAt(registrationDay + 2)} 09:15:00` : null;
+      const activity = [];
+      for (let offset = -29; offset <= 0; offset += 1) {
+        if (offset < registrationDay + 2 || (index + offset + seed) % 4 !== 0) continue;
+        const amount = 100 + (index + seed) % 20 * 50;
+        activity.push({
+          depositAt: `${dayAt(offset)} 09:15:00`, withdrawAt: `${dayAt(offset)} 12:20:00`,
+          betAt: `${dayAt(offset)} 14:30:00`, bonusAt: `${dayAt(offset)} 16:40:00`, rebateAt: `${dayAt(offset)} 21:45:00`,
+          depositAmount: amount, withdrawAmount: Math.round(amount * .6), betAmount: amount * 8,
+          profitLossAmount: (index % 3 === 0 ? -1 : 1) * amount * .2,
+          bonusAmount: index % 3 === 0 ? 20 : 0, rebateAmount: amount * .08
+        });
+      }
+      // 首存也进入存款金额，后续充值单独累计。
+      if (firstDepositTime) activity.push({ depositAt: firstDepositTime, depositAmount: 200 });
+      return { registrationTime, firstDepositTime, activity };
+    });
     return {
       siteName: team.siteName,
       agentName: team.accounts[agentIndex],
-      cycle: cycles[cycleIndex].label,
-      statisticsTime: `${cycles[cycleIndex].start} 00:00:00 至 ${cycles[cycleIndex].asOf}`,
       teamName: team.teamName,
       agentType: agentIndex === 0 ? "团队代理多线（负责人）" : "团队代理多线（副线）",
-      members,
-      registrations,
-      firstDeposits,
-      activeMembers,
-      newActiveMembers,
-      depositAmount,
-      withdrawAmount,
-      betAmount,
-      profitLossAmount,
-      bonusAmount,
-      rebateAmount,
+      members, memberSamples,
       teamId: team.teamId,
-      teamKey: `${team.siteName}|${team.teamId}|${cycles[cycleIndex].label}`
+      teamKey: `${team.siteName}|${team.teamId}`
     };
   }
 
-  const allGroups = teams.flatMap((team) => cycles.map((cycle, cycleIndex) => {
-    const agents = team.accounts.map((_, agentIndex) => makeAgent(team, cycleIndex, agentIndex));
-    const aggregate = {
+  function agentStatistics(agent, range) {
+    const inRange = (time) => Boolean(time) && (!range.start || time >= range.start) && (!range.end || time <= range.end);
+    const result = { ...agent, ...Object.fromEntries(numericFields.map((key) => [key, 0])), members: agent.members };
+    const eventFields = { depositAmount: "depositAt", withdrawAmount: "withdrawAt", betAmount: "betAt", profitLossAmount: "betAt", bonusAmount: "bonusAt", rebateAmount: "rebateAt" };
+    for (const member of agent.memberSamples) {
+      const registered = inRange(member.registrationTime);
+      const active = member.activity.some((event) => event.betAmount > 0 && inRange(event.betAt));
+      result.registrations += Number(registered);
+      result.firstDeposits += Number(inRange(member.firstDepositTime));
+      result.activeMembers += Number(active);
+      result.newActiveMembers += Number(registered && active);
+      for (const event of member.activity) {
+        for (const [field, timeField] of Object.entries(eventFields)) {
+          if (inRange(event[timeField])) result[field] += event[field] || 0;
+        }
+      }
+    }
+    return result;
+  }
+
+  const allGroups = teams.map((team) => ({
       siteName: team.siteName,
       agentName: `${team.teamName}（汇总）`,
-      cycle: cycle.label,
-      statisticsTime: `${cycle.start} 00:00:00 至 ${cycle.asOf}`,
       teamName: team.teamName,
       agentType: "团队",
       teamId: team.teamId,
-      teamKey: `${team.siteName}|${team.teamId}|${cycle.label}`,
-      agents
-    };
-    numericFields.forEach((field) => { aggregate[field] = agents.reduce((sum, agent) => sum + agent[field], 0); });
-    return aggregate;
+      teamKey: `${team.siteName}|${team.teamId}`,
+      agents: team.accounts.map((_, agentIndex) => makeAgent(team, agentIndex))
   }));
 
   function summaryText(selected) {
@@ -114,8 +123,9 @@
   }
 
   function filterPanel() {
-    const cycle = state.draft.cycle;
-    return `<section class="risk1261-filter-panel annotated" data-component-id="F01">${context.badge?.("F01") || ""}<div class="risk1261-filter-grid">${siteSelector()}<label class="risk1261-field"><span>佣金周期</span><select data-risk1261-cycle>${cycleOptions.map((option) => `<option value="${e(option)}"${option === cycle ? " selected" : ""}>${e(option)}</option>`).join("")}</select></label><label class="risk1261-field risk1261-date-field"><span>统计开始日期</span><input type="date" value="${e(state.draft.startDate)}" data-risk1261-date="startDate" /></label><label class="risk1261-field risk1261-date-field"><span>统计结束日期</span><input type="date" value="${e(state.draft.endDate)}" data-risk1261-date="endDate" /></label><label class="risk1261-field"><span>团队名称</span><input type="text" value="${e(state.draft.team)}" placeholder="请输入团队名称" data-risk1261-keyword="team" /></label><label class="risk1261-field"><span>代理名称</span><input type="text" value="${e(state.draft.agent)}" placeholder="请输入代理账号" data-risk1261-keyword="agent" /></label><div class="risk1261-filter-actions"><button type="button" class="main-action" data-risk1261-search>查询</button><button type="button" class="secondary-action" data-risk1261-reset>重置</button></div>${state.error ? `<p class="risk1261-error" role="alert">${e(state.error)}</p>` : ""}</div></section>`;
+    const date = (state.draft.start || `${today} 00:00:00`).slice(0, 10).split("-").map(Number);
+    const timeControl = context.dateControl({ year: date[0], month: date[1], startDay: date[2], endDay: date[2], empty: !state.draft.start });
+    return `<section class="risk1261-filter-panel annotated" data-component-id="F01">${context.badge?.("F01") || ""}<div class="risk1261-filter-grid">${siteSelector()}<label class="risk1261-field"><span>团队名称</span><input type="text" value="${e(state.draft.team)}" placeholder="请输入团队名称" data-risk1261-keyword="team" /></label><label class="risk1261-field"><span>代理名称</span><input type="text" value="${e(state.draft.agent)}" placeholder="负责人或副线代理账号" data-risk1261-keyword="agent" /></label><div class="risk1261-field risk1261-date-field"><span>统计时间</span>${timeControl}</div><div class="risk1261-filter-actions"><button type="button" class="main-action" data-risk1261-search>查询</button><button type="button" class="secondary-action" data-risk1261-reset>重置</button></div>${state.error ? `<p class="risk1261-error" role="alert">${e(state.error)}</p>` : ""}</div></section>`;
   }
 
   function matchingGroups() {
@@ -124,20 +134,16 @@
     const agentTerm = filter.agent.trim().toLowerCase();
     return allGroups.filter((group) => {
       if (!filter.sites.includes(group.siteName)) return false;
-      if (filter.cycle && group.cycle !== filter.cycle) return false;
       if (teamTerm && !`${group.teamName} ${group.teamId}`.toLowerCase().includes(teamTerm)) return false;
-      const periodStart = group.statisticsTime.slice(0, 10);
-      const periodEnd = group.statisticsTime.slice(-19, -9);
-      if (filter.endDate && periodStart > filter.endDate) return false;
-      if (filter.startDate && periodEnd < filter.startDate) return false;
       if (agentTerm && !group.agents.some((agent) => agent.agentName.toLowerCase().includes(agentTerm))) return false;
       return true;
     }).map((group) => {
-      const agents = agentTerm ? group.agents.filter((agent) => agent.agentName.toLowerCase().includes(agentTerm)) : group.agents;
-      const aggregate = { ...group, agents };
+      const statisticsTime = `${filter.start} 至 ${filter.end}`;
+      const agents = group.agents.map((agent) => ({ ...agentStatistics(agent, filter), statisticsTime, matched: Boolean(agentTerm) && agent.agentName.toLowerCase().includes(agentTerm) }));
+      const aggregate = { ...group, agents, statisticsTime };
       numericFields.forEach((field) => { aggregate[field] = agents.reduce((sum, agent) => sum + agent[field], 0); });
       return aggregate;
-    }).sort((left, right) => left.siteName.localeCompare(right.siteName, "zh-CN") || left.teamName.localeCompare(right.teamName, "zh-CN") || right.cycle.localeCompare(left.cycle));
+    }).sort((left, right) => left.siteName.localeCompare(right.siteName, "zh-CN") || left.teamName.localeCompare(right.teamName, "zh-CN"));
   }
 
   function valueCell(row, field, aggregate = false) {
@@ -145,7 +151,7 @@
     if (field.key === "statisticsTime") return `<td class="risk1261-statistics-time">${e(value || "—")}</td>`;
     if (field.kind === "count") return `<td class="risk1261-number">${numberFormat(value)}</td>`;
     if (field.kind === "money") return `<td class="risk1261-number risk1261-money">${moneyFormat(value)}</td>`;
-    if (field.kind === "agent") return `<td class="risk1261-agent-name">${aggregate ? `<strong>${e(value)}</strong><small>团队汇总</small>` : `<strong>${e(value)}</strong>`}</td>`;
+    if (field.kind === "agent") return `<td class="risk1261-agent-name${row.matched ? " is-match" : ""}">${aggregate ? `<strong>${e(value)}</strong><small>团队汇总</small>` : `<strong>${e(value)}</strong>`}</td>`;
     if (field.kind === "type") return `<td>${aggregate ? '<span class="risk1261-team-tag">团队</span>' : `<span class="risk1261-role-tag${value.includes("负责人") ? " is-leader" : ""}">${e(value)}</span>`}</td>`;
     return `<td>${e(value || "—")}</td>`;
   }
@@ -218,12 +224,45 @@
     state.draft = {
       ...state.draft,
       sites: [...root.querySelectorAll("[data-risk1261-site]:checked")].map((input) => input.value),
-      cycle: root.querySelector("[data-risk1261-cycle]")?.value || "",
-      startDate: root.querySelector('[data-risk1261-date="startDate"]')?.value || "",
-      endDate: root.querySelector('[data-risk1261-date="endDate"]')?.value || "",
       team: root.querySelector('[data-risk1261-keyword="team"]')?.value.trim() || "",
       agent: root.querySelector('[data-risk1261-keyword="agent"]')?.value.trim() || ""
     };
+  }
+
+  function bindStatisticsTime(root) {
+    const field = root.querySelector(".risk1261-date-field");
+    context.bindDates();
+    const trigger = field.querySelector("[data-date-trigger]");
+    const popover = field.querySelector(".agent-498-date-popover");
+    const refreshLabel = () => {
+      trigger.innerHTML = `<span>${e(state.draft.start || "开始时间")}</span><b>至</b><span>${e(state.draft.end || "结束时间")}</span>`;
+    };
+    refreshLabel();
+    trigger.addEventListener("click", () => {
+      if (popover.hidden) return;
+      popover.querySelectorAll(".calendar-panel").forEach((panel) => {
+        const side = panel.dataset.rangeSide;
+        const value = state.draft[side] || `${today} ${side === "start" ? "00:00:00" : "23:59:59"}`;
+        const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+        Object.assign(panel.dataset, { year, month });
+        panel.querySelector("header strong").textContent = `${year}年${month}月`;
+        panel.querySelector(".calendar-days").innerHTML = '<span></span>'.repeat((new Date(year, month - 1, 1).getDay() + 6) % 7) + Array.from({ length: new Date(year, month, 0).getDate() }, (_, index) => `<button type="button" class="calendar-day${index + 1 === day ? " selected" : ""}" data-day="${index + 1}">${index + 1}</button>`).join("");
+        panel.querySelector("input[type='time']").value = value.slice(11);
+      });
+    });
+    field.querySelector(".date-apply").addEventListener("click", () => {
+      if (!popover.hidden) return;
+      const values = [...trigger.querySelectorAll("span")].map((span) => span.textContent);
+      state.draft.start = values[0].length === 16 ? `${values[0]}:00` : values[0];
+      state.draft.end = values[1].length === 16 ? `${values[1]}:00` : values[1];
+      refreshLabel();
+    });
+    field.querySelector(".site-695-date-clear").addEventListener("click", () => {
+      state.draft.start = ""; state.draft.end = ""; refreshLabel();
+    });
+    popover.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") field.querySelector(".date-close").click();
+    });
   }
 
   function bind(helpers = {}) {
@@ -231,6 +270,7 @@
     const root = document.querySelector(".risk1261-app");
     if (!root) return;
     const rerender = context.rerender || (() => {});
+    bindStatisticsTime(root);
     const definitionPopup = root.querySelector("#risk1261-field-definition");
     let definitionTrigger;
     const closeDefinition = () => {
@@ -273,16 +313,20 @@
       updateSiteSummary();
     });
     root.querySelectorAll("[data-risk1261-site]").forEach((input) => input.addEventListener("change", updateSiteSummary));
-    root.querySelectorAll("[data-risk1261-cycle], [data-risk1261-date], [data-risk1261-keyword]").forEach((input) => input.addEventListener("change", () => readDraft(root)));
+    root.querySelectorAll("[data-risk1261-keyword]").forEach((input) => input.addEventListener("change", () => readDraft(root)));
     root.querySelectorAll("[data-risk1261-keyword]").forEach((input) => input.addEventListener("input", () => readDraft(root)));
     root.querySelector("[data-risk1261-search]")?.addEventListener("click", () => {
       readDraft(root);
-      if (state.draft.startDate && state.draft.endDate && state.draft.startDate > state.draft.endDate) {
-        state.error = "统计开始日期不能晚于统计结束日期。";
+      if (!state.draft.start || !state.draft.end) {
+        state.error = "请选择完整的统计时间范围。";
+      } else if (state.draft.start > state.draft.end) {
+        state.error = "统计开始时间不能晚于统计结束时间。";
       } else {
         state.error = "";
         state.applied = { ...state.draft, sites: [...state.draft.sites] };
         state.page = 1;
+        state.expanded.clear();
+        if (state.applied.agent) matchingGroups().forEach((group) => state.expanded.add(group.teamKey));
       }
       rerender();
     });
