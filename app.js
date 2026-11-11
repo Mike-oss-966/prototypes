@@ -386,9 +386,6 @@
       const healthIssue = p0RiskV2EnsureState().healthIssue;
       demoControls = `<div class="spec-view-switch" aria-label="风控看板健康状态演示"><span>原型状态演示</span><div><button type="button" class="${healthIssue ? "active" : ""}" data-p0-health-demo="issue">异常状态</button><button type="button" class="${healthIssue ? "" : "active"}" data-p0-health-demo="normal">正常状态</button></div><small>仅用于原型评审，不属于生产功能</small></div>`;
     }
-    let summaryText = escapeHtml(annotation.summary);
-    annotation.summaryHighlights?.forEach((term) => { summaryText = summaryText.replaceAll(escapeHtml(term), `<strong class="summary-danger">${escapeHtml(term)}</strong>`); });
-    const summary = annotation.summary ? `<p class="annotation-summary${annotation.summaryTone === "danger" ? " annotation-summary-danger" : ""}">${summaryText}</p>` : "";
     const rules = annotationRules(annotation);
     const ruleHtml = rules.map((rule, index) => {
       let text = escapeHtml(rule);
@@ -396,7 +393,7 @@
       return `<li${annotation.ruleEmphasisIndexes?.includes(index) ? ' class="rule-emphasis"' : ""}>${text}</li>`;
     }).join("");
     const template = annotation.templateText ? `<pre class="annotation-template">${escapeHtml(annotation.templateText)}</pre>` : "";
-    return `<article class="annotation-card${annotation.critical ? " critical-annotation" : ""}${annotation.templateText ? " template-annotation" : ""}" data-spec-id="${annotation.id}" tabindex="0"><div class="annotation-heading"><span class="component-code">${annotation.id}</span><div><h3>${escapeHtml(annotation.name)}</h3></div></div>${summary}${template || `<ul>${ruleHtml}</ul>`}${demoControls}</article>`;
+    return `<article class="annotation-card${annotation.critical ? " critical-annotation" : ""}${annotation.templateText ? " template-annotation" : ""}" data-spec-id="${annotation.id}" tabindex="0"><div class="annotation-heading"><span class="component-code">${annotation.id}</span><div><h3>${escapeHtml(annotation.name)}</h3></div></div>${template || `<ul>${ruleHtml}</ul>`}${demoControls}</article>`;
   }
 
   function agent498IsTeamIdentity(identity = agent498Identity) {
@@ -5806,7 +5803,7 @@
 
   function scopeSpecNotice(annotation) {
     if (!annotation) return "";
-    return `<section class="scope-spec-note"><span>${escapeHtml(annotation.name)}</span><p>${escapeHtml(annotation.summary)}</p><ul>${annotation.rules.map((rule) => `<li>${escapeHtml(rule)}</li>`).join("")}</ul></section>`;
+    return `<section class="scope-spec-note"><span>${escapeHtml(annotation.name)}</span><ul>${annotation.rules.map((rule) => `<li>${escapeHtml(rule)}</li>`).join("")}</ul></section>`;
   }
 
   function productionComparisonNotice(requirement, page) {
@@ -5898,8 +5895,7 @@
   function exportStandardNotice(annotation) {
     const rules = [...(annotation?.rules || [])];
     exportExcelRules.forEach((rule) => { if (!rules.includes(rule)) rules.push(rule); });
-    const summary = annotation?.summary ? `${escapeHtml(annotation.summary)} ` : "";
-    return `<section class="export-standard-note"><span>${escapeHtml(annotation?.name || "导出规范")}</span><p>${summary}${rules.map(escapeHtml).join("；")}。</p></section>`;
+    return `<section class="export-standard-note"><span>${escapeHtml(annotation?.name || "导出规范")}</span><p>${rules.map(escapeHtml).join("；")}。</p></section>`;
   }
 
   function prototypeEndpointSwitch(requirement, page) {
@@ -6086,14 +6082,62 @@
 
   function selectComponent(id, source) {
     app.querySelectorAll("[data-component-id], [data-spec-id]").forEach((element) => element.classList.remove("is-selected"));
+    app.querySelectorAll(".component-badge.is-spec-target").forEach((badge) => badge.classList.remove("is-spec-target"));
     const component = app.querySelector(`[data-component-id="${id}"]`);
     const spec = app.querySelector(`[data-spec-id="${id}"]`);
     component?.classList.add("is-selected"); spec?.classList.add("is-selected");
-    (source === "spec" ? component : spec)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (source === "spec") {
+      if (component) componentBadgeFor(component)?.classList.add("is-spec-target");
+      component?.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (component) flashComponentBadge(component);
+    } else {
+      spec?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+
+  function componentBadgeFor(component) {
+    return [...component.querySelectorAll(".component-badge")].find((item) => item.closest("[data-component-id]") === component);
+  }
+
+  function flashComponentBadge(component) {
+    const badge = componentBadgeFor(component);
+    if (!badge) return;
+    badge.classList.remove("is-link-pulse");
+    if (badge.dataset.pulseFrame) cancelAnimationFrame(Number(badge.dataset.pulseFrame));
+    if (badge.dataset.pulseTimeout) clearTimeout(Number(badge.dataset.pulseTimeout));
+    badge.dataset.pulseFrame = String(requestAnimationFrame(() => {
+      delete badge.dataset.pulseFrame;
+      badge.classList.add("is-link-pulse");
+      badge.dataset.pulseTimeout = String(setTimeout(() => {
+        badge.classList.remove("is-link-pulse");
+        delete badge.dataset.pulseTimeout;
+      }, 3500));
+    }));
   }
 
   function bindComponentLinks() {
     app.querySelectorAll("[data-component-id]").forEach((component) => {
+      const spec = app.querySelector(`[data-spec-id="${component.dataset.componentId}"]`);
+      const badge = componentBadgeFor(component);
+      if (spec && badge && !badge.dataset.componentBadgeBound) {
+        badge.dataset.componentBadgeBound = "true";
+        badge.classList.add("is-linkable");
+        badge.removeAttribute("aria-hidden");
+        badge.setAttribute("role", "button");
+        badge.setAttribute("tabindex", "0");
+        badge.setAttribute("aria-label", `查看说明 ${component.dataset.componentId}`);
+        badge.setAttribute("title", "点击查看对应说明");
+        badge.addEventListener("click", (event) => {
+          event.stopPropagation();
+          selectComponent(component.dataset.componentId, "component");
+        });
+        badge.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          event.stopPropagation();
+          selectComponent(component.dataset.componentId, "component");
+        });
+      }
       if (component.dataset.componentLinkBound) return;
       component.dataset.componentLinkBound = "true";
       component.addEventListener("click", (event) => { if (event.target.closest("button,input,select,a") && event.target !== component) return; event.stopPropagation(); selectComponent(component.dataset.componentId, "component"); });

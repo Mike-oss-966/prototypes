@@ -36,12 +36,12 @@
     return sources.map(source => {
       const edit = patch.edits[source.key];
       const block = { ...source, ...(edit?.values || {}) };
-      const conflicts = Object.entries(edit?.values || {}).filter(([field, value]) => field !== "deleted" && !equal(source[field] ?? (field === "rules" ? [] : ""), edit.base[field]) && !equal(source[field], value)).map(([field]) => field);
+      const conflicts = Object.entries(edit?.values || {}).filter(([field, value]) => !["deleted", "summary"].includes(field) && !equal(source[field] ?? (field === "rules" ? [] : ""), edit.base[field]) && !equal(source[field], value)).map(([field]) => field);
       return { ...block, source, conflicts, visible: source.kind !== "annotation" || frame.visibleIds.has(source.id) };
     }).sort((a, b) => ordered.indexOf(a.key) - ordered.indexOf(b.key));
   }
   function plainCard(block) {
-    return `<article class="annotation-card notes-text-card" data-note-key="${escape(block.key)}"><div class="annotation-heading"><div><h3>${escape(block.name)}</h3></div></div>${block.summary ? `<p class="annotation-summary">${escape(block.summary)}</p>` : ""}${block.templateText ? `<pre class="annotation-template">${escape(block.templateText)}</pre>` : `<ul>${block.rules.map(rule => `<li>${escape(rule)}</li>`).join("")}</ul>`}</article>`;
+    return `<article class="annotation-card notes-text-card" data-note-key="${escape(block.key)}"><div class="annotation-heading"><div><h3>${escape(block.name)}</h3></div></div>${block.templateText ? `<pre class="annotation-template">${escape(block.templateText)}</pre>` : `<ul>${block.rules.map(rule => `<li>${escape(rule)}</li>`).join("")}</ul>`}</article>`;
   }
   function updateBadges() {
     if (!current) return;
@@ -87,7 +87,7 @@
     if (!loading) {
       loading = new Promise((resolve, reject) => {
         const script = document.createElement("script");
-        script.src = `${serviceOrigin()}/notes-editor.js?v=1`;
+        script.src = `${serviceOrigin()}/notes-editor.js?v=2`;
         script.onload = resolve;
         script.onerror = () => { script.remove(); reject(new Error("本地保存服务尚未启动。双击 start-prototype-server.bat 后点击重试。")); };
         document.head.append(script);
